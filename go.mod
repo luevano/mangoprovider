@@ -3,12 +3,14 @@ module github.com/luevano/mangoprovider
 go 1.21
 
 require (
+	github.com/bob620/mangodex v0.0.0-20220405223321-04789f6bde6d
 	github.com/luevano/libmangal v0.9.1
 	github.com/philippgille/gokv v0.6.0
 	github.com/philippgille/gokv/syncmap v0.6.0
 )
 
 require (
+	github.com/google/uuid v1.5.0 // indirect
 	github.com/hhrutter/lzw v1.0.0 // indirect
 	github.com/hhrutter/tiff v1.0.1 // indirect
 	github.com/kr/text v0.1.0 // indirect

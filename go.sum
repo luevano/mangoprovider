@@ -1,5 +1,9 @@
+github.com/bob620/mangodex v0.0.0-20220405223321-04789f6bde6d h1:1ZhDX1y5iMqVsHVU/hU9/urAgThGtCGyQbYP0Gz5PcU=
+github.com/bob620/mangodex v0.0.0-20220405223321-04789f6bde6d/go.mod h1:Z/Pfb1IcOiHYIMSIsvWvGfFWmiIqYGnkRnHT9rSa6pI=
 github.com/go-test/deep v1.0.4 h1:u2CU3YKy9I2pmu9pX0eq50wCgjfGIt539SqR7FbHiho=
 github.com/go-test/deep v1.0.4/go.mod h1:wGDj63lr65AM2AQyKZd/NYHGb0R+1RLqB8NKt3aSFNA=
+github.com/google/uuid v1.5.0 h1:1p67kYwdtXjb0gL0BPiP1Av9wiZPo5A8z2cWkTZ+eyU=
+github.com/google/uuid v1.5.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/hhrutter/lzw v1.0.0 h1:laL89Llp86W3rRs83LvKbwYRx6INE8gDn0XNb1oXtm0=
 github.com/hhrutter/lzw v1.0.0/go.mod h1:2HC6DJSn/n6iAZfgM3Pg+cP1KxeWc3ezG8bBqW5+WEo=
 github.com/hhrutter/tiff v1.0.1 h1:MIus8caHU5U6823gx7C6jrfoEvfSTGtEFRiM8/LOzC0=

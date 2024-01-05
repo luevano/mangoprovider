@@ -1,4 +1,4 @@
-package mangoprovider
+package mango
 
 import (
 	"regexp"
@@ -8,25 +8,25 @@ import (
 
 var fileExtensionRegex = regexp.MustCompile(`^\.[a-zA-Z0-9][a-zA-Z0-9.]*[a-zA-Z0-9]$`)
 
-var _ libmangal.Page = (*mangoPage)(nil)
+var _ libmangal.Page = (*MangoPage)(nil)
 
-type mangoPage struct {
+type MangoPage struct {
 	Extension string            `json:"extension"`
 	URL       string            `json:"url"`
 	Headers   map[string]string `json:"headers"`
 	Cookies   map[string]string `json:"cookies"`
 
-	chapter *mangoChapter
+	chapter *MangoChapter
 }
 
-func (p mangoPage) String() string {
+func (p MangoPage) String() string {
 	return p.URL
 }
 
-func (p mangoPage) GetExtension() string {
+func (p MangoPage) GetExtension() string {
 	return p.Extension
 }
 
-func (p mangoPage) Chapter() libmangal.Chapter {
+func (p MangoPage) Chapter() libmangal.Chapter {
 	return p.chapter
 }
