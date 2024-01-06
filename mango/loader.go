@@ -12,7 +12,7 @@ type MangoLoader struct {
 	libmangal.ProviderInfo
 	Options Options
 
-	ProviderFuncs
+	Funcs ProviderFuncs
 }
 
 func (l MangoLoader) String() string {
@@ -27,7 +27,7 @@ func (l MangoLoader) Load(ctx context.Context) (libmangal.Provider, error) {
 	provider := &MangoProvider{
 		ProviderInfo: l.ProviderInfo,
 		Options:      l.Options,
-		ProviderFuncs: l.ProviderFuncs,
+		Funcs:        l.Funcs,
 	}
 
 	store, err := l.Options.HTTPStoreProvider()

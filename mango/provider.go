@@ -11,18 +11,18 @@ import (
 var _ libmangal.Provider = (*MangoProvider)(nil)
 
 type ProviderFuncs struct {
-	FnSearchMangas   func(context.Context, string) ([]libmangal.Manga, error)
-	FnMangaVolumes   func(context.Context, libmangal.Manga) ([]libmangal.Manga, error)
-	FnVolumeChapters func(context.Context, libmangal.Volume) ([]libmangal.Chapter, error)
-	FnChapterPages   func(context.Context, libmangal.Chapter) ([]libmangal.Page, error)
-	FnGetPageImage   func(context.Context, libmangal.Page) ([]byte, error)
+	SearchMangas   func(context.Context, string) ([]libmangal.Manga, error)
+	MangaVolumes   func(context.Context, libmangal.Manga) ([]libmangal.Manga, error)
+	VolumeChapters func(context.Context, libmangal.Volume) ([]libmangal.Chapter, error)
+	ChapterPages   func(context.Context, libmangal.Chapter) ([]libmangal.Page, error)
+	GetPageImage   func(context.Context, libmangal.Page) ([]byte, error)
 }
 
 type MangoProvider struct {
 	libmangal.ProviderInfo
 	Options Options
 
-	ProviderFuncs
+	Funcs ProviderFuncs
 
 	store  gokv.Store
 	logger *libmangal.Logger
@@ -50,7 +50,7 @@ func (p *MangoProvider) SearchMangas(
 ) ([]libmangal.Manga, error) {
 	p.logger.Log(fmt.Sprintf("Searching mangas with %q", query))
 
-	return p.FnSearchMangas(ctx, query)
+	return p.SearchMangas(ctx, query)
 }
 
 func (p *MangoProvider) MangaVolumes(
@@ -68,7 +68,7 @@ func (p *MangoProvider) VolumeChapters(
 ) ([]libmangal.Chapter, error) {
 	p.logger.Log(fmt.Sprintf("Searching manga chapters for volume %q", volume))
 
-	return p.FnVolumeChapters(ctx, volume)
+	return p.VolumeChapters(ctx, volume)
 }
 
 func (p *MangoProvider) ChapterPages(
@@ -77,7 +77,7 @@ func (p *MangoProvider) ChapterPages(
 ) ([]libmangal.Page, error) {
 	p.logger.Log(fmt.Sprintf("Searching manga pages for chapter %q", chapter))
 
-	return p.FnChapterPages(ctx, chapter)
+	return p.ChapterPages(ctx, chapter)
 }
 
 func (p *MangoProvider) GetPageImage(
@@ -86,5 +86,5 @@ func (p *MangoProvider) GetPageImage(
 ) ([]byte, error) {
 	p.logger.Log(fmt.Sprintf("Searching page image for page %q", page))
 
-	return p.FnGetPageImage(ctx, page)
+	return p.GetPageImage(ctx, page)
 }

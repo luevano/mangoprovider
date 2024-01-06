@@ -26,21 +26,21 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 
 	return mango.MangoLoader{
 		ProviderInfo: dexProviderInfo,
-		Options: options,
-		ProviderFuncs: mango.ProviderFuncs{
-			FnSearchMangas: func(ctx context.Context, s string) ([]libmangal.Manga, error) {
+		Options:      options,
+		Funcs: mango.ProviderFuncs{
+			SearchMangas: func(ctx context.Context, s string) ([]libmangal.Manga, error) {
 				return nil, fmt.Errorf("unimplemented")
 			},
-			FnMangaVolumes: func(ctx context.Context, m libmangal.Manga) ([]libmangal.Manga, error) {
+			MangaVolumes: func(ctx context.Context, m libmangal.Manga) ([]libmangal.Manga, error) {
 				return nil, fmt.Errorf("unimplemented")
 			},
-			FnVolumeChapters: func(ctx context.Context, v libmangal.Volume) ([]libmangal.Chapter, error) {
+			VolumeChapters: func(ctx context.Context, v libmangal.Volume) ([]libmangal.Chapter, error) {
 				return nil, fmt.Errorf("unimplemented")
 			},
-			FnChapterPages: func(ctx context.Context, c libmangal.Chapter) ([]libmangal.Page, error) {
+			ChapterPages: func(ctx context.Context, c libmangal.Chapter) ([]libmangal.Page, error) {
 				return nil, fmt.Errorf("unimplemented")
 			},
-			FnGetPageImage: func(ctx context.Context, p libmangal.Page) ([]byte, error) {
+			GetPageImage: func(ctx context.Context, p libmangal.Page) ([]byte, error) {
 				return nil, fmt.Errorf("unimplemented")
 			},
 		},
