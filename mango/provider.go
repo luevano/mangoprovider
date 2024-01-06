@@ -8,21 +8,22 @@ import (
 	"github.com/philippgille/gokv"
 )
 
+// TODO: need to make another layer for the providerfunctions
+// to use MangoX instead of the interfaces from libmangal
+
 var _ libmangal.Provider = (*MangoProvider)(nil)
 
 type ProviderFuncs struct {
-	SearchMangas   func(context.Context, string) ([]libmangal.Manga, error)
-	MangaVolumes   func(context.Context, libmangal.Manga) ([]libmangal.Manga, error)
-	VolumeChapters func(context.Context, libmangal.Volume) ([]libmangal.Chapter, error)
-	ChapterPages   func(context.Context, libmangal.Chapter) ([]libmangal.Page, error)
-	GetPageImage   func(context.Context, libmangal.Page) ([]byte, error)
+	SearchMangas   func(context.Context, gokv.Store, string) ([]libmangal.Manga, error)
+	MangaVolumes   func(context.Context, gokv.Store, libmangal.Manga) ([]libmangal.Volume, error)
+	VolumeChapters func(context.Context, gokv.Store, libmangal.Volume) ([]libmangal.Chapter, error)
+	ChapterPages   func(context.Context, gokv.Store, libmangal.Chapter) ([]libmangal.Page, error)
 }
 
 type MangoProvider struct {
 	libmangal.ProviderInfo
 	Options Options
-
-	Funcs ProviderFuncs
+	Funcs   ProviderFuncs
 
 	store  gokv.Store
 	logger *libmangal.Logger
@@ -50,41 +51,41 @@ func (p *MangoProvider) SearchMangas(
 ) ([]libmangal.Manga, error) {
 	p.logger.Log(fmt.Sprintf("Searching mangas with %q", query))
 
-	return p.SearchMangas(ctx, query)
+	return p.Funcs.SearchMangas(ctx, p.store, query)
 }
 
 func (p *MangoProvider) MangaVolumes(
 	ctx context.Context,
 	manga libmangal.Manga,
 ) ([]libmangal.Volume, error) {
-	p.logger.Log(fmt.Sprintf("Searching manga volumes for manga %q", manga))
+	p.logger.Log(fmt.Sprintf("Fetching volumes for %q", manga))
 
-	return p.MangaVolumes(ctx, manga)
+	return p.Funcs.MangaVolumes(ctx, p.store, manga)
 }
 
 func (p *MangoProvider) VolumeChapters(
 	ctx context.Context,
 	volume libmangal.Volume,
 ) ([]libmangal.Chapter, error) {
-	p.logger.Log(fmt.Sprintf("Searching manga chapters for volume %q", volume))
+	p.logger.Log(fmt.Sprintf("Fetching chapters for %q", volume))
 
-	return p.VolumeChapters(ctx, volume)
+	return p.Funcs.VolumeChapters(ctx, p.store, volume)
 }
 
 func (p *MangoProvider) ChapterPages(
 	ctx context.Context,
 	chapter libmangal.Chapter,
 ) ([]libmangal.Page, error) {
-	p.logger.Log(fmt.Sprintf("Searching manga pages for chapter %q", chapter))
+	p.logger.Log(fmt.Sprintf("Fetching pages for %q", chapter))
 
-	return p.ChapterPages(ctx, chapter)
+	return p.Funcs.ChapterPages(ctx, p.store, chapter)
 }
 
 func (p *MangoProvider) GetPageImage(
 	ctx context.Context,
 	page libmangal.Page,
 ) ([]byte, error) {
-	p.logger.Log(fmt.Sprintf("Searching page image for page %q", page))
+	p.logger.Log(fmt.Sprintf("Making HTTP GET request for %q", page))
 
-	return p.GetPageImage(ctx, page)
+	return nil, fmt.Errorf("unimplemented")
 }

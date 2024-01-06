@@ -7,6 +7,7 @@ import (
 	"github.com/bob620/mangodex"
 	"github.com/luevano/libmangal"
 	"github.com/luevano/mangoprovider/mango"
+	"github.com/philippgille/gokv"
 )
 
 var dex = mangodex.NewDexClient()
@@ -28,19 +29,16 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 		ProviderInfo: dexProviderInfo,
 		Options:      options,
 		Funcs: mango.ProviderFuncs{
-			SearchMangas: func(ctx context.Context, s string) ([]libmangal.Manga, error) {
+			SearchMangas: func(ctx context.Context, store gokv.Store, s string) ([]libmangal.Manga, error) {
 				return nil, fmt.Errorf("unimplemented")
 			},
-			MangaVolumes: func(ctx context.Context, m libmangal.Manga) ([]libmangal.Manga, error) {
+			MangaVolumes: func(ctx context.Context, store gokv.Store, m libmangal.Manga) ([]libmangal.Volume, error) {
 				return nil, fmt.Errorf("unimplemented")
 			},
-			VolumeChapters: func(ctx context.Context, v libmangal.Volume) ([]libmangal.Chapter, error) {
+			VolumeChapters: func(ctx context.Context, store gokv.Store, v libmangal.Volume) ([]libmangal.Chapter, error) {
 				return nil, fmt.Errorf("unimplemented")
 			},
-			ChapterPages: func(ctx context.Context, c libmangal.Chapter) ([]libmangal.Page, error) {
-				return nil, fmt.Errorf("unimplemented")
-			},
-			GetPageImage: func(ctx context.Context, p libmangal.Page) ([]byte, error) {
+			ChapterPages: func(ctx context.Context, store gokv.Store, c libmangal.Chapter) ([]libmangal.Page, error) {
 				return nil, fmt.Errorf("unimplemented")
 			},
 		},

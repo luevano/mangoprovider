@@ -11,8 +11,7 @@ var _ libmangal.ProviderLoader = (*MangoLoader)(nil)
 type MangoLoader struct {
 	libmangal.ProviderInfo
 	Options Options
-
-	Funcs ProviderFuncs
+	Funcs   ProviderFuncs
 }
 
 func (l MangoLoader) String() string {
