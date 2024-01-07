@@ -8,16 +8,13 @@ import (
 	"github.com/philippgille/gokv"
 )
 
-// TODO: need to make another layer for the providerfunctions
-// to use MangoX instead of the interfaces from libmangal
-
 var _ libmangal.Provider = (*MangoProvider)(nil)
 
 type ProviderFuncs struct {
 	SearchMangas   func(context.Context, gokv.Store, string) ([]libmangal.Manga, error)
-	MangaVolumes   func(context.Context, gokv.Store, libmangal.Manga) ([]libmangal.Volume, error)
-	VolumeChapters func(context.Context, gokv.Store, libmangal.Volume) ([]libmangal.Chapter, error)
-	ChapterPages   func(context.Context, gokv.Store, libmangal.Chapter) ([]libmangal.Page, error)
+	MangaVolumes   func(context.Context, gokv.Store, MangoManga) ([]libmangal.Volume, error)
+	VolumeChapters func(context.Context, gokv.Store, MangoVolume) ([]libmangal.Chapter, error)
+	ChapterPages   func(context.Context, gokv.Store, MangoChapter) ([]libmangal.Page, error)
 }
 
 type MangoProvider struct {
@@ -58,34 +55,57 @@ func (p *MangoProvider) MangaVolumes(
 	ctx context.Context,
 	manga libmangal.Manga,
 ) ([]libmangal.Volume, error) {
-	p.logger.Log(fmt.Sprintf("Fetching volumes for %q", manga))
+	m, ok := manga.(MangoManga)
+	if !ok {
+		return nil, fmt.Errorf("unexpected manga type: %T", manga)
+	}
 
-	return p.Funcs.MangaVolumes(ctx, p.store, manga)
+	p.logger.Log(fmt.Sprintf("Fetching volumes for %q", m))
+	return p.Funcs.MangaVolumes(ctx, p.store, m)
 }
 
 func (p *MangoProvider) VolumeChapters(
 	ctx context.Context,
 	volume libmangal.Volume,
 ) ([]libmangal.Chapter, error) {
-	p.logger.Log(fmt.Sprintf("Fetching chapters for %q", volume))
+	v, ok := volume.(MangoVolume)
+	if !ok {
+		return nil, fmt.Errorf("unexpected volume type: %T", volume)
+	}
 
-	return p.Funcs.VolumeChapters(ctx, p.store, volume)
+	p.logger.Log(fmt.Sprintf("Fetching chapters for %q", v))
+	return p.Funcs.VolumeChapters(ctx, p.store, v)
 }
 
 func (p *MangoProvider) ChapterPages(
 	ctx context.Context,
 	chapter libmangal.Chapter,
 ) ([]libmangal.Page, error) {
-	p.logger.Log(fmt.Sprintf("Fetching pages for %q", chapter))
+	c, ok := chapter.(MangoChapter)
+	if !ok {
+		return nil, fmt.Errorf("unexpected chapter type: %T", chapter)
+	}
 
-	return p.Funcs.ChapterPages(ctx, p.store, chapter)
+	p.logger.Log(fmt.Sprintf("Fetching pages for %q", c))
+	return p.Funcs.ChapterPages(ctx, p.store, c)
 }
 
 func (p *MangoProvider) GetPageImage(
 	ctx context.Context,
 	page libmangal.Page,
 ) ([]byte, error) {
-	p.logger.Log(fmt.Sprintf("Making HTTP GET request for %q", page))
+	page_, ok := page.(MangoPage)
+	if !ok {
+		return nil, fmt.Errorf("unexpected page type: %T", page)
+	}
 
+	p.logger.Log(fmt.Sprintf("Making HTTP GET request for %q", page_.URL))
+	return p.getPageImage(ctx, page_)
+}
+
+func (p *MangoProvider) getPageImage(
+	ctx context.Context,
+	page MangoPage,
+) ([]byte, error) {
 	return nil, fmt.Errorf("unimplemented")
 }
