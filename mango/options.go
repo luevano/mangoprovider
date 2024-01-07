@@ -4,22 +4,17 @@ import (
 	"net/http"
 
 	"github.com/philippgille/gokv"
-	"github.com/philippgille/gokv/syncmap"
 )
 
-type DexOptions struct{}
+const BundleID = "mango"
+
+type DexOptions struct{
+	NSFW bool
+	Language string
+}
 
 type Options struct {
 	HTTPClient        *http.Client
-	HTTPStoreProvider func() (gokv.Store, error)
+	HTTPStoreProvider func(providerID string) (gokv.Store, error)
 	MangadexOptions   DexOptions
-}
-
-func DefaultOptions() Options {
-	return Options{
-		HTTPClient: &http.Client{},
-		HTTPStoreProvider: func() (gokv.Store, error) {
-			return syncmap.NewStore(syncmap.DefaultOptions), nil
-		},
-	}
 }

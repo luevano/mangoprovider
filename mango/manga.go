@@ -9,7 +9,12 @@ import (
 var _ libmangal.Manga = (*MangoManga)(nil)
 
 type MangoManga struct {
-	libmangal.MangaInfo
+	Title         string `json:"title"`
+	AnilistSearch string `json:"anilist_search"`
+	URL           string `json:"url"`
+	ID            string `json:"id"`
+	Cover         string `json:"cover"`
+	Banner        string `json:"banner"`
 }
 
 func (m MangoManga) String() string {
@@ -17,7 +22,14 @@ func (m MangoManga) String() string {
 }
 
 func (m MangoManga) Info() libmangal.MangaInfo {
-	return m.MangaInfo
+	return libmangal.MangaInfo{
+		Title: m.Title,
+		AnilistSearch: m.AnilistSearch,
+		URL: m.URL,
+		ID: m.ID,
+		Cover: m.Cover,
+		Banner: m.Banner,
+	}
 }
 
 func (m MangoManga) MarshalJSON() ([]byte, error) {

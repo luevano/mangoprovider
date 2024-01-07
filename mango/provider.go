@@ -25,6 +25,7 @@ type MangoProvider struct {
 	Funcs   ProviderFuncs
 
 	store  gokv.Store
+	// TODO: the logger is not actually being used anywhere
 	logger *libmangal.Logger
 }
 

@@ -10,28 +10,30 @@ import (
 	"github.com/philippgille/gokv"
 )
 
-var dex = mangodex.NewDexClient()
-
-var dexProviderInfo = libmangal.ProviderInfo{
-	ID:          "mangadex",
+var DexProviderInfo = libmangal.ProviderInfo{
+	ID:          mango.BundleID + "-mangadex",
 	Name:        "Mangadex",
 	Version:     "0.1.0",
 	Description: "Mangadex scraper using mangodex",
 	Website:     "https://mangadex.org/",
 }
 
+type Dex struct {
+	client  *mangodex.DexClient
+	options mango.DexOptions
+}
+
 func Loader(options mango.Options) libmangal.ProviderLoader {
-	if err := dexProviderInfo.Validate(); err != nil {
-		return nil
+	dex := Dex{
+		client:  mangodex.NewDexClient(),
+		options: options.MangadexOptions,
 	}
 
 	return mango.MangoLoader{
-		ProviderInfo: dexProviderInfo,
+		ProviderInfo: DexProviderInfo,
 		Options:      options,
 		Funcs: mango.ProviderFuncs{
-			SearchMangas: func(ctx context.Context, store gokv.Store, s string) ([]libmangal.Manga, error) {
-				return nil, fmt.Errorf("unimplemented")
-			},
+			SearchMangas: dex.SearchMangas,
 			MangaVolumes: func(ctx context.Context, store gokv.Store, m mango.MangoManga) ([]libmangal.Volume, error) {
 				return nil, fmt.Errorf("unimplemented")
 			},

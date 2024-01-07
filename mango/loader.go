@@ -29,7 +29,7 @@ func (l MangoLoader) Load(ctx context.Context) (libmangal.Provider, error) {
 		Funcs:        l.Funcs,
 	}
 
-	store, err := l.Options.HTTPStoreProvider()
+	store, err := l.Options.HTTPStoreProvider(l.ProviderInfo.ID)
 	if err != nil {
 		return nil, err
 	}
