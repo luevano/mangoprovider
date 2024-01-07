@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/bob620/mangodex"
+	"github.com/luevano/mangodex"
 	"github.com/luevano/libmangal"
 	"github.com/luevano/mangoprovider/mango"
 	"github.com/philippgille/gokv"
