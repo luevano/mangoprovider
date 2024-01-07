@@ -3,6 +3,8 @@ package mango
 import (
 	"context"
 	"fmt"
+	"io"
+	"net/http"
 
 	"github.com/luevano/libmangal"
 	"github.com/philippgille/gokv"
@@ -107,5 +109,35 @@ func (p *MangoProvider) getPageImage(
 	ctx context.Context,
 	page MangoPage,
 ) ([]byte, error) {
-	return nil, fmt.Errorf("unimplemented")
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, page.URL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	for key, value := range page.Headers {
+		request.Header.Set(key, value)
+	}
+
+	for key, value := range page.Cookies {
+		request.AddCookie(&http.Cookie{Name: key, Value: value})
+	}
+
+	response, err := p.Options.HTTPClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	p.logger.Log("Got response")
+
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d", response.StatusCode)
+	}
+
+	image, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return image, nil
 }
