@@ -6,8 +6,8 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/luevano/mangodex"
 	"github.com/luevano/libmangal"
+	"github.com/luevano/mangodex"
 	"github.com/luevano/mangoprovider/mango"
 	"github.com/philippgille/gokv"
 )
@@ -16,9 +16,10 @@ func (d *Dex) SearchMangas(ctx context.Context, store gokv.Store, query string) 
 	var mangas []libmangal.Manga
 
 	params := url.Values{}
+	params.Set("title", query)
 	params.Set("limit", strconv.Itoa(100))
 	params.Set("order[followedCount]", "desc")
-	params.Set("title", query)
+	params.Add("includes[]", string(mangodex.RelationshipTypeCoverArt))
 
 	ratings := []mangodex.ContentRating{mangodex.ContentRatingSafe, mangodex.ContentRatingSuggestive}
 	if d.options.NSFW {
@@ -58,12 +59,29 @@ func (d *Dex) SearchMangas(ctx context.Context, store gokv.Store, query string) 
 	for _, manga := range mangaList {
 		mangaTitle := manga.GetTitle(language)
 		mangaID := manga.ID
+
+		var mangaCoverFileNames []string
+		for _, relationship := range manga.Relationships {
+			if relationship.Type == mangodex.RelationshipTypeCoverArt {
+				coverRel, ok := relationship.Attributes.(*mangodex.CoverAttributes)
+				if !ok {
+					return nil, fmt.Errorf("unexpected error, failed to convert relationship attribute to cover type despite being of type %q", mangodex.RelationshipTypeCoverArt)
+				}
+				mangaCoverFileNames = append(mangaCoverFileNames, coverRel.FileName)
+			}
+		}
+
+		var cover string
+		if len(mangaCoverFileNames) != 0 {
+			cover = fmt.Sprintf("https://mangadex.org/covers/%s/%s", mangaID, mangaCoverFileNames[0])
+		}
+
 		m := mango.MangoManga{
 			Title:         mangaTitle,
 			AnilistSearch: mangaTitle,
 			URL:           fmt.Sprintf("https://mangadex.org/title/%s", mangaID),
 			ID:            mangaID,
-			// TODO: need to implement the cover_art (needs to be added to mangodex)
+			Cover:         cover,
 		}
 
 		mangas = append(mangas, m)
