@@ -10,9 +10,9 @@ import (
 var _ libmangal.Volume = (*MangoVolume)(nil)
 
 type MangoVolume struct {
-	libmangal.VolumeInfo
+	Number int `json:"number"`
 
-	manga *MangoManga
+	Manga_ *MangoManga
 }
 
 func (v MangoVolume) String() string {
@@ -20,11 +20,13 @@ func (v MangoVolume) String() string {
 }
 
 func (v MangoVolume) Info() libmangal.VolumeInfo {
-	return v.VolumeInfo
+	return libmangal.VolumeInfo{
+		Number: v.Number,
+	}
 }
 
 func (v MangoVolume) Manga() libmangal.Manga {
-	return v.manga
+	return v.Manga_
 }
 
 func (v MangoVolume) MarshalJSON() ([]byte, error) {

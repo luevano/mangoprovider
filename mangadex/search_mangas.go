@@ -18,7 +18,7 @@ func (d *Dex) SearchMangas(ctx context.Context, store gokv.Store, query string) 
 	params := url.Values{}
 	params.Set("title", query)
 	params.Set("limit", strconv.Itoa(100))
-	params.Set("order[followedCount]", "desc")
+	params.Set("order[followedCount]", mangodex.OrderDescending)
 	params.Add("includes[]", string(mangodex.RelationshipTypeCoverArt))
 
 	ratings := []mangodex.ContentRating{mangodex.ContentRatingSafe, mangodex.ContentRatingSuggestive}
@@ -26,7 +26,6 @@ func (d *Dex) SearchMangas(ctx context.Context, store gokv.Store, query string) 
 		ratings = append(ratings, mangodex.ContentRatingPorn)
 		ratings = append(ratings, mangodex.ContentRatingErotica)
 	}
-
 	for _, rating := range ratings {
 		params.Add("contentRating[]", string(rating))
 	}
@@ -52,6 +51,7 @@ func (d *Dex) SearchMangas(ctx context.Context, store gokv.Store, query string) 
 	}
 
 	language := d.options.Language
+	// TODO: use incoming options instead of checking for empty
 	if language == "" {
 		language = "en"
 	}

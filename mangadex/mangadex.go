@@ -34,9 +34,7 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 		Options:      options,
 		Funcs: mango.ProviderFuncs{
 			SearchMangas: dex.SearchMangas,
-			MangaVolumes: func(ctx context.Context, store gokv.Store, m mango.MangoManga) ([]libmangal.Volume, error) {
-				return nil, fmt.Errorf("unimplemented")
-			},
+			MangaVolumes: dex.MangaVolumes,
 			VolumeChapters: func(ctx context.Context, store gokv.Store, v mango.MangoVolume) ([]libmangal.Chapter, error) {
 				return nil, fmt.Errorf("unimplemented")
 			},
