@@ -1,13 +1,9 @@
 package mangadex
 
 import (
-	"context"
-	"fmt"
-
-	"github.com/luevano/mangodex"
 	"github.com/luevano/libmangal"
+	"github.com/luevano/mangodex"
 	"github.com/luevano/mangoprovider/mango"
-	"github.com/philippgille/gokv"
 )
 
 var DexProviderInfo = libmangal.ProviderInfo{
@@ -29,16 +25,15 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 		options: options.MangadexOptions,
 	}
 
+	// TODO: use mangodex get chapter page for downloading, instead of the mangoloader generic one
 	return mango.MangoLoader{
 		ProviderInfo: DexProviderInfo,
 		Options:      options,
 		Funcs: mango.ProviderFuncs{
-			SearchMangas: dex.SearchMangas,
-			MangaVolumes: dex.MangaVolumes,
+			SearchMangas:   dex.SearchMangas,
+			MangaVolumes:   dex.MangaVolumes,
 			VolumeChapters: dex.VolumeChapters,
-			ChapterPages: func(ctx context.Context, store gokv.Store, c mango.MangoChapter) ([]libmangal.Page, error) {
-				return nil, fmt.Errorf("unimplemented")
-			},
+			ChapterPages:   dex.ChapterPages,
 		},
 	}
 }

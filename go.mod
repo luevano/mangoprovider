@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/luevano/libmangal v0.9.1
-	github.com/luevano/mangodex v0.1.2
+	github.com/luevano/mangodex v0.2.0
 	github.com/philippgille/gokv v0.6.0
 )
 

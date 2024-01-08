@@ -9,9 +9,10 @@ import (
 var _ libmangal.Chapter = (*MangoChapter)(nil)
 
 type MangoChapter struct {
-	Title string
-	URL string
-	Number float32
+	Title  string  `json:"title"`
+	ID     string  `json:"id"`
+	URL    string  `json:"url"`
+	Number float32 `json:"number"`
 
 	Volume_ *MangoVolume
 }
@@ -22,8 +23,8 @@ func (c MangoChapter) String() string {
 
 func (c MangoChapter) Info() libmangal.ChapterInfo {
 	return libmangal.ChapterInfo{
-		Title: c.Title,
-		URL: c.URL,
+		Title:  c.Title,
+		URL:    c.URL,
 		Number: c.Number,
 	}
 }

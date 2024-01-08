@@ -6,7 +6,7 @@ import (
 	"github.com/luevano/libmangal"
 )
 
-var fileExtensionRegex = regexp.MustCompile(`^\.[a-zA-Z0-9][a-zA-Z0-9.]*[a-zA-Z0-9]$`)
+var ImageExtensionRegex = regexp.MustCompile(`^\.[a-zA-Z0-9][a-zA-Z0-9.]*[a-zA-Z0-9]$`)
 
 var _ libmangal.Page = (*MangoPage)(nil)
 
@@ -16,7 +16,7 @@ type MangoPage struct {
 	Headers   map[string]string `json:"headers"`
 	Cookies   map[string]string `json:"cookies"`
 
-	chapter *MangoChapter
+	Chapter_ *MangoChapter
 }
 
 func (p MangoPage) String() string {
@@ -28,5 +28,5 @@ func (p MangoPage) GetExtension() string {
 }
 
 func (p MangoPage) Chapter() libmangal.Chapter {
-	return p.chapter
+	return p.Chapter_
 }

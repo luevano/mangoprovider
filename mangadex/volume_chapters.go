@@ -30,7 +30,7 @@ func (d *Dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango
 
 	// TODO: add scanlation group once libmangal is modified to accept it
 	params := url.Values{}
-	params.Set("manga", volume.Manga().Info().ID)
+	params.Set("manga", volume.Manga_.ID)
 	params.Set("volume[]", volumeNumber)
 	params.Set("limit", strconv.Itoa(100))
 	params.Set("order[chapter]", mangodex.OrderAscending)
@@ -113,7 +113,7 @@ func (d *Dex) populateChapters(store gokv.Store, offset int, params url.Values, 
 		chapterNumberStr := chapter.GetChapterNum()
 
 		if chapterNumberStr == "-" {
-			return nil, false, fmt.Errorf("chapter number for manga %q volume %q with title %q wasn't found", volume.Manga_.Info().Title, volumeNumber, chapterTitle)
+			return nil, false, fmt.Errorf("chapter number for manga %q volume %q with title %q wasn't found", volume.Manga_.Title, volumeNumber, chapterTitle)
 		}
 
 		chapterNumber, err := strconv.ParseFloat(chapterNumberStr, 64)
@@ -127,6 +127,7 @@ func (d *Dex) populateChapters(store gokv.Store, offset int, params url.Values, 
 
 		c := mango.MangoChapter{
 			Title:   chapterTitle,
+			ID:      chapterID,
 			URL:     fmt.Sprintf("https://mangadex.org/chapter/%s", chapterID),
 			Number:  float32(chapterNumber),
 			Volume_: &volume,
