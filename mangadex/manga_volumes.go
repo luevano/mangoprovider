@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"sort"
 	"strconv"
 
 	"github.com/luevano/libmangal"
@@ -39,6 +40,9 @@ func (d *Dex) MangaVolumes(ctx context.Context, store gokv.Store, manga mango.Ma
 		return nil, err
 	}
 
+	// represents the "none" volume
+	var noneVolume mango.MangoVolume
+
 	// n is a string, could be "none", represents the volume number
 	for n := range volumeList {
 		// Using 0 for the "none"; shouldn't be used according to libmangal
@@ -55,7 +59,20 @@ func (d *Dex) MangaVolumes(ctx context.Context, store gokv.Store, manga mango.Ma
 			Number: number,
 			Manga_: &manga,
 		}
-		volumes = append(volumes, v)
+	
+		if number == 0 {
+			noneVolume = v
+		} else {
+			volumes = append(volumes, v)
+		}
+	}
+
+	sort.Slice(volumes, func(i, j int) bool {
+		return volumes[i].Info().Number < volumes[j].Info().Number
+	})
+
+	if noneVolume != (mango.MangoVolume{}) {
+		volumes = append(volumes, noneVolume)
 	}
 
 	err = store.Set(idWithParams, volumes)
