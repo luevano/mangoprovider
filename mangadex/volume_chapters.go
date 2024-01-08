@@ -28,6 +28,7 @@ func (d *Dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango
 		volumeNumber = volume.String()
 	}
 
+	// TODO: add scanlation group once libmangal is modified to accept it
 	params := url.Values{}
 	params.Set("manga", volume.Manga().Info().ID)
 	params.Set("volume[]", volumeNumber)
@@ -44,7 +45,8 @@ func (d *Dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango
 		params.Add("contentRating[]", string(rating))
 	}
 
-	// need a query with params included for the cache
+	// need a query with params included for the cache,
+	// this doesn't include the offset so that it retrieves and saves all the chapters
 	queryWithParams := params.Encode()
 
 	found, err := store.Get(queryWithParams, &chapters)
@@ -57,25 +59,66 @@ func (d *Dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango
 		return chapters, nil
 	}
 
+	offset := 0
+	for {
+		chaptersTemp, ended, err := d.populateChapters(store, offset, params, volume)
+		if err != nil {
+			return nil, err
+		}
+		offset += 100
+
+		if chaptersTemp != nil {
+			chapters = append(chapters, chaptersTemp...)
+		}
+
+		if ended {
+			break
+		}
+	}
+
+	err = store.Set(queryWithParams, chapters)
+	if err != nil {
+		return nil, err
+	}
+
+	return chapters, nil
+}
+
+func (d *Dex) populateChapters(store gokv.Store, offset int, params url.Values, volume mango.MangoVolume) ([]libmangal.Chapter, bool, error) {
+	var chapters []libmangal.Chapter
+
+	volumeNumber := params.Get("volume[]")
+	params.Set("offset", strconv.Itoa(offset))
+
 	chapterList, err := d.client.Chapter.List(params)
 	if err != nil {
 		// TODO: need to start using the logger, need to receive a logger, check options
 		// log.Fatalln(err)
-		return nil, err
+		return nil, false, err
+	}
+
+	if len(chapterList) == 0 {
+		return nil, true, nil
 	}
 
 	for _, chapter := range chapterList {
+		// Skip external chapters (can't be downloaded)
+		// TODO: add option to accept unavailable (external url) chapters?
+		if chapter.Attributes.ExternalURL != nil {
+			continue
+		}
+
 		chapterTitle := chapter.GetTitle()
 		chapterID := chapter.ID
 		chapterNumberStr := chapter.GetChapterNum()
 
 		if chapterNumberStr == "-" {
-			return nil, fmt.Errorf("chapter number for manga %q volume %q with title %q wasn't found", volume.Manga_.Info().Title, volumeNumber, chapterTitle)
+			return nil, false, fmt.Errorf("chapter number for manga %q volume %q with title %q wasn't found", volume.Manga_.Info().Title, volumeNumber, chapterTitle)
 		}
 
 		chapterNumber, err := strconv.ParseFloat(chapterNumberStr, 64)
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 
 		if chapterTitle == "" {
@@ -92,10 +135,10 @@ func (d *Dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango
 		chapters = append(chapters, c)
 	}
 
-	err = store.Set(queryWithParams, chapters)
-	if err != nil {
-		return nil, err
+	// if received 100 entries, that means it probably has more
+	if len(chapterList) == 100 {
+		return chapters, false, nil
 	}
 
-	return chapters, nil
+	return chapters, true, nil
 }
