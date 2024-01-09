@@ -17,6 +17,7 @@ type ProviderFuncs struct {
 	MangaVolumes   func(context.Context, gokv.Store, Manga) ([]libmangal.Volume, error)
 	VolumeChapters func(context.Context, gokv.Store, Volume) ([]libmangal.Chapter, error)
 	ChapterPages   func(context.Context, gokv.Store, Chapter) ([]libmangal.Page, error)
+	GetPageImage   func(context.Context, Page) ([]byte, error)
 }
 
 type Provider struct {
@@ -24,8 +25,8 @@ type Provider struct {
 	Options Options
 	Funcs   ProviderFuncs
 
-	store  gokv.Store
 	// TODO: the logger is not actually being used anywhere
+	store  gokv.Store
 	logger *libmangal.Logger
 }
 
@@ -103,13 +104,18 @@ func (p *Provider) GetPageImage(
 	}
 
 	p.logger.Log(fmt.Sprintf("Making HTTP GET request for %q", page_.URL))
-	return p.getPageImage(ctx, page_)
+	if p.Funcs.GetPageImage != nil {
+		return p.Funcs.GetPageImage(ctx, page_)
+	} else {
+		return p.GenericGetPageImage(ctx, page_)
+	}
 }
 
-func (p *Provider) getPageImage(
+func (p *Provider) GenericGetPageImage(
 	ctx context.Context,
 	page Page,
 ) ([]byte, error) {
+	p.logger.Log("Making request using generic getter.")
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, page.URL, nil)
 	if err != nil {
 		return nil, err

@@ -8,9 +8,10 @@ import (
 
 const BundleID = "mango"
 
-type DexOptions struct{
-	NSFW bool
-	Language string
+type DexOptions struct {
+	NSFW               bool
+	Language           string
+	TitleChapterNumber bool
 }
 
 type Options struct {

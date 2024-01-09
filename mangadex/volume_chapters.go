@@ -108,13 +108,12 @@ func (d *Dex) populateChapters(store gokv.Store, offset int, params url.Values, 
 			continue
 		}
 
-		// TODO: use "Chapter n - title"
-		chapterTitle := chapter.GetTitle()
+		chapterTitleRaw := chapter.GetTitle()
 		chapterID := chapter.ID
 		chapterNumberStr := chapter.GetChapterNum()
 
 		if chapterNumberStr == "-" {
-			return nil, false, fmt.Errorf("chapter number for manga %q volume %q with title %q wasn't found", volume.Manga_.Title, volumeNumber, chapterTitle)
+			return nil, false, fmt.Errorf("chapter number for manga %q volume %q with title %q wasn't found", volume.Manga_.Title, volumeNumber, chapterTitleRaw)
 		}
 
 		chapterNumber, err := strconv.ParseFloat(chapterNumberStr, 64)
@@ -122,8 +121,19 @@ func (d *Dex) populateChapters(store gokv.Store, offset int, params url.Values, 
 			return nil, false, err
 		}
 
-		if chapterTitle == "" {
-			chapterTitle = fmt.Sprintf("Chapter %06.1f", chapterNumber)
+
+		// Add "Chapter #" when wanted or when no title for the chapter is found.
+		var chapterTitle string
+		if chapterTitleRaw != "" {
+			chapterTitle = chapterTitleRaw
+		}
+		chapterTitleNumber := fmt.Sprintf("Chapter %06.1f", chapterNumber)
+		if d.options.TitleChapterNumber || chapterTitle == "" {
+			if chapterTitle == "" {
+				chapterTitle = chapterTitleNumber
+			} else {
+				chapterTitle = fmt.Sprintf("%s - %s", chapterTitleNumber, chapterTitle)
+			}
 		}
 
 		c := mango.Chapter{
