@@ -108,6 +108,7 @@ func (d *Dex) populateChapters(store gokv.Store, offset int, params url.Values, 
 			continue
 		}
 
+		// TODO: use "Chapter n - title"
 		chapterTitle := chapter.GetTitle()
 		chapterID := chapter.ID
 		chapterNumberStr := chapter.GetChapterNum()
