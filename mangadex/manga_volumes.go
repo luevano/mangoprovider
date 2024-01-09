@@ -12,7 +12,7 @@ import (
 	"github.com/philippgille/gokv"
 )
 
-func (d *Dex) MangaVolumes(ctx context.Context, store gokv.Store, manga mango.Manga) ([]libmangal.Volume, error) {
+func (d *dex) MangaVolumes(ctx context.Context, store gokv.Store, manga mango.Manga) ([]libmangal.Volume, error) {
 	var volumes []libmangal.Volume
 
 	language := d.options.Language

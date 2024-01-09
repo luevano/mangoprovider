@@ -12,7 +12,7 @@ import (
 	"github.com/philippgille/gokv"
 )
 
-func (d *Dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango.Volume) ([]libmangal.Chapter, error) {
+func (d *dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango.Volume) ([]libmangal.Chapter, error) {
 	var chapters []libmangal.Chapter
 
 	language := d.options.Language
@@ -84,7 +84,7 @@ func (d *Dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango
 	return chapters, nil
 }
 
-func (d *Dex) populateChapters(store gokv.Store, offset int, params url.Values, volume mango.Volume) ([]libmangal.Chapter, bool, error) {
+func (d *dex) populateChapters(store gokv.Store, offset int, params url.Values, volume mango.Volume) ([]libmangal.Chapter, bool, error) {
 	var chapters []libmangal.Chapter
 
 	volumeNumber := params.Get("volume[]")
@@ -101,6 +101,7 @@ func (d *Dex) populateChapters(store gokv.Store, offset int, params url.Values, 
 		return nil, true, nil
 	}
 
+	// TODO: add option to avoid duplicate chapters
 	for _, chapter := range chapterList {
 		// Skip external chapters (can't be downloaded)
 		// TODO: add option to accept unavailable (external url) chapters?
@@ -120,7 +121,6 @@ func (d *Dex) populateChapters(store gokv.Store, offset int, params url.Values, 
 		if err != nil {
 			return nil, false, err
 		}
-
 
 		// Add "Chapter #" when wanted or when no title for the chapter is found.
 		var chapterTitle string

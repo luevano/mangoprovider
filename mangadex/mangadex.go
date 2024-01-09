@@ -6,7 +6,7 @@ import (
 	"github.com/luevano/mangoprovider/mango"
 )
 
-var DexProviderInfo = libmangal.ProviderInfo{
+var providerInfo = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-mangadex",
 	Name:        "Mangadex",
 	Version:     "0.1.0",
@@ -14,26 +14,26 @@ var DexProviderInfo = libmangal.ProviderInfo{
 	Website:     "https://mangadex.org/",
 }
 
-type Dex struct {
+type dex struct {
 	client  *mangodex.DexClient
 	options mango.DexOptions
 }
 
 func Loader(options mango.Options) libmangal.ProviderLoader {
-	dex := Dex{
+	d := dex{
 		client:  mangodex.NewDexClient(),
 		options: options.MangadexOptions,
 	}
 
 	// TODO: use mangodex get chapter page for downloading, instead of the mangoloader generic one
 	return mango.ProviderLoader{
-		ProviderInfo: DexProviderInfo,
+		ProviderInfo: providerInfo,
 		Options:      options,
 		Funcs: mango.ProviderFuncs{
-			SearchMangas:   dex.SearchMangas,
-			MangaVolumes:   dex.MangaVolumes,
-			VolumeChapters: dex.VolumeChapters,
-			ChapterPages:   dex.ChapterPages,
+			SearchMangas:   d.SearchMangas,
+			MangaVolumes:   d.MangaVolumes,
+			VolumeChapters: d.VolumeChapters,
+			ChapterPages:   d.ChapterPages,
 		},
 	}
 }

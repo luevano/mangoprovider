@@ -12,7 +12,7 @@ import (
 	"github.com/philippgille/gokv"
 )
 
-func (d *Dex) SearchMangas(ctx context.Context, store gokv.Store, query string) ([]libmangal.Manga, error) {
+func (d *dex) SearchMangas(ctx context.Context, store gokv.Store, query string) ([]libmangal.Manga, error) {
 	var mangas []libmangal.Manga
 
 	params := url.Values{}
