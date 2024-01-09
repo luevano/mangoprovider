@@ -10,6 +10,9 @@ import (
 	"github.com/philippgille/gokv"
 )
 
+// TODO: remove ctx from ProviderFuncs?
+// TODO: remove gokv.Store from ChapterPages
+
 var _ libmangal.Provider = (*Provider)(nil)
 
 type ProviderFuncs struct {
