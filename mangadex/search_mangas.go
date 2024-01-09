@@ -76,7 +76,7 @@ func (d *Dex) SearchMangas(ctx context.Context, store gokv.Store, query string) 
 			cover = fmt.Sprintf("https://mangadex.org/covers/%s/%s", mangaID, mangaCoverFileNames[0])
 		}
 
-		m := mango.MangoManga{
+		m := mango.Manga{
 			Title:         mangaTitle,
 			AnilistSearch: mangaTitle,
 			URL:           fmt.Sprintf("https://mangadex.org/title/%s", mangaID),

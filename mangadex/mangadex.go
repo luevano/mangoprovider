@@ -26,7 +26,7 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 	}
 
 	// TODO: use mangodex get chapter page for downloading, instead of the mangoloader generic one
-	return mango.MangoLoader{
+	return mango.ProviderLoader{
 		ProviderInfo: DexProviderInfo,
 		Options:      options,
 		Funcs: mango.ProviderFuncs{

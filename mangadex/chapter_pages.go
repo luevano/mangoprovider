@@ -10,7 +10,7 @@ import (
 	"github.com/philippgille/gokv"
 )
 
-func (d *Dex) ChapterPages(ctx context.Context, store gokv.Store, chapter mango.MangoChapter) ([]libmangal.Page, error) {
+func (d *Dex) ChapterPages(ctx context.Context, store gokv.Store, chapter mango.Chapter) ([]libmangal.Page, error) {
 	// Note that this doesn't use the store "cache" as mangadex provides a dynamic
 	// baseURL/hash/page each time it is consulted
 	var pages []libmangal.Page
@@ -43,7 +43,7 @@ func (d *Dex) ChapterPages(ctx context.Context, store gokv.Store, chapter mango.
 			"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
 		}
 
-		p := mango.MangoPage{
+		p := mango.Page{
 			Extension: pageExtension,
 			URL:       fmt.Sprintf("%s/data/%s/%s", mdhome.BaseURL, mdhome.Hash, page),
 			Headers:   pageHeaders,

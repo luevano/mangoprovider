@@ -8,25 +8,25 @@ import (
 
 var ImageExtensionRegex = regexp.MustCompile(`^\.[a-zA-Z0-9][a-zA-Z0-9.]*[a-zA-Z0-9]$`)
 
-var _ libmangal.Page = (*MangoPage)(nil)
+var _ libmangal.Page = (*Page)(nil)
 
-type MangoPage struct {
+type Page struct {
 	Extension string            `json:"extension"`
 	URL       string            `json:"url"`
 	Headers   map[string]string `json:"headers"`
 	Cookies   map[string]string `json:"cookies"`
 
-	Chapter_ *MangoChapter
+	Chapter_ *Chapter
 }
 
-func (p MangoPage) String() string {
+func (p Page) String() string {
 	return p.URL
 }
 
-func (p MangoPage) GetExtension() string {
+func (p Page) GetExtension() string {
 	return p.Extension
 }
 
-func (p MangoPage) Chapter() libmangal.Chapter {
+func (p Page) Chapter() libmangal.Chapter {
 	return p.Chapter_
 }

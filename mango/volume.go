@@ -7,28 +7,28 @@ import (
 	"github.com/luevano/libmangal"
 )
 
-var _ libmangal.Volume = (*MangoVolume)(nil)
+var _ libmangal.Volume = (*Volume)(nil)
 
-type MangoVolume struct {
+type Volume struct {
 	Number int `json:"number"`
 
-	Manga_ *MangoManga
+	Manga_ *Manga
 }
 
-func (v MangoVolume) String() string {
+func (v Volume) String() string {
 	return strconv.Itoa(v.Number)
 }
 
-func (v MangoVolume) Info() libmangal.VolumeInfo {
+func (v Volume) Info() libmangal.VolumeInfo {
 	return libmangal.VolumeInfo{
 		Number: v.Number,
 	}
 }
 
-func (v MangoVolume) Manga() libmangal.Manga {
+func (v Volume) Manga() libmangal.Manga {
 	return v.Manga_
 }
 
-func (v MangoVolume) MarshalJSON() ([]byte, error) {
+func (v Volume) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.Info())
 }

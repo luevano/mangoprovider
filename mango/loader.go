@@ -6,24 +6,24 @@ import (
 	"github.com/luevano/libmangal"
 )
 
-var _ libmangal.ProviderLoader = (*MangoLoader)(nil)
+var _ libmangal.ProviderLoader = (*ProviderLoader)(nil)
 
-type MangoLoader struct {
+type ProviderLoader struct {
 	libmangal.ProviderInfo
 	Options Options
 	Funcs   ProviderFuncs
 }
 
-func (l MangoLoader) String() string {
+func (l ProviderLoader) String() string {
 	return l.Name
 }
 
-func (l MangoLoader) Info() libmangal.ProviderInfo {
+func (l ProviderLoader) Info() libmangal.ProviderInfo {
 	return l.ProviderInfo
 }
 
-func (l MangoLoader) Load(ctx context.Context) (libmangal.Provider, error) {
-	provider := &MangoProvider{
+func (l ProviderLoader) Load(ctx context.Context) (libmangal.Provider, error) {
+	provider := &Provider{
 		ProviderInfo: l.ProviderInfo,
 		Options:      l.Options,
 		Funcs:        l.Funcs,

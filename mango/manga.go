@@ -6,9 +6,9 @@ import (
 	"github.com/luevano/libmangal"
 )
 
-var _ libmangal.Manga = (*MangoManga)(nil)
+var _ libmangal.Manga = (*Manga)(nil)
 
-type MangoManga struct {
+type Manga struct {
 	Title         string `json:"title"`
 	AnilistSearch string `json:"anilist_search"`
 	URL           string `json:"url"`
@@ -17,11 +17,11 @@ type MangoManga struct {
 	Banner        string `json:"banner"`
 }
 
-func (m MangoManga) String() string {
+func (m Manga) String() string {
 	return m.Title
 }
 
-func (m MangoManga) Info() libmangal.MangaInfo {
+func (m Manga) Info() libmangal.MangaInfo {
 	return libmangal.MangaInfo{
 		Title: m.Title,
 		AnilistSearch: m.AnilistSearch,
@@ -32,6 +32,6 @@ func (m MangoManga) Info() libmangal.MangaInfo {
 	}
 }
 
-func (m MangoManga) MarshalJSON() ([]byte, error) {
+func (m Manga) MarshalJSON() ([]byte, error) {
 	return json.Marshal(m.Info())
 }

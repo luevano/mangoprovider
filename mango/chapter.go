@@ -6,22 +6,22 @@ import (
 	"github.com/luevano/libmangal"
 )
 
-var _ libmangal.Chapter = (*MangoChapter)(nil)
+var _ libmangal.Chapter = (*Chapter)(nil)
 
-type MangoChapter struct {
+type Chapter struct {
 	Title  string  `json:"title"`
 	ID     string  `json:"id"`
 	URL    string  `json:"url"`
 	Number float32 `json:"number"`
 
-	Volume_ *MangoVolume
+	Volume_ *Volume
 }
 
-func (c MangoChapter) String() string {
+func (c Chapter) String() string {
 	return c.Title
 }
 
-func (c MangoChapter) Info() libmangal.ChapterInfo {
+func (c Chapter) Info() libmangal.ChapterInfo {
 	return libmangal.ChapterInfo{
 		Title:  c.Title,
 		URL:    c.URL,
@@ -29,10 +29,10 @@ func (c MangoChapter) Info() libmangal.ChapterInfo {
 	}
 }
 
-func (c MangoChapter) Volume() libmangal.Volume {
+func (c Chapter) Volume() libmangal.Volume {
 	return c.Volume_
 }
 
-func (c MangoChapter) MarshalJSON() ([]byte, error) {
+func (c Chapter) MarshalJSON() ([]byte, error) {
 	return json.Marshal(c.Info())
 }

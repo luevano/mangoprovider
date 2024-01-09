@@ -12,7 +12,7 @@ import (
 	"github.com/philippgille/gokv"
 )
 
-func (d *Dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango.MangoVolume) ([]libmangal.Chapter, error) {
+func (d *Dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango.Volume) ([]libmangal.Chapter, error) {
 	var chapters []libmangal.Chapter
 
 	language := d.options.Language
@@ -84,7 +84,7 @@ func (d *Dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango
 	return chapters, nil
 }
 
-func (d *Dex) populateChapters(store gokv.Store, offset int, params url.Values, volume mango.MangoVolume) ([]libmangal.Chapter, bool, error) {
+func (d *Dex) populateChapters(store gokv.Store, offset int, params url.Values, volume mango.Volume) ([]libmangal.Chapter, bool, error) {
 	var chapters []libmangal.Chapter
 
 	volumeNumber := params.Get("volume[]")
@@ -126,7 +126,7 @@ func (d *Dex) populateChapters(store gokv.Store, offset int, params url.Values, 
 			chapterTitle = fmt.Sprintf("Chapter %06.1f", chapterNumber)
 		}
 
-		c := mango.MangoChapter{
+		c := mango.Chapter{
 			Title:   chapterTitle,
 			ID:      chapterID,
 			URL:     fmt.Sprintf("https://mangadex.org/chapter/%s", chapterID),

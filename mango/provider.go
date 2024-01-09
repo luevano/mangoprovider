@@ -10,16 +10,16 @@ import (
 	"github.com/philippgille/gokv"
 )
 
-var _ libmangal.Provider = (*MangoProvider)(nil)
+var _ libmangal.Provider = (*Provider)(nil)
 
 type ProviderFuncs struct {
 	SearchMangas   func(context.Context, gokv.Store, string) ([]libmangal.Manga, error)
-	MangaVolumes   func(context.Context, gokv.Store, MangoManga) ([]libmangal.Volume, error)
-	VolumeChapters func(context.Context, gokv.Store, MangoVolume) ([]libmangal.Chapter, error)
-	ChapterPages   func(context.Context, gokv.Store, MangoChapter) ([]libmangal.Page, error)
+	MangaVolumes   func(context.Context, gokv.Store, Manga) ([]libmangal.Volume, error)
+	VolumeChapters func(context.Context, gokv.Store, Volume) ([]libmangal.Chapter, error)
+	ChapterPages   func(context.Context, gokv.Store, Chapter) ([]libmangal.Page, error)
 }
 
-type MangoProvider struct {
+type Provider struct {
 	libmangal.ProviderInfo
 	Options Options
 	Funcs   ProviderFuncs
@@ -29,23 +29,23 @@ type MangoProvider struct {
 	logger *libmangal.Logger
 }
 
-func (p *MangoProvider) String() string {
+func (p *Provider) String() string {
 	return p.Name
 }
 
-func (p *MangoProvider) Close() error {
+func (p *Provider) Close() error {
 	return p.store.Close()
 }
 
-func (p *MangoProvider) Info() libmangal.ProviderInfo {
+func (p *Provider) Info() libmangal.ProviderInfo {
 	return p.ProviderInfo
 }
 
-func (p *MangoProvider) SetLogger(logger *libmangal.Logger) {
+func (p *Provider) SetLogger(logger *libmangal.Logger) {
 	p.logger = logger
 }
 
-func (p *MangoProvider) SearchMangas(
+func (p *Provider) SearchMangas(
 	ctx context.Context,
 	query string,
 ) ([]libmangal.Manga, error) {
@@ -54,11 +54,11 @@ func (p *MangoProvider) SearchMangas(
 	return p.Funcs.SearchMangas(ctx, p.store, query)
 }
 
-func (p *MangoProvider) MangaVolumes(
+func (p *Provider) MangaVolumes(
 	ctx context.Context,
 	manga libmangal.Manga,
 ) ([]libmangal.Volume, error) {
-	m, ok := manga.(MangoManga)
+	m, ok := manga.(Manga)
 	if !ok {
 		return nil, fmt.Errorf("unexpected manga type: %T", manga)
 	}
@@ -67,11 +67,11 @@ func (p *MangoProvider) MangaVolumes(
 	return p.Funcs.MangaVolumes(ctx, p.store, m)
 }
 
-func (p *MangoProvider) VolumeChapters(
+func (p *Provider) VolumeChapters(
 	ctx context.Context,
 	volume libmangal.Volume,
 ) ([]libmangal.Chapter, error) {
-	v, ok := volume.(MangoVolume)
+	v, ok := volume.(Volume)
 	if !ok {
 		return nil, fmt.Errorf("unexpected volume type: %T", volume)
 	}
@@ -80,11 +80,11 @@ func (p *MangoProvider) VolumeChapters(
 	return p.Funcs.VolumeChapters(ctx, p.store, v)
 }
 
-func (p *MangoProvider) ChapterPages(
+func (p *Provider) ChapterPages(
 	ctx context.Context,
 	chapter libmangal.Chapter,
 ) ([]libmangal.Page, error) {
-	c, ok := chapter.(MangoChapter)
+	c, ok := chapter.(Chapter)
 	if !ok {
 		return nil, fmt.Errorf("unexpected chapter type: %T", chapter)
 	}
@@ -93,11 +93,11 @@ func (p *MangoProvider) ChapterPages(
 	return p.Funcs.ChapterPages(ctx, p.store, c)
 }
 
-func (p *MangoProvider) GetPageImage(
+func (p *Provider) GetPageImage(
 	ctx context.Context,
 	page libmangal.Page,
 ) ([]byte, error) {
-	page_, ok := page.(MangoPage)
+	page_, ok := page.(Page)
 	if !ok {
 		return nil, fmt.Errorf("unexpected page type: %T", page)
 	}
@@ -106,9 +106,9 @@ func (p *MangoProvider) GetPageImage(
 	return p.getPageImage(ctx, page_)
 }
 
-func (p *MangoProvider) getPageImage(
+func (p *Provider) getPageImage(
 	ctx context.Context,
-	page MangoPage,
+	page Page,
 ) ([]byte, error) {
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, page.URL, nil)
 	if err != nil {

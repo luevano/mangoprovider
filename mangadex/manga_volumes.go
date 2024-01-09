@@ -12,7 +12,7 @@ import (
 	"github.com/philippgille/gokv"
 )
 
-func (d *Dex) MangaVolumes(ctx context.Context, store gokv.Store, manga mango.MangoManga) ([]libmangal.Volume, error) {
+func (d *Dex) MangaVolumes(ctx context.Context, store gokv.Store, manga mango.Manga) ([]libmangal.Volume, error) {
 	var volumes []libmangal.Volume
 
 	language := d.options.Language
@@ -41,7 +41,7 @@ func (d *Dex) MangaVolumes(ctx context.Context, store gokv.Store, manga mango.Ma
 	}
 
 	// represents the "none" volume
-	var noneVolume mango.MangoVolume
+	var noneVolume mango.Volume
 
 	// n is a string, could be "none", represents the volume number
 	for n := range volumeList {
@@ -55,7 +55,7 @@ func (d *Dex) MangaVolumes(ctx context.Context, store gokv.Store, manga mango.Ma
 			number = numberI
 		}
 
-		v := mango.MangoVolume{
+		v := mango.Volume{
 			Number: number,
 			Manga_: &manga,
 		}
@@ -71,7 +71,7 @@ func (d *Dex) MangaVolumes(ctx context.Context, store gokv.Store, manga mango.Ma
 		return volumes[i].Info().Number < volumes[j].Info().Number
 	})
 
-	if noneVolume != (mango.MangoVolume{}) {
+	if noneVolume != (mango.Volume{}) {
 		volumes = append(volumes, noneVolume)
 	}
 
