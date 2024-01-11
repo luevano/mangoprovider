@@ -9,6 +9,8 @@
 
 Provider for [libmangal](https://github.com/luevano/libmangal) written in go.
 
+Most of the code/functionality is based heavily on implementations from [Belphemur/mangal](https://github.com/Belphemur/mangal) (which in turn comes from [metafates/mangal](https://github.com/metafates/mangal)) adapted to work with [libmangal](https://github.com/luevano/libmangal)'s [mangal](https://github.com/luevano/mangal).
+
 ## Credits
 
 Mango logo: [Mango icons created by max.icons - Flaticon](https://www.flaticon.com/free-icons/mango "mango icons")
