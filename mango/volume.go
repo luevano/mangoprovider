@@ -12,7 +12,7 @@ var _ libmangal.Volume = (*Volume)(nil)
 type Volume struct {
 	Number int `json:"number"`
 
-	Manga_ *Manga
+	Manga_ *Manga `json:"-"`
 }
 
 func (v Volume) String() string {

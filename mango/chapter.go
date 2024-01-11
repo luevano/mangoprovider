@@ -14,7 +14,7 @@ type Chapter struct {
 	URL    string  `json:"url"`
 	Number float32 `json:"number"`
 
-	Volume_ *Volume
+	Volume_ *Volume `json:"-"`
 }
 
 func (c Chapter) String() string {

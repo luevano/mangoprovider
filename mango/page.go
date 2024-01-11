@@ -16,7 +16,7 @@ type Page struct {
 	Headers   map[string]string `json:"headers"`
 	Cookies   map[string]string `json:"cookies"`
 
-	Chapter_ *Chapter
+	Chapter_ *Chapter `json:"-"`
 }
 
 func (p Page) String() string {
