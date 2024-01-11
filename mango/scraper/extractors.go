@@ -6,40 +6,49 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-// TODO: add volume extractor and then the collector to the scraper
-
-// MangaExtractor is responsible for finding specified elements by selector and extracting required data from them
+// MangaExtractor: responsible for finding manga elements by selector and extracting the data.
 type MangaExtractor struct {
-	// Selector CSS selector
+	// Selector: CSS selector
 	Selector string
-	// Name function to get name from element found by selector.
-	Name func(*goquery.Selection) string
-	// URL function to get URL from element found by selector.
+	// Title: Get title from element found by selector.
+	Title func(*goquery.Selection) string
+	// URL: Get URL from element found by selector.
 	URL func(*goquery.Selection) string
-	// Cover function to get cover from element found by selector. Used by manga extractor
+	// TODO: change this to a more generic? Not sure if this is enough
+	// ID: Get id from parsed url string.
+	ID func(string) string
+	// Cover: Get cover from element found by selector.
 	Cover func(*goquery.Selection) string
 }
 
-// ChapterExtractor is responsible for finding specified elements by selector and extracting required data from them
-type ChapterExtractor struct {
-	// Selector CSS selector
+// VolumeExtractor: responsible for finding volume elements by selector and extracting the data.
+type VolumeExtractor struct {
+	// Selector: CSS selector.
 	Selector string
-	// Name function to get name from element found by selector.
-	Name func(*goquery.Selection) string
-	// URL function to get URL from element found by selector.
+	// Number: Get number from element found by selector.
+	Number func(*goquery.Selection) int
+}
+
+// ChapterExtractor: responsible for finding chapter elements by selector and extracting the data.
+type ChapterExtractor struct {
+	// Selector: CSS selector.
+	Selector string
+	// Title: Get title from element found by selector.
+	Title func(*goquery.Selection) string
+	// TODO: change this to a more generic? Not sure if this is enough
+	// ID: Get id from parsed url string.
+	ID func(string) string
+	// URL: Get URL from element found by selector.
 	URL func(*goquery.Selection) string
-	// Volume function to get volume from element found by selector. Used by chapters extractor
-	Volume func(*goquery.Selection) string
-	// Date function to get the published date of the chapter if available.
+	// TODO: start using this once libmangal accepts it
+	// Date: Get the published date of the chapter if available.
 	Date func(*goquery.Selection) *time.Time
 }
 
-// PageExtractor is responsible for finding specified elements by selector and extracting required data from them
+// PageExtractor: responsible for finding page elements by selector and extracting the data.
 type PageExtractor struct {
-	// Selector CSS selector
+	// Selector: CSS selector.
 	Selector string
-	// Name function to get name from element found by selector.
-	Name func(*goquery.Selection) string
-	// URL function to get URL from element found by selector.
+	// URL: Get URL from element found by selector.
 	URL func(*goquery.Selection) string
 }

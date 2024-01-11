@@ -20,7 +20,6 @@ var providerInfo = libmangal.ProviderInfo{
 }
 
 var scraperOptions = &scraper.Options{
-	// Name:            "Mangapill",
 	Delay:           50 * time.Millisecond,
 	Parallelism:     50,
 	ReverseChapters: true,
@@ -40,7 +39,7 @@ var scraperOptions = &scraper.Options{
 	},
 	MangaExtractor: &scraper.MangaExtractor{
 		Selector: "body > div.container.py-3 > div.my-3.grid.justify-end.gap-3.grid-cols-2.md\\:grid-cols-3.lg\\:grid-cols-5 > div",
-		Name: func(selection *goquery.Selection) string {
+		Title: func(selection *goquery.Selection) string {
 			return strings.TrimSpace(selection.Find("div a div.leading-tight").Text())
 		},
 		URL: func(selection *goquery.Selection) string {
@@ -49,18 +48,31 @@ var scraperOptions = &scraper.Options{
 		Cover: func(selection *goquery.Selection) string {
 			return selection.Find("img").AttrOr("data-src", "")
 		},
+		ID: func(_url string) string {
+			urlSplit := strings.Split(_url, "/")
+			// TODO: should the ID be 123/manga-name instead of just 123?
+			return urlSplit[4]
+		},
 	},
-	// TODO: update these for libmangal/mangoprovider and add VolumeExtractor
+	VolumeExtractor: &scraper.VolumeExtractor{
+		// selector that points to only 1 element ("Chapters" header)
+		Selector: "body > div.container > div.border.border-border.rounded > div.p-3.border-b.border-border > div.flex.flex-col.md\\:flex-row.md\\:items-center.md\\:justify-between",
+		Number: func(selection *goquery.Selection) int {
+			return 1
+		},
+	},
 	ChapterExtractor: &scraper.ChapterExtractor{
 		Selector: "div[data-filter-list] a",
-		Name: func(selection *goquery.Selection) string {
+		Title: func(selection *goquery.Selection) string {
 			return strings.TrimSpace(selection.Text())
+		},
+		ID: func(_url string) string {
+			urlSplit := strings.Split(_url, "/")
+			// TODO: should the ID be 123/chapter-name instead of just 123?
+			return urlSplit[4]
 		},
 		URL: func(selection *goquery.Selection) string {
 			return selection.AttrOr("href", "")
-		},
-		Volume: func(selection *goquery.Selection) string {
-			return ""
 		},
 	},
 	PageExtractor: &scraper.PageExtractor{

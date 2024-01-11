@@ -3,53 +3,52 @@ package scraper
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"slices"
 
+	"github.com/gocolly/colly/v2"
 	"github.com/luevano/libmangal"
 	"github.com/luevano/mangoprovider/mango"
 	"github.com/philippgille/gokv"
 )
 
 func (s *Scraper) VolumeChapters(_ctx context.Context, store gokv.Store, volume mango.Volume) ([]libmangal.Chapter, error) {
-	// TODO: use gokv.Store
-	// if chapters := s.cache.chapters.Get(manga.URL); chapters.IsPresent() {
-	// 	c := chapters.MustGet()
-	// 	for _, chapter := range c {
-	// 		chapter.Manga = manga
-	// 	}
-	// 	manga.Chapters = c
+	var chapters []libmangal.Chapter
 
-	// 	return nil
-	// }
+	// need an identifiable string for the cache
+	cacheID := fmt.Sprintf("%s-chapters", volume.Manga_.URL)
 
-	// ctx := colly.NewContext()
-	// ctx.Put("volume", volume)
-	// // TODO: check if volume.Manga_.URL is the one required
-	// err := s.chaptersCollector.Request(http.MethodGet, volume.Manga_.URL, nil, ctx, nil)
+	found, err := store.Get(cacheID, &chapters)
+	if err != nil {
+		return nil, err
+	}
+	if found {
+		// TODO: use logger
+		// fmt.Printf("found volumes in cache for manga %q with id %q\n", manga.Title, manga.ID)
+		return chapters, nil
+	}
 
-	// if err != nil {
-	// 	return nil, err
-	// }
+	ctx := colly.NewContext()
+	ctx.Put("volume", volume)
+	ctx.Put("chapters", &chapters)
 
-	// s.chaptersCollector.Wait()
+	// TODO: check if using this URL is good enough, only works for sources that
+	// don't provide volumes and thus everything is in the manga url
+	err = s.chaptersCollector.Request(http.MethodGet, volume.Manga_.URL, nil, ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	s.chaptersCollector.Wait()
 
-	// if s.config.ReverseChapters {
-	// 	// reverse chapters
-	// 	chapters := manga.Chapters
-	// 	reversed := make([]*source.Chapter, len(chapters))
-	// 	for i, chapter := range chapters {
-	// 		reversed[len(chapters)-i-1] = chapter
-	// 		chapter.Index = uint16(len(chapters) - i - 1)
-	// 		chapter.Index++
-	// 	}
+	if s.options.ReverseChapters {
+		slices.Reverse(chapters)
+	}
 
-	// 	manga.Chapters = reversed
-	// }
+	// TODO: only cache if there are chapters (len > 0)?
+	err = store.Set(cacheID, chapters)
+	if err != nil {
+		return nil, err
+	}
 
-	// TODO: use gokv.Store
-	// // Only cache if we have chapters
-	// if len(manga.Chapters) > 0 {
-	// 	_ = s.cache.chapters.Set(manga.URL, manga.Chapters)
-	// }
-
-	return nil, fmt.Errorf("unimplemented")
+	return chapters, nil
 }
