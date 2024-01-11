@@ -117,7 +117,7 @@ func (d *dex) populateChapters(store gokv.Store, offset int, params url.Values, 
 			return nil, false, fmt.Errorf("chapter number for manga %q volume %q with title %q wasn't found", volume.Manga_.Title, volumeNumber, chapterTitleRaw)
 		}
 
-		chapterNumber, err := strconv.ParseFloat(chapterNumberStr, 64)
+		chapterNumber, err := strconv.ParseFloat(chapterNumberStr, 32)
 		if err != nil {
 			return nil, false, err
 		}
