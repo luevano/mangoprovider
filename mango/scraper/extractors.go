@@ -1,9 +1,8 @@
 package scraper
 
 import (
-	"time"
-
 	"github.com/PuerkitoBio/goquery"
+	"github.com/luevano/libmangal"
 )
 
 // MangaExtractor: responsible for finding manga elements by selector and extracting the data.
@@ -40,9 +39,10 @@ type ChapterExtractor struct {
 	ID func(string) string
 	// URL: Get URL from element found by selector.
 	URL func(*goquery.Selection) string
-	// TODO: start using this once libmangal accepts it
 	// Date: Get the published date of the chapter if available.
-	Date func(*goquery.Selection) *time.Time
+	Date func(*goquery.Selection) libmangal.Date
+	// ScanlationGroups: Get the scanlation groups if available.
+	ScanlationGroups func(*goquery.Selection) []string
 }
 
 // PageExtractor: responsible for finding page elements by selector and extracting the data.

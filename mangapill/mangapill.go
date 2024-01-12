@@ -14,7 +14,7 @@ import (
 var providerInfo = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-mangapill",
 	Name:        "Mangapill",
-	Version:     "0.1.0",
+	Version:     "0.2.0",
 	Description: "Mangapill scraper",
 	Website:     "https://mangapill.com/",
 }
@@ -74,6 +74,21 @@ var scraperOptions = &scraper.Options{
 		URL: func(selection *goquery.Selection) string {
 			return selection.AttrOr("href", "")
 		},
+		Date: func(_ *goquery.Selection) libmangal.Date {
+			// mangapill doesn't provide dates, just use scraping day
+			// else it will just use anilist publication day
+			today := time.Now()
+			return libmangal.Date{
+				Year:  today.Year(),
+				Month: int(today.Month()),
+				Day:   today.Day(),
+			}
+		},
+		ScanlationGroups: func(selection *goquery.Selection) []string {
+			// mangapill doens't provide scanlators, just use "mangapill"
+			// to avoid using anilist translators
+			return []string{"mangapill"}
+		},
 	},
 	PageExtractor: &scraper.PageExtractor{
 		Selector: "picture img",
@@ -90,7 +105,8 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 		return nil
 	}
 
-	// TODO: use mangodex get chapter page for downloading, instead of the mangoloader generic one
+	// TODO: use mangodex get chapter page for downloading,
+	// instead of the mangoloader generic one
 	return mango.ProviderLoader{
 		ProviderInfo: providerInfo,
 		Options:      options,

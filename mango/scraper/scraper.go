@@ -152,19 +152,24 @@ func (s *Scraper) setChaptersCollector(collector *colly.Collector) error {
 				}
 			}
 
-			// TODO: enable this once the chapter date is implemented in libmangal
-			// var chapterDate *time.Time
-			// if s.options.ChapterExtractor.Date != nil {
-			// 	chapterDate = s.options.ChapterExtractor.Date(selection)
-			// }
+			var chapterDate libmangal.Date
+			if s.options.ChapterExtractor.Date != nil {
+				chapterDate = s.options.ChapterExtractor.Date(selection)
+			}
+
+			var scanlationGroups []string
+			if s.options.ChapterExtractor.Date != nil {
+				scanlationGroups = s.options.ChapterExtractor.ScanlationGroups(selection)
+			}
 
 			c := mango.Chapter{
-				Title:   title,
-				ID:      s.options.ChapterExtractor.ID(url),
-				URL:     url,
-				Number:  chapterNumber,
-				Volume_: &volume,
-				// ChapterDate: chapterDate,
+				Title:            title,
+				ID:               s.options.ChapterExtractor.ID(url),
+				URL:              url,
+				Number:           chapterNumber,
+				Date:             chapterDate,
+				ScanlationGroups: scanlationGroups,
+				Volume_:          &volume,
 			}
 			*chapters = append(*chapters, c)
 		})

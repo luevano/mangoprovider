@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/luevano/libmangal"
 	"github.com/luevano/mangodex"
@@ -21,20 +22,20 @@ func (d *dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango
 		language = "en"
 	}
 
-	// mangadex api returns "none" for "non-volumed" chapters,
+	// Mangadex api returns "none" for "non-volumed" chapters,
 	// which are saved as 0 in libmangal.Volume
 	volumeNumber := "none"
 	if volume.Number != 0 {
 		volumeNumber = volume.String()
 	}
 
-	// TODO: add scanlation group once libmangal is modified to accept it
 	params := url.Values{}
 	params.Set("manga", volume.Manga_.ID)
 	params.Set("volume[]", volumeNumber)
 	params.Set("limit", strconv.Itoa(100))
 	params.Set("order[chapter]", mangodex.OrderAscending)
 	params.Set("translatedLanguage[]", language)
+	params.Set("includes[]", "scanlation_group")
 
 	ratings := []mangodex.ContentRating{mangodex.ContentRatingSafe, mangodex.ContentRatingSuggestive}
 	if d.options.NSFW {
@@ -45,7 +46,7 @@ func (d *dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango
 		params.Add("contentRating[]", string(rating))
 	}
 
-	// need a query with params included for the cache,
+	// Need a query with params included for the cache,
 	// this doesn't include the offset so that it retrieves and saves all the chapters
 	queryWithParams := params.Encode()
 
@@ -136,18 +137,42 @@ func (d *dex) populateChapters(store gokv.Store, offset int, params url.Values, 
 			}
 		}
 
+		var chapterDate libmangal.Date
+		date, err := time.Parse(time.RFC3339, chapter.Attributes.PublishAt)
+		if err == nil {
+			chapterDate.Year = date.Year()
+			chapterDate.Month = int(date.Month())
+			chapterDate.Day = date.Day()
+		}
+
+		var scanlators []string
+		for _, relationship := range chapter.Relationships {
+			if relationship.Type == mangodex.RelationshipTypeScanlationGroup {
+				groupRel, ok := relationship.Attributes.(*mangodex.ScanlationGroupAttributes)
+				if !ok {
+					return nil, false, fmt.Errorf("unexpected error, failed to convert relationship attribute to scanlation_group type despite being of type %q", mangodex.RelationshipTypeScanlationGroup)
+				}
+
+				if groupRel.Name != "" {
+					scanlators = append(scanlators, groupRel.Name)
+				}
+			}
+		}
+
 		c := mango.Chapter{
-			Title:   chapterTitle,
-			ID:      chapterID,
-			URL:     fmt.Sprintf("https://mangadex.org/chapter/%s", chapterID),
-			Number:  float32(chapterNumber),
-			Volume_: &volume,
+			Title:            chapterTitle,
+			ID:               chapterID,
+			URL:              fmt.Sprintf("https://mangadex.org/chapter/%s", chapterID),
+			Number:           float32(chapterNumber),
+			Date:             chapterDate,
+			ScanlationGroups: scanlators,
+			Volume_:          &volume,
 		}
 
 		chapters = append(chapters, c)
 	}
 
-	// if received 100 entries, that means it probably has more
+	// If received 100 entries means it probably has more
 	if len(chapterList) == 100 {
 		return chapters, false, nil
 	}

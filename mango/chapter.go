@@ -9,10 +9,12 @@ import (
 var _ libmangal.Chapter = (*Chapter)(nil)
 
 type Chapter struct {
-	Title  string  `json:"title"`
-	ID     string  `json:"id"`
-	URL    string  `json:"url"`
-	Number float32 `json:"number"`
+	Title            string         `json:"title"`
+	ID               string         `json:"id"`
+	URL              string         `json:"url"`
+	Number           float32        `json:"number"`
+	Date             libmangal.Date `json:"date"`
+	ScanlationGroups []string       `json:"scanlation_groups"`
 
 	Volume_ *Volume `json:"-"`
 }
@@ -23,9 +25,11 @@ func (c Chapter) String() string {
 
 func (c Chapter) Info() libmangal.ChapterInfo {
 	return libmangal.ChapterInfo{
-		Title:  c.Title,
-		URL:    c.URL,
-		Number: c.Number,
+		Title:            c.Title,
+		URL:              c.URL,
+		Number:           c.Number,
+		Date:             c.Date,
+		ScanlationGroups: c.ScanlationGroups,
 	}
 }
 
