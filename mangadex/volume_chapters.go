@@ -16,12 +16,6 @@ import (
 func (d *dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango.Volume) ([]libmangal.Chapter, error) {
 	var chapters []libmangal.Chapter
 
-	language := d.options.Language
-	// TODO: use incoming options instead of checking for empty
-	if language == "" {
-		language = "en"
-	}
-
 	// Mangadex api returns "none" for "non-volumed" chapters,
 	// which are saved as 0 in libmangal.Volume
 	volumeNumber := "none"
@@ -34,11 +28,11 @@ func (d *dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango
 	params.Set("volume[]", volumeNumber)
 	params.Set("limit", strconv.Itoa(100))
 	params.Set("order[chapter]", mangodex.OrderAscending)
-	params.Set("translatedLanguage[]", language)
-	params.Set("includes[]", "scanlation_group")
+	params.Set("translatedLanguage[]", d.filter.Language)
+	params.Set("includes[]", string(mangodex.RelationshipTypeScanlationGroup))
 
 	ratings := []mangodex.ContentRating{mangodex.ContentRatingSafe, mangodex.ContentRatingSuggestive}
-	if d.options.NSFW {
+	if d.filter.NSFW {
 		ratings = append(ratings, mangodex.ContentRatingPorn)
 		ratings = append(ratings, mangodex.ContentRatingErotica)
 	}
@@ -46,11 +40,10 @@ func (d *dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango
 		params.Add("contentRating[]", string(rating))
 	}
 
-	// Need a query with params included for the cache,
-	// this doesn't include the offset so that it retrieves and saves all the chapters
-	queryWithParams := params.Encode()
+	// This doesn't include the offset so that it retrieves and saves all the chapters
+	cacheID := fmt.Sprintf("%s-%s", params.Encode(), d.filter.String())
 
-	found, err := store.Get(queryWithParams, &chapters)
+	found, err := store.Get(cacheID, &chapters)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +70,7 @@ func (d *dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango
 		}
 	}
 
-	err = store.Set(queryWithParams, chapters)
+	err = store.Set(cacheID, chapters)
 	if err != nil {
 		return nil, err
 	}
@@ -103,10 +96,10 @@ func (d *dex) populateChapters(store gokv.Store, offset int, params url.Values, 
 	}
 
 	// TODO: add option to avoid duplicate chapters
+	// TODO: add option to exclude list of scanlators/prefer list of scanlators
 	for _, chapter := range chapterList {
-		// Skip external chapters (can't be downloaded)
-		// TODO: add option to accept unavailable (external url) chapters?
-		if chapter.Attributes.ExternalURL != nil {
+		// Skip external chapters (can't be downloaded) unless wanted
+		if chapter.Attributes.ExternalURL != nil && !d.filter.ShowUnavailableChapters {
 			continue
 		}
 
@@ -129,7 +122,7 @@ func (d *dex) populateChapters(store gokv.Store, offset int, params url.Values, 
 			chapterTitle = chapterTitleRaw
 		}
 		chapterTitleNumber := fmt.Sprintf("Chapter %06.1f", chapterNumber)
-		if d.options.TitleChapterNumber || chapterTitle == "" {
+		if d.filter.TitleChapterNumber || chapterTitle == "" {
 			if chapterTitle == "" {
 				chapterTitle = chapterTitleNumber
 			} else {
@@ -145,7 +138,7 @@ func (d *dex) populateChapters(store gokv.Store, offset int, params url.Values, 
 			chapterDate.Day = date.Day()
 		}
 
-		var scanlators []string
+		var scanlator string
 		for _, relationship := range chapter.Relationships {
 			if relationship.Type == mangodex.RelationshipTypeScanlationGroup {
 				groupRel, ok := relationship.Attributes.(*mangodex.ScanlationGroupAttributes)
@@ -153,20 +146,19 @@ func (d *dex) populateChapters(store gokv.Store, offset int, params url.Values, 
 					return nil, false, fmt.Errorf("unexpected error, failed to convert relationship attribute to scanlation_group type despite being of type %q", mangodex.RelationshipTypeScanlationGroup)
 				}
 
-				if groupRel.Name != "" {
-					scanlators = append(scanlators, groupRel.Name)
-				}
+				scanlator = groupRel.Name
+				break
 			}
 		}
 
 		c := mango.Chapter{
-			Title:            chapterTitle,
-			ID:               chapterID,
-			URL:              fmt.Sprintf("https://mangadex.org/chapter/%s", chapterID),
-			Number:           float32(chapterNumber),
-			Date:             chapterDate,
-			ScanlationGroups: scanlators,
-			Volume_:          &volume,
+			Title:           chapterTitle,
+			ID:              chapterID,
+			URL:             fmt.Sprintf("https://mangadex.org/chapter/%s", chapterID),
+			Number:          float32(chapterNumber),
+			Date:            chapterDate,
+			ScanlationGroup: scanlator,
+			Volume_:         &volume,
 		}
 
 		chapters = append(chapters, c)

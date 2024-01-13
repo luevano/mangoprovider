@@ -41,8 +41,8 @@ type ChapterExtractor struct {
 	URL func(*goquery.Selection) string
 	// Date: Get the published date of the chapter if available.
 	Date func(*goquery.Selection) libmangal.Date
-	// ScanlationGroups: Get the scanlation groups if available.
-	ScanlationGroups func(*goquery.Selection) []string
+	// ScanlationGroup: Get the scanlation group if available.
+	ScanlationGroup func(*goquery.Selection) string
 }
 
 // PageExtractor: responsible for finding page elements by selector and extracting the data.

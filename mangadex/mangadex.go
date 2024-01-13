@@ -9,20 +9,20 @@ import (
 var providerInfo = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-mangadex",
 	Name:        "Mangadex",
-	Version:     "0.2.0",
+	Version:     "0.3.0",
 	Description: "Mangadex scraper using mangodex",
 	Website:     "https://mangadex.org/",
 }
 
 type dex struct {
-	client  *mangodex.DexClient
-	options mango.DexOptions
+	client *mangodex.DexClient
+	filter mango.Filter
 }
 
 func Loader(options mango.Options) libmangal.ProviderLoader {
 	d := dex{
-		client:  mangodex.NewDexClient(),
-		options: options.MangadexOptions,
+		client: mangodex.NewDexClient(),
+		filter: options.Filter,
 	}
 
 	// TODO: use mangodex get chapter page for downloading, instead of the mangoloader generic one

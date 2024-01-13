@@ -157,9 +157,9 @@ func (s *Scraper) setChaptersCollector(collector *colly.Collector) error {
 				chapterDate = s.options.ChapterExtractor.Date(selection)
 			}
 
-			var scanlationGroups []string
+			var scanlationGroup string
 			if s.options.ChapterExtractor.Date != nil {
-				scanlationGroups = s.options.ChapterExtractor.ScanlationGroups(selection)
+				scanlationGroup = s.options.ChapterExtractor.ScanlationGroup(selection)
 			}
 
 			c := mango.Chapter{
@@ -168,7 +168,7 @@ func (s *Scraper) setChaptersCollector(collector *colly.Collector) error {
 				URL:              url,
 				Number:           chapterNumber,
 				Date:             chapterDate,
-				ScanlationGroups: scanlationGroups,
+				ScanlationGroup: scanlationGroup,
 				Volume_:          &volume,
 			}
 			*chapters = append(*chapters, c)

@@ -84,10 +84,10 @@ var scraperOptions = &scraper.Options{
 				Day:   today.Day(),
 			}
 		},
-		ScanlationGroups: func(selection *goquery.Selection) []string {
+		ScanlationGroup: func(selection *goquery.Selection) string {
 			// mangapill doens't provide scanlators, just use "mangapill"
 			// to avoid using anilist translators
-			return []string{"mangapill"}
+			return "mangapill"
 		},
 	},
 	PageExtractor: &scraper.PageExtractor{

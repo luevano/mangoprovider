@@ -15,17 +15,12 @@ import (
 func (d *dex) MangaVolumes(ctx context.Context, store gokv.Store, manga mango.Manga) ([]libmangal.Volume, error) {
 	var volumes []libmangal.Volume
 
-	language := d.options.Language
-	// TODO: use incoming options instead of checking for empty
-	if language == "" {
-		language = "en"
-	}
 	params := url.Values{}
-	params.Set("translatedLanguage[]", language)
+	params.Set("translatedLanguage[]", d.filter.Language)
 
-	// need an identifiable string for the cache, this is not actually the query/url
-	idWithParams := fmt.Sprintf("%s?%s", manga.ID, params.Encode())
-	found, err := store.Get(idWithParams, &volumes)
+	cacheID := fmt.Sprintf("%s?%s-%s", manga.ID, params.Encode(), d.filter.String())
+
+	found, err := store.Get(cacheID, &volumes)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +70,7 @@ func (d *dex) MangaVolumes(ctx context.Context, store gokv.Store, manga mango.Ma
 		volumes = append(volumes, noneVolume)
 	}
 
-	err = store.Set(idWithParams, volumes)
+	err = store.Set(cacheID, volumes)
 	if err != nil {
 		return nil, err
 	}

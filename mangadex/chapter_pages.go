@@ -15,8 +15,12 @@ func (d *dex) ChapterPages(ctx context.Context, store gokv.Store, chapter mango.
 	// baseURL/hash/page each time it is consulted
 	var pages []libmangal.Page
 
-	// TODO: add an option to select the "quality" ("data" or "data-saver")
-	mdhome, err := d.client.AtHome.NewMDHomeClient(chapter.ID, "data", false)
+	data := "data"
+	if d.filter.MangaDexDataSaver {
+		data = "data-saver"
+	}
+
+	mdhome, err := d.client.AtHome.NewMDHomeClient(chapter.ID, data, false)
 	if err != nil {
 		return nil, err
 	}

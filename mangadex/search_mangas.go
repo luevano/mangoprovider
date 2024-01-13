@@ -22,7 +22,7 @@ func (d *dex) SearchMangas(ctx context.Context, store gokv.Store, query string) 
 	params.Add("includes[]", string(mangodex.RelationshipTypeCoverArt))
 
 	ratings := []mangodex.ContentRating{mangodex.ContentRatingSafe, mangodex.ContentRatingSuggestive}
-	if d.options.NSFW {
+	if d.filter.NSFW {
 		ratings = append(ratings, mangodex.ContentRatingPorn)
 		ratings = append(ratings, mangodex.ContentRatingErotica)
 	}
@@ -30,10 +30,9 @@ func (d *dex) SearchMangas(ctx context.Context, store gokv.Store, query string) 
 		params.Add("contentRating[]", string(rating))
 	}
 
-	// need a query with params included for the cache
-	queryWithParams := params.Encode()
+	cacheID := fmt.Sprintf("%s-%s", params.Encode(), d.filter.String())
 
-	found, err := store.Get(queryWithParams, &mangas)
+	found, err := store.Get(cacheID, &mangas)
 	if err != nil {
 		return nil, err
 	}
@@ -50,14 +49,8 @@ func (d *dex) SearchMangas(ctx context.Context, store gokv.Store, query string) 
 		return nil, err
 	}
 
-	language := d.options.Language
-	// TODO: use incoming options instead of checking for empty
-	if language == "" {
-		language = "en"
-	}
-
 	for _, manga := range mangaList {
-		mangaTitle := manga.GetTitle(language)
+		mangaTitle := manga.GetTitle(d.filter.Language)
 		mangaID := manga.ID
 
 		var mangaCoverFileNames []string
@@ -87,7 +80,7 @@ func (d *dex) SearchMangas(ctx context.Context, store gokv.Store, query string) 
 		mangas = append(mangas, m)
 	}
 
-	err = store.Set(queryWithParams, mangas)
+	err = store.Set(cacheID, mangas)
 	if err != nil {
 		return nil, err
 	}
