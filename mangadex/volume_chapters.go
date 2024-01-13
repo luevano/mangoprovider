@@ -70,12 +70,28 @@ func (d *dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango
 		}
 	}
 
-	err = store.Set(cacheID, chapters)
+	// TODO: add option to exclude list of scanlators/prefer list of scanlators
+	var chaptersFiltered []libmangal.Chapter
+
+	if d.filter.AvoidDuplicateChapters {
+		allFound := map[float32]bool{}
+		for _, chapter := range chapters {
+			_, found := allFound[chapter.Info().Number]
+			if !found {
+				chaptersFiltered = append(chaptersFiltered, chapter)
+				allFound[chapter.Info().Number] = true
+			}
+		}
+	} else {
+		chaptersFiltered = chapters
+	}
+
+	err = store.Set(cacheID, chaptersFiltered)
 	if err != nil {
 		return nil, err
 	}
 
-	return chapters, nil
+	return chaptersFiltered, nil
 }
 
 func (d *dex) populateChapters(store gokv.Store, offset int, params url.Values, volume mango.Volume) ([]libmangal.Chapter, bool, error) {
@@ -95,8 +111,6 @@ func (d *dex) populateChapters(store gokv.Store, offset int, params url.Values, 
 		return nil, true, nil
 	}
 
-	// TODO: add option to avoid duplicate chapters
-	// TODO: add option to exclude list of scanlators/prefer list of scanlators
 	for _, chapter := range chapterList {
 		// Skip external chapters (can't be downloaded) unless wanted
 		if chapter.Attributes.ExternalURL != nil && !d.filter.ShowUnavailableChapters {
