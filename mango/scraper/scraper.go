@@ -41,7 +41,7 @@ func NewScraper(options *Options) (*Scraper, error) {
 
 	err := checkForRedirect(options)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	baseCollector := colly.NewCollector(collectorOptions...)

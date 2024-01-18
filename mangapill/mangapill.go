@@ -14,7 +14,7 @@ import (
 var providerInfo = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-mangapill",
 	Name:        "Mangapill",
-	Version:     "0.2.0",
+	Version:     "0.3.0",
 	Description: "Mangapill scraper",
 	Website:     "https://mangapill.com/",
 }
@@ -48,10 +48,10 @@ var scraperOptions = &scraper.Options{
 		Cover: func(selection *goquery.Selection) string {
 			return selection.Find("img").AttrOr("data-src", "")
 		},
+		// the id is in the form <number>/<manga-name> as with just <number>
+		// the url returns 404 (in case it's needed)
 		ID: func(_url string) string {
-			urlSplit := strings.Split(_url, "/")
-			// TODO: should the ID be 123/manga-name instead of just 123?
-			return urlSplit[4]
+			return strings.Join(strings.Split(_url, "/")[4:], "/")
 		},
 	},
 	VolumeExtractor: &scraper.VolumeExtractor{
@@ -66,10 +66,9 @@ var scraperOptions = &scraper.Options{
 		Title: func(selection *goquery.Selection) string {
 			return strings.TrimSpace(selection.Text())
 		},
+		// id is constructed similar to manga id above, <number>/<chapter-name>
 		ID: func(_url string) string {
-			urlSplit := strings.Split(_url, "/")
-			// TODO: should the ID be 123/chapter-name instead of just 123?
-			return urlSplit[4]
+			return strings.Join(strings.Split(_url, "/")[4:], "/")
 		},
 		URL: func(selection *goquery.Selection) string {
 			return selection.AttrOr("href", "")
@@ -100,13 +99,10 @@ var scraperOptions = &scraper.Options{
 
 func Loader(options mango.Options) libmangal.ProviderLoader {
 	s, err := scraper.NewScraper(scraperOptions)
-	// TODO: panic?
 	if err != nil {
-		return nil
+		panic(err)
 	}
 
-	// TODO: use mangodex get chapter page for downloading,
-	// instead of the mangoloader generic one
 	return mango.ProviderLoader{
 		ProviderInfo: providerInfo,
 		Options:      options,
