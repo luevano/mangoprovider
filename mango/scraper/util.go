@@ -40,7 +40,7 @@ func setupCollector(collector *colly.Collector, refererType string, options Opti
 	return nil
 }
 
-// TODO: refactor this
+// TODO: refactor this function? is it needed?
 func checkForRedirect(options *Options) error {
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {

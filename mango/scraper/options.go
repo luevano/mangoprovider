@@ -4,6 +4,8 @@ import "time"
 
 // Options: Defines behavior of the scraper.
 type Options struct {
+	// Name: Name of the scraper. E.g. "mangapill"
+	Name string
 	// Delay: Delay between requests.
 	Delay time.Duration
 	// Parallelism: Parallelism of the scraper.
@@ -17,7 +19,6 @@ type Options struct {
 
 	// BaseURL: Base URL of the source.
 	BaseURL string
-	// TODO: remove baseUrl? not really required.
 	// GenerateSearchURL: Create search URL from the query.
 	// E.g. "one piece" -> "https://manganelo.com/search/story/one%20piece"
 	GenerateSearchURL func(baseUrl, query string) (string, error)

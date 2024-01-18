@@ -10,7 +10,7 @@ import (
 	"github.com/philippgille/gokv"
 )
 
-func (d *dex) ChapterPages(ctx context.Context, store gokv.Store, chapter mango.Chapter) ([]libmangal.Page, error) {
+func (d *dex) ChapterPages(ctx context.Context, logger *libmangal.Logger, store gokv.Store, chapter mango.Chapter) ([]libmangal.Page, error) {
 	// Note that this doesn't use the store "cache" as mangadex provides a dynamic
 	// baseURL/hash/page each time it is consulted
 	var pages []libmangal.Page
@@ -40,7 +40,6 @@ func (d *dex) ChapterPages(ctx context.Context, store gokv.Store, chapter mango.
 			return nil, fmt.Errorf("invalid page extension: %s", pageExtension)
 		}
 
-		// TODO: generate random user-agent or use a different static agent
 		pageHeaders := map[string]string{
 			"Referer":    chapter.URL,
 			"Accept":     "image/webp,image/apng,image/*,*/*;q=0.8",

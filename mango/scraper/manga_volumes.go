@@ -10,7 +10,7 @@ import (
 	"github.com/philippgille/gokv"
 )
 
-func (s *Scraper) MangaVolumes(_ctx context.Context, store gokv.Store, manga mango.Manga) ([]libmangal.Volume, error) {
+func (s *Scraper) MangaVolumes(_ctx context.Context, logger *libmangal.Logger, store gokv.Store, manga mango.Manga) ([]libmangal.Volume, error) {
 	var volumes []libmangal.Volume
 
 	// need an identifiable string for the cache
@@ -21,8 +21,7 @@ func (s *Scraper) MangaVolumes(_ctx context.Context, store gokv.Store, manga man
 		return nil, err
 	}
 	if found {
-		// TODO: use logger
-		// fmt.Printf("found volumes in cache for manga %q with id %q\n", manga.Title, manga.ID)
+		logger.Log(fmt.Sprintf("[%s]found volumes in cache for manga %q with id %q", s.options.Name, manga.Title, manga.ID))
 		return volumes, nil
 	}
 

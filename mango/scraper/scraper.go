@@ -86,7 +86,6 @@ func (s *Scraper) setMangasCollector(collector *colly.Collector) error {
 			link := s.options.MangaExtractor.URL(selection)
 			url := e.Request.AbsoluteURL(link)
 			title := cleanName(s.options.MangaExtractor.Title(selection))
-			// TODO: need to check ID creation,
 			m := mango.Manga{
 				Title:         title,
 				AnilistSearch: title,
@@ -142,7 +141,6 @@ func (s *Scraper) setChaptersCollector(collector *colly.Collector) error {
 			url := e.Request.AbsoluteURL(link)
 			title := cleanName(s.options.ChapterExtractor.Title(selection))
 
-			// TODO: not sure if this is generic enough?
 			match := chapterNumberRegex.FindString(title)
 			chapterNumber := float32(e.Index)
 			if match != "" {
@@ -192,12 +190,10 @@ func (s *Scraper) setPagesCollector(collector *colly.Collector) error {
 
 		elements.Each(func(_ int, selection *goquery.Selection) {
 			link := s.options.PageExtractor.URL(selection)
-			// TODO: handle if for some reason there is no extension?
 			ext := filepath.Ext(link)
 			// remove some query params from the extension
 			ext = strings.Split(ext, "?")[0]
 
-			// TODO: generate random user-agent or use a different static agent
 			headers := map[string]string{
 				"Referer":    chapter.URL,
 				"Accept":     "image/webp,image/apng,image/*,*/*;q=0.8",

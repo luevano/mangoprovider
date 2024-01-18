@@ -20,6 +20,7 @@ var providerInfo = libmangal.ProviderInfo{
 }
 
 var scraperOptions = &scraper.Options{
+	Name:            providerInfo.ID,
 	Delay:           50 * time.Millisecond,
 	Parallelism:     50,
 	ReverseChapters: true,

@@ -13,7 +13,6 @@ type MangaExtractor struct {
 	Title func(*goquery.Selection) string
 	// URL: Get URL from element found by selector.
 	URL func(*goquery.Selection) string
-	// TODO: change this to a more generic? Not sure if this is enough
 	// ID: Get id from parsed url string.
 	ID func(string) string
 	// Cover: Get cover from element found by selector.
@@ -34,7 +33,6 @@ type ChapterExtractor struct {
 	Selector string
 	// Title: Get title from element found by selector.
 	Title func(*goquery.Selection) string
-	// TODO: change this to a more generic? Not sure if this is enough
 	// ID: Get id from parsed url string.
 	ID func(string) string
 	// URL: Get URL from element found by selector.

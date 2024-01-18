@@ -10,17 +10,14 @@ import (
 	"github.com/philippgille/gokv"
 )
 
-// TODO: remove ctx from ProviderFuncs?
-// TODO: remove gokv.Store from ChapterPages
-
 var _ libmangal.Provider = (*Provider)(nil)
 
 type ProviderFuncs struct {
-	SearchMangas   func(context.Context, gokv.Store, string) ([]libmangal.Manga, error)
-	MangaVolumes   func(context.Context, gokv.Store, Manga) ([]libmangal.Volume, error)
-	VolumeChapters func(context.Context, gokv.Store, Volume) ([]libmangal.Chapter, error)
-	ChapterPages   func(context.Context, gokv.Store, Chapter) ([]libmangal.Page, error)
-	GetPageImage   func(context.Context, Page) ([]byte, error)
+	SearchMangas   func(context.Context, *libmangal.Logger, gokv.Store, string) ([]libmangal.Manga, error)
+	MangaVolumes   func(context.Context, *libmangal.Logger, gokv.Store, Manga) ([]libmangal.Volume, error)
+	VolumeChapters func(context.Context, *libmangal.Logger, gokv.Store, Volume) ([]libmangal.Chapter, error)
+	ChapterPages   func(context.Context, *libmangal.Logger, gokv.Store, Chapter) ([]libmangal.Page, error)
+	GetPageImage   func(context.Context, *libmangal.Logger, Page) ([]byte, error)
 }
 
 type Provider struct {
@@ -28,7 +25,8 @@ type Provider struct {
 	Options Options
 	Funcs   ProviderFuncs
 
-	// TODO: the logger is not actually being used anywhere
+	// libmangal sets the logger, used for internal logging
+	// and can be displayed in mangal itself
 	store  gokv.Store
 	logger *libmangal.Logger
 }
@@ -55,7 +53,7 @@ func (p *Provider) SearchMangas(
 ) ([]libmangal.Manga, error) {
 	p.logger.Log(fmt.Sprintf("Searching mangas with %q", query))
 
-	return p.Funcs.SearchMangas(ctx, p.store, query)
+	return p.Funcs.SearchMangas(ctx, p.logger, p.store, query)
 }
 
 func (p *Provider) MangaVolumes(
@@ -68,7 +66,7 @@ func (p *Provider) MangaVolumes(
 	}
 
 	p.logger.Log(fmt.Sprintf("Fetching volumes for %q", m))
-	return p.Funcs.MangaVolumes(ctx, p.store, m)
+	return p.Funcs.MangaVolumes(ctx, p.logger, p.store, m)
 }
 
 func (p *Provider) VolumeChapters(
@@ -81,7 +79,7 @@ func (p *Provider) VolumeChapters(
 	}
 
 	p.logger.Log(fmt.Sprintf("Fetching chapters for %q", v))
-	return p.Funcs.VolumeChapters(ctx, p.store, v)
+	return p.Funcs.VolumeChapters(ctx, p.logger, p.store, v)
 }
 
 func (p *Provider) ChapterPages(
@@ -94,7 +92,7 @@ func (p *Provider) ChapterPages(
 	}
 
 	p.logger.Log(fmt.Sprintf("Fetching pages for %q", c))
-	return p.Funcs.ChapterPages(ctx, p.store, c)
+	return p.Funcs.ChapterPages(ctx, p.logger, p.store, c)
 }
 
 func (p *Provider) GetPageImage(
@@ -108,7 +106,7 @@ func (p *Provider) GetPageImage(
 
 	p.logger.Log(fmt.Sprintf("Making HTTP GET request for %q", page_.URL))
 	if p.Funcs.GetPageImage != nil {
-		return p.Funcs.GetPageImage(ctx, page_)
+		return p.Funcs.GetPageImage(ctx, p.logger, page_)
 	} else {
 		return p.GenericGetPageImage(ctx, page_)
 	}
