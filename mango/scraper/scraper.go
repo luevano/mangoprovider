@@ -11,6 +11,7 @@ import (
 	"github.com/gocolly/colly/v2"
 	"github.com/luevano/libmangal"
 	"github.com/luevano/mangoprovider/mango"
+	"github.com/luevano/mangoprovider/mango/scraper/headless"
 )
 
 var (
@@ -29,7 +30,7 @@ type Scraper struct {
 }
 
 // NewScraper: generates a new scraper with given configuration.
-func NewScraper(options *Options) (*Scraper, error) {
+func NewScraper(options *Options, headlessOptions headless.Options) (*Scraper, error) {
 	s := &Scraper{
 		options: options,
 	}
@@ -47,12 +48,10 @@ func NewScraper(options *Options) (*Scraper, error) {
 	baseCollector := colly.NewCollector(collectorOptions...)
 	baseCollector.SetRequestTimeout(30 * time.Second)
 
-	// TODO: add headless
-	// "github.com/belphemur/mangal/provider/generic/headless"
-	// if conf.NeedsHeadlessBrowser {
-	// 	transport := headless.GetTransportSingleton()
-	// 	baseCollector.WithTransport(transport)
-	// }
+	if options.NeedsHeadlessBrowser {
+		transport := headless.GetTransportSingleton(headlessOptions)
+		baseCollector.WithTransport(transport)
+	}
 
 	err = s.setMangasCollector(baseCollector.Clone())
 	if err != nil {
@@ -161,13 +160,13 @@ func (s *Scraper) setChaptersCollector(collector *colly.Collector) error {
 			}
 
 			c := mango.Chapter{
-				Title:            title,
-				ID:               s.options.ChapterExtractor.ID(url),
-				URL:              url,
-				Number:           chapterNumber,
-				Date:             chapterDate,
+				Title:           title,
+				ID:              s.options.ChapterExtractor.ID(url),
+				URL:             url,
+				Number:          chapterNumber,
+				Date:            chapterDate,
 				ScanlationGroup: scanlationGroup,
-				Volume_:          &volume,
+				Volume_:         &volume,
 			}
 			*chapters = append(*chapters, c)
 		})

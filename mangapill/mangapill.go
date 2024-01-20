@@ -14,7 +14,7 @@ import (
 var providerInfo = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-mangapill",
 	Name:        "Mangapill",
-	Version:     "0.3.0",
+	Version:     "0.3.1",
 	Description: "Mangapill scraper",
 	Website:     "https://mangapill.com/",
 }
@@ -22,7 +22,7 @@ var providerInfo = libmangal.ProviderInfo{
 var scraperOptions = &scraper.Options{
 	Name:            providerInfo.ID,
 	Delay:           50 * time.Millisecond,
-	Parallelism:     50,
+	Parallelism:     15,
 	ReverseChapters: true,
 	BaseURL:         providerInfo.Website,
 	GenerateSearchURL: func(baseUrl string, query string) (string, error) {
@@ -84,7 +84,7 @@ var scraperOptions = &scraper.Options{
 				Day:   today.Day(),
 			}
 		},
-		ScanlationGroup: func(selection *goquery.Selection) string {
+		ScanlationGroup: func(_ *goquery.Selection) string {
 			// mangapill doens't provide scanlators, just use "mangapill"
 			// to avoid using anilist translators
 			return "mangapill"
@@ -98,8 +98,9 @@ var scraperOptions = &scraper.Options{
 	},
 }
 
+// TODO: this is generic, need to refactor
 func Loader(options mango.Options) libmangal.ProviderLoader {
-	s, err := scraper.NewScraper(scraperOptions)
+	s, err := scraper.NewScraper(scraperOptions, options.HeadlessOptions)
 	if err != nil {
 		panic(err)
 	}

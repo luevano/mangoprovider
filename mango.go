@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/luevano/libmangal"
+	"github.com/luevano/mangoprovider/asurascans"
 	"github.com/luevano/mangoprovider/mangadex"
 	"github.com/luevano/mangoprovider/mangapill"
 	"github.com/luevano/mangoprovider/mango"
@@ -22,6 +23,7 @@ func Loaders(options mango.Options) ([]libmangal.ProviderLoader, error) {
 	loaders := []libmangal.ProviderLoader{
 		mangadex.Loader(options),
 		mangapill.Loader(options),
+		asurascans.Loader(options),
 	}
 
 	for _, loader := range loaders {

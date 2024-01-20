@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/luevano/mangoprovider/mango/scraper/headless"
 	"github.com/philippgille/gokv"
 )
 
@@ -38,5 +39,6 @@ func (f *Filter) String() string {
 type Options struct {
 	HTTPClient        *http.Client
 	HTTPStoreProvider func(providerID string) (gokv.Store, error)
+	HeadlessOptions   headless.Options
 	Filter
 }
