@@ -155,7 +155,7 @@ func (s *Scraper) setChaptersCollector(collector *colly.Collector) error {
 			}
 
 			var scanlationGroup string
-			if s.options.ChapterExtractor.Date != nil {
+			if s.options.ChapterExtractor.ScanlationGroup != nil {
 				scanlationGroup = s.options.ChapterExtractor.ScanlationGroup(selection)
 			}
 
