@@ -9,6 +9,7 @@ import (
 	"github.com/luevano/mangoprovider/scrapers/manganato"
 	"github.com/luevano/mangoprovider/scrapers/manganelo"
 	"github.com/luevano/mangoprovider/scrapers/mangapill"
+	"github.com/luevano/mangoprovider/scrapers/toonily"
 )
 
 func Loaders(options mango.Options) []libmangal.ProviderLoader {
@@ -18,6 +19,7 @@ func Loaders(options mango.Options) []libmangal.ProviderLoader {
 		Loader(flamescans.ProviderInfo, flamescans.Options, options),
 		Loader(manganato.ProviderInfo, manganato.Options, options),
 		Loader(manganelo.ProviderInfo, manganelo.Options, options),
+		Loader(toonily.ProviderInfo, toonily.Options, options),
 	}
 
 	return loaders
