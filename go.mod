@@ -6,7 +6,7 @@ require (
 	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/gocolly/colly/v2 v2.1.0
 	github.com/luevano/libmangal v0.9.6
-	github.com/luevano/mangodex v0.2.2
+	github.com/luevano/mangodex v0.3.0
 	github.com/philippgille/gokv v0.6.0
 )
 

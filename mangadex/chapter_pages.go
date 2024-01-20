@@ -3,6 +3,7 @@ package mangadex
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/luevano/libmangal"
@@ -15,21 +16,23 @@ func (d *dex) ChapterPages(ctx context.Context, logger *libmangal.Logger, store 
 	// baseURL/hash/page each time it is consulted
 	var pages []libmangal.Page
 
-	data := "data"
-	if d.filter.MangaDexDataSaver {
-		data = "data-saver"
-	}
-
-	mdhome, err := d.client.AtHome.NewMDHomeClient(chapter.ID, data, false)
+	atHome, err := d.client.AtHome.Get(chapter.ID, url.Values{})
 	if err != nil {
 		return nil, err
 	}
 
-	if len(mdhome.Pages) == 0 {
+	data := "data"
+	chapterPages := atHome.Chapter.Data
+	if d.filter.MangaDexDataSaver {
+		chapterPages = atHome.Chapter.DataSaver
+		data = "data-saver"
+	}
+
+	if len(chapterPages) == 0 {
 		return nil, fmt.Errorf("no pages for chapter %q (%s); volume %q; manga %q", chapter.Title, chapter.ID, chapter.Volume_.Number, chapter.Volume_.Manga_.Title)
 	}
 
-	for _, page := range mdhome.Pages {
+	for _, page := range chapterPages {
 		pageSplit := strings.Split(page, ".")
 		if len(pageSplit) != 2 {
 			return nil, fmt.Errorf("unexpected error when extracting page extension; chapter %q (%s)", chapter.Title, chapter.ID)
@@ -48,7 +51,7 @@ func (d *dex) ChapterPages(ctx context.Context, logger *libmangal.Logger, store 
 
 		p := mango.Page{
 			Extension: pageExtension,
-			URL:       fmt.Sprintf("%s/data/%s/%s", mdhome.BaseURL, mdhome.Hash, page),
+			URL:       fmt.Sprintf("%s/%s/%s/%s", atHome.BaseURL, data, atHome.Chapter.Hash, page),
 			Headers:   pageHeaders,
 			Chapter_:  &chapter,
 		}
