@@ -16,6 +16,8 @@ type Options struct {
 
 	// NeedsHeadlessBrowser: If a headless browser should be used to proxy any request.
 	NeedsHeadlessBrowser bool
+	// Cookies: Custom cookies to pass to the request. It is a string, as it is passed as a header.
+	Cookies string
 
 	// BaseURL: Base URL of the source.
 	BaseURL string

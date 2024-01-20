@@ -26,6 +26,9 @@ func setupCollector(collector *colly.Collector, refererType string, options Opti
 		r.Headers.Set("Accept", "text/html")
 		r.Headers.Set("Host", options.BaseURL)
 		r.Headers.Set("User-Agent", mango.UserAgent)
+		if options.Cookies != "" {
+			r.Headers.Set("Cookie", options.Cookies)
+		}
 	})
 
 	err := collector.Limit(&colly.LimitRule{
