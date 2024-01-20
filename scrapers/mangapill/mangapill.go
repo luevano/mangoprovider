@@ -11,7 +11,7 @@ import (
 	"github.com/luevano/mangoprovider/mango/scraper"
 )
 
-var providerInfo = libmangal.ProviderInfo{
+var ProviderInfo = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-mangapill",
 	Name:        "Mangapill",
 	Version:     "0.3.1",
@@ -19,12 +19,12 @@ var providerInfo = libmangal.ProviderInfo{
 	Website:     "https://mangapill.com/",
 }
 
-var scraperOptions = &scraper.Options{
-	Name:            providerInfo.ID,
+var Options = &scraper.Options{
+	Name:            ProviderInfo.ID,
 	Delay:           50 * time.Millisecond,
 	Parallelism:     15,
 	ReverseChapters: true,
-	BaseURL:         providerInfo.Website,
+	BaseURL:         ProviderInfo.Website,
 	GenerateSearchURL: func(baseUrl string, query string) (string, error) {
 		// path is /search?q=<query>&type=&status=
 		params := url.Values{}
@@ -96,23 +96,4 @@ var scraperOptions = &scraper.Options{
 			return selection.AttrOr("data-src", "")
 		},
 	},
-}
-
-// TODO: this is generic, need to refactor
-func Loader(options mango.Options) libmangal.ProviderLoader {
-	s, err := scraper.NewScraper(scraperOptions, options.HeadlessOptions)
-	if err != nil {
-		panic(err)
-	}
-
-	return mango.ProviderLoader{
-		ProviderInfo: providerInfo,
-		Options:      options,
-		Funcs: mango.ProviderFuncs{
-			SearchMangas:   s.SearchMangas,
-			MangaVolumes:   s.MangaVolumes,
-			VolumeChapters: s.VolumeChapters,
-			ChapterPages:   s.ChapterPages,
-		},
-	}
 }

@@ -12,7 +12,7 @@ import (
 	"github.com/luevano/mangoprovider/mango/scraper"
 )
 
-var providerInfo = libmangal.ProviderInfo{
+var ProviderInfo = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-manganato",
 	Name:        "Manganato",
 	Version:     "0.1.0",
@@ -20,12 +20,12 @@ var providerInfo = libmangal.ProviderInfo{
 	Website:     "https://manganato.com/",
 }
 
-var scraperOptions = &scraper.Options{
-	Name:            providerInfo.ID,
+var Options = &scraper.Options{
+	Name:            ProviderInfo.ID,
 	Delay:           50 * time.Millisecond,
 	Parallelism:     15,
 	ReverseChapters: true,
-	BaseURL:         providerInfo.Website,
+	BaseURL:         ProviderInfo.Website,
 	GenerateSearchURL: func(baseUrl string, query string) (string, error) {
 		// path is /search/story/
 		// No longer required? the baseurl works just fine
@@ -100,7 +100,7 @@ var scraperOptions = &scraper.Options{
 			}
 		},
 		ScanlationGroup: func(_ *goquery.Selection) string {
-			return providerInfo.Name
+			return ProviderInfo.Name
 		},
 	},
 	PageExtractor: &scraper.PageExtractor{
@@ -109,23 +109,4 @@ var scraperOptions = &scraper.Options{
 			return selection.AttrOr("src", "")
 		},
 	},
-}
-
-// TODO: this is generic, need to refactor
-func Loader(options mango.Options) libmangal.ProviderLoader {
-	s, err := scraper.NewScraper(scraperOptions, options.HeadlessOptions)
-	if err != nil {
-		panic(err)
-	}
-
-	return mango.ProviderLoader{
-		ProviderInfo: providerInfo,
-		Options:      options,
-		Funcs: mango.ProviderFuncs{
-			SearchMangas:   s.SearchMangas,
-			MangaVolumes:   s.MangaVolumes,
-			VolumeChapters: s.VolumeChapters,
-			ChapterPages:   s.ChapterPages,
-		},
-	}
 }

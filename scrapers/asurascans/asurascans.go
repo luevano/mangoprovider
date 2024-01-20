@@ -1,4 +1,4 @@
-package flamescans
+package asurascans
 
 import (
 	"net/url"
@@ -13,20 +13,23 @@ import (
 
 // TODO: add extra option for extracting chapter number (solo leveling is wrong)
 
-var providerInfo = libmangal.ProviderInfo{
-	ID:          mango.BundleID + "-flamescans",
-	Name:        "FlameScans",
-	Version:     "0.1.0",
-	Description: "FlameScans scraper",
-	Website:     "https://flamecomics.com/",
+const dateLayout = "January 2, 2006"
+
+var ProviderInfo = libmangal.ProviderInfo{
+	ID:          mango.BundleID + "-asurascans",
+	Name:        "AsuraScans",
+	Version:     "0.1.1",
+	Description: "AsuraScans scraper",
+	Website:     "https://asuracomics.com/",
 }
 
-var scraperOptions = &scraper.Options{
-	Name:            providerInfo.ID,
-	Delay:           50 * time.Millisecond,
-	Parallelism:     15,
-	ReverseChapters: true,
-	BaseURL:         providerInfo.Website,
+var Options = &scraper.Options{
+	Name:                 ProviderInfo.ID,
+	Delay:                50 * time.Millisecond,
+	Parallelism:          15,
+	ReverseChapters:      true,
+	NeedsHeadlessBrowser: true,
+	BaseURL:              ProviderInfo.Website,
 	GenerateSearchURL: func(baseUrl string, query string) (string, error) {
 		// path is /?s=
 		params := url.Values{}
@@ -54,11 +57,11 @@ var scraperOptions = &scraper.Options{
 	},
 	VolumeExtractor: &scraper.VolumeExtractor{
 		// selector that points to only 1 element ("Chapter MangaName" header)
-		Selector: "body > div.mainholder > div.manga-info.mangastyle > div.wrapper > div.postbody.full > article.hentry > div.main-info > div.second-half > div.right-side > div.bixbox.bxcl.epcheck > div.releases > h2",
+		Selector: "body > div > div.wrapper > div.postbody > article.hentry > div.bixbox.bxcl.epcheck > div.releases > h2",
 		Number: func(selection *goquery.Selection) int {
 			return 1
 		},
-		// FlameScans doesn't really provide volumes, some chapters have "Vol." prefix, need to figure out how to implement this as this was used inside the chapter extractor on original mangal
+		// AsuraScans doesn't really provide volumes, some chapters have "Vol." prefix, need to figure out how to implement this as this was used inside the chapter extractor on original mangal
 		// Volume: func(selection *goquery.Selection) string {
 		// 	name := selection.Find(".chapternum").Text()
 		// 	if strings.HasPrefix(name, "Vol.") {
@@ -81,21 +84,20 @@ var scraperOptions = &scraper.Options{
 			return selection.Find("a").AttrOr("href", "")
 		},
 		Date: func(selection *goquery.Selection) libmangal.Date {
-			layout := "January 2, 2006"
-			publishedDate := selection.Find(".chapterdate").Text()
-			date, err := time.Parse(layout, publishedDate)
+			date := selection.Find(".chapterdate").Text()
+			t, err := time.Parse(dateLayout, date)
 			if err != nil {
 				// if failed to parse date, use scraping day
-				date = time.Now()
+				t = time.Now()
 			}
 			return libmangal.Date{
-				Year:  date.Year(),
-				Month: int(date.Month()),
-				Day:   date.Day(),
+				Year:  t.Year(),
+				Month: int(t.Month()),
+				Day:   t.Day(),
 			}
 		},
 		ScanlationGroup: func(_ *goquery.Selection) string {
-			return providerInfo.Name
+			return ProviderInfo.Name
 		},
 	},
 	PageExtractor: &scraper.PageExtractor{
@@ -104,23 +106,4 @@ var scraperOptions = &scraper.Options{
 			return selection.AttrOr("src", "")
 		},
 	},
-}
-
-// TODO: this is generic, need to refactor
-func Loader(options mango.Options) libmangal.ProviderLoader {
-	s, err := scraper.NewScraper(scraperOptions, options.HeadlessOptions)
-	if err != nil {
-		panic(err)
-	}
-
-	return mango.ProviderLoader{
-		ProviderInfo: providerInfo,
-		Options:      options,
-		Funcs: mango.ProviderFuncs{
-			SearchMangas:   s.SearchMangas,
-			MangaVolumes:   s.MangaVolumes,
-			VolumeChapters: s.VolumeChapters,
-			ChapterPages:   s.ChapterPages,
-		},
-	}
 }

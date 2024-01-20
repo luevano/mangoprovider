@@ -14,7 +14,7 @@ import (
 
 // TODO: check the website url, there appears to be multiple of them
 
-var providerInfo = libmangal.ProviderInfo{
+var ProviderInfo = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-manganelo",
 	Name:        "Manganelo",
 	Version:     "0.1.0",
@@ -22,12 +22,12 @@ var providerInfo = libmangal.ProviderInfo{
 	Website:     "https://ww7.manganelo.tv/",
 }
 
-var scraperOptions = &scraper.Options{
-	Name:            providerInfo.ID,
+var Options = &scraper.Options{
+	Name:            ProviderInfo.ID,
 	Delay:           50 * time.Millisecond,
 	Parallelism:     15,
 	ReverseChapters: true,
-	BaseURL:         providerInfo.Website,
+	BaseURL:         ProviderInfo.Website,
 	GenerateSearchURL: func(baseUrl string, query string) (string, error) {
 		// path is /search/
 		u, _ := url.Parse(baseUrl)
@@ -98,7 +98,7 @@ var scraperOptions = &scraper.Options{
 			}
 		},
 		ScanlationGroup: func(_ *goquery.Selection) string {
-			return providerInfo.Name
+			return ProviderInfo.Name
 		},
 	},
 	PageExtractor: &scraper.PageExtractor{
@@ -107,23 +107,4 @@ var scraperOptions = &scraper.Options{
 			return selection.AttrOr("data-src", "")
 		},
 	},
-}
-
-// TODO: this is generic, need to refactor
-func Loader(options mango.Options) libmangal.ProviderLoader {
-	s, err := scraper.NewScraper(scraperOptions, options.HeadlessOptions)
-	if err != nil {
-		panic(err)
-	}
-
-	return mango.ProviderLoader{
-		ProviderInfo: providerInfo,
-		Options:      options,
-		Funcs: mango.ProviderFuncs{
-			SearchMangas:   s.SearchMangas,
-			MangaVolumes:   s.MangaVolumes,
-			VolumeChapters: s.VolumeChapters,
-			ChapterPages:   s.ChapterPages,
-		},
-	}
 }
