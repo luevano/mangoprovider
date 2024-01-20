@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/luevano/libmangal"
-	"github.com/luevano/mangoprovider/mango"
+	mango "github.com/luevano/mangoprovider"
 	"github.com/philippgille/gokv"
 )
 

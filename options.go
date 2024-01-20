@@ -1,10 +1,10 @@
-package mango
+package mangoprovider
 
 import (
 	"fmt"
 	"net/http"
 
-	"github.com/luevano/mangoprovider/mango/scraper/headless"
+	"github.com/luevano/mangoprovider/scraper/headless"
 	"github.com/philippgille/gokv"
 )
 

@@ -3,7 +3,7 @@ package mangadex
 import (
 	"github.com/luevano/libmangal"
 	"github.com/luevano/mangodex"
-	"github.com/luevano/mangoprovider/mango"
+	mango "github.com/luevano/mangoprovider"
 )
 
 var providerInfo = libmangal.ProviderInfo{

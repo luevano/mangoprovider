@@ -6,8 +6,8 @@ import (
 	"net/url"
 	"sync"
 
-	"github.com/luevano/mangoprovider/mango/scraper/headless/flaresolverr"
-	"github.com/luevano/mangoprovider/mango/scraper/headless/rod"
+	"github.com/luevano/mangoprovider/scraper/headless/flaresolverr"
+	"github.com/luevano/mangoprovider/scraper/headless/rod"
 )
 
 var (

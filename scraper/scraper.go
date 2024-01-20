@@ -10,8 +10,8 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gocolly/colly/v2"
 	"github.com/luevano/libmangal"
-	"github.com/luevano/mangoprovider/mango"
-	"github.com/luevano/mangoprovider/mango/scraper/headless"
+	mango "github.com/luevano/mangoprovider"
+	"github.com/luevano/mangoprovider/scraper/headless"
 )
 
 var (

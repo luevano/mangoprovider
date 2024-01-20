@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/gocolly/colly/v2"
-	"github.com/luevano/mangoprovider/mango"
+	mango "github.com/luevano/mangoprovider"
 )
 
 func setupCollector(collector *colly.Collector, refererType string, options Options) error {

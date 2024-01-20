@@ -37,9 +37,9 @@ require (
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966 // indirect
 	github.com/spf13/afero v1.11.0 // indirect
 	github.com/temoto/robotstxt v1.1.2 // indirect
-	github.com/ysmood/fetchup v0.2.3 // indirect
+	github.com/ysmood/fetchup v0.2.4 // indirect
 	github.com/ysmood/goob v0.4.0 // indirect
-	github.com/ysmood/got v0.34.1 // indirect
+	github.com/ysmood/got v0.39.4 // indirect
 	github.com/ysmood/leakless v0.8.0 // indirect
 	golang.org/x/image v0.15.0 // indirect
 	golang.org/x/mod v0.14.0 // indirect

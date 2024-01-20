@@ -8,8 +8,8 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/luevano/libmangal"
-	"github.com/luevano/mangoprovider/mango"
-	"github.com/luevano/mangoprovider/mango/scraper"
+	mango "github.com/luevano/mangoprovider"
+	"github.com/luevano/mangoprovider/scraper"
 )
 
 // TODO: check the website url, there appears to be multiple of them

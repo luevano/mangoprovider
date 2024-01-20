@@ -1,9 +1,9 @@
-package scraper
+package scrapers
 
 import (
 	"github.com/luevano/libmangal"
-	"github.com/luevano/mangoprovider/mango"
-	"github.com/luevano/mangoprovider/mango/scraper"
+	mango "github.com/luevano/mangoprovider"
+	"github.com/luevano/mangoprovider/scraper"
 	"github.com/luevano/mangoprovider/scrapers/asurascans"
 	"github.com/luevano/mangoprovider/scrapers/flamescans"
 	"github.com/luevano/mangoprovider/scrapers/manganato"

@@ -8,8 +8,8 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/luevano/libmangal"
-	"github.com/luevano/mangoprovider/mango"
-	"github.com/luevano/mangoprovider/mango/scraper"
+	mango "github.com/luevano/mangoprovider"
+	"github.com/luevano/mangoprovider/scraper"
 )
 
 var ProviderInfo = libmangal.ProviderInfo{
