@@ -22,7 +22,7 @@ func setupCollector(collector *colly.Collector, refererType string, options Opti
 			referer = "https://google.com"
 		}
 		r.Headers.Set("Referer", referer)
-		r.Headers.Set("accept-language", "en-US")
+		r.Headers.Set("accept-language", "en-US") // TODO: remove this? shouldn't specify a language
 		r.Headers.Set("Accept", "text/html")
 		r.Headers.Set("Host", options.BaseURL)
 		r.Headers.Set("User-Agent", mango.UserAgent)

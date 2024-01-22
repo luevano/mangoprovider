@@ -14,6 +14,8 @@ import (
 	"github.com/google/uuid"
 )
 
+var _ http.RoundTripper = (*TransportFlaresolevrr)(nil)
+
 type TransportFlaresolevrr struct {
 	client      *http.Client
 	uuid        uuid.UUID

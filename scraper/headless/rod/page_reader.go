@@ -7,6 +7,8 @@ import (
 	"github.com/go-rod/rod"
 )
 
+var _ io.ReadCloser = (*pageReader)(nil)
+
 type pageReader struct {
 	page   *rod.Page
 	reader io.Reader
