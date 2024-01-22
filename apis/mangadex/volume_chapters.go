@@ -13,7 +13,7 @@ import (
 	"github.com/philippgille/gokv"
 )
 
-func (d *dex) VolumeChapters(ctx context.Context, logger *libmangal.Logger, store gokv.Store, volume mango.Volume) ([]libmangal.Chapter, error) {
+func (d *dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango.Volume) ([]libmangal.Chapter, error) {
 	var chapters []libmangal.Chapter
 
 	// Mangadex api returns "none" for "non-volumed" chapters,
@@ -48,7 +48,7 @@ func (d *dex) VolumeChapters(ctx context.Context, logger *libmangal.Logger, stor
 		return nil, err
 	}
 	if found {
-		logger.Log(fmt.Sprintf("[%s]found chapters in cache for manga %q with id %q", providerInfo.ID, volume.Manga_.Title, volume.Manga_.ID))
+		mango.Log(fmt.Sprintf("[%s]found chapters in cache for manga %q with id %q", providerInfo.ID, volume.Manga_.Title, volume.Manga_.ID))
 		return chapters, nil
 	}
 

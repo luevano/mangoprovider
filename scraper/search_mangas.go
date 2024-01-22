@@ -6,10 +6,11 @@ import (
 
 	"github.com/gocolly/colly/v2"
 	"github.com/luevano/libmangal"
+	mango "github.com/luevano/mangoprovider"
 	"github.com/philippgille/gokv"
 )
 
-func (s *Scraper) SearchMangas(_ctx context.Context, logger *libmangal.Logger, store gokv.Store, query string) ([]libmangal.Manga, error) {
+func (s *Scraper) SearchMangas(_ctx context.Context, store gokv.Store, query string) ([]libmangal.Manga, error) {
 	var mangas []libmangal.Manga
 
 	searchURL, err := s.options.GenerateSearchURL(s.options.BaseURL, query)
@@ -22,7 +23,7 @@ func (s *Scraper) SearchMangas(_ctx context.Context, logger *libmangal.Logger, s
 		return nil, err
 	}
 	if found {
-		logger.Log(fmt.Sprintf("[%s]found mangas in cache with query %q", s.options.Name, query))
+		mango.Log(fmt.Sprintf("[%s]found mangas in cache with query %q", s.options.Name, query))
 		return mangas, nil
 	}
 

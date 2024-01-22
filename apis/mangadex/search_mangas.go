@@ -12,7 +12,7 @@ import (
 	"github.com/philippgille/gokv"
 )
 
-func (d *dex) SearchMangas(ctx context.Context, logger *libmangal.Logger, store gokv.Store, query string) ([]libmangal.Manga, error) {
+func (d *dex) SearchMangas(ctx context.Context, store gokv.Store, query string) ([]libmangal.Manga, error) {
 	var mangas []libmangal.Manga
 
 	params := url.Values{}
@@ -37,7 +37,7 @@ func (d *dex) SearchMangas(ctx context.Context, logger *libmangal.Logger, store 
 		return nil, err
 	}
 	if found {
-		logger.Log(fmt.Sprintf("[%s]found mangas in cache with query %q", providerInfo.ID, query))
+		mango.Log(fmt.Sprintf("[%s]found mangas in cache with query %q", providerInfo.ID, query))
 		return mangas, nil
 	}
 
