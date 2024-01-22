@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"sync"
 
+	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/scraper/headless/flaresolverr"
 	"github.com/luevano/mangoprovider/scraper/headless/rod"
 )
@@ -32,7 +33,7 @@ func GetTransport(options Options) Transport {
 		if options.UseFlaresolverr && options.FlaresolverrURL != "" {
 			url, err := url.Parse(options.FlaresolverrURL)
 			if err != nil {
-				// log.Error("Couldn't parse flaresolverr url, falling back to rod")
+				mango.Log("Couldn't parse flaresolverr url, falling back to rod.")
 				transport = rod.NewTransport()
 				return
 			}
@@ -45,7 +46,7 @@ func GetTransport(options Options) Transport {
 				}
 			}()
 			if err != nil || result.StatusCode != 200 {
-				// log.Error("Couldn't connect to flaresolverr, falling back to rod")
+				mango.Log("Couldn't connect to flaresolverr, falling back to rod.")
 				transport = rod.NewTransport()
 				return
 			}
