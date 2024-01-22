@@ -7,7 +7,7 @@ require (
 	github.com/go-rod/rod v0.114.6
 	github.com/gocolly/colly/v2 v2.1.0
 	github.com/google/uuid v1.5.0
-	github.com/luevano/libmangal v0.9.7
+	github.com/luevano/libmangal v0.9.8
 	github.com/luevano/mangodex v0.3.0
 	github.com/philippgille/gokv v0.6.0
 )
