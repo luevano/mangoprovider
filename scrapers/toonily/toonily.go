@@ -25,8 +25,8 @@ var Options = &scraper.Options{
 	Delay:           50 * time.Millisecond,
 	Parallelism:     15,
 	ReverseChapters: true,
-	Cookies: "toonily-mature=1",
-	BaseURL: ProviderInfo.Website,
+	Cookies:         "toonily-mature=1",
+	BaseURL:         ProviderInfo.Website,
 	GenerateSearchURL: func(baseUrl string, query string) (string, error) {
 		// path is /search/
 		u, _ := url.Parse(baseUrl)
@@ -44,7 +44,7 @@ var Options = &scraper.Options{
 			return selection.Find(".item-summary .post-title a").AttrOr("href", "")
 		},
 		Cover: func(selection *goquery.Selection) string {
-			return selection.Find("img").AttrOr("src", "")
+			return selection.Find("img").AttrOr("data-src", "")
 		},
 		ID: func(_url string) string {
 			return strings.Split(_url, "/")[4]
@@ -90,7 +90,7 @@ var Options = &scraper.Options{
 	PageExtractor: &scraper.PageExtractor{
 		Selector: "div.reading-content div.page-break.no-gaps img",
 		URL: func(selection *goquery.Selection) string {
-			return selection.AttrOr("src", "")
+			return strings.TrimSpace(selection.AttrOr("data-src", ""))
 		},
 	},
 }
