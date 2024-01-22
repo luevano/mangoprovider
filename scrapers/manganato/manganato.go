@@ -12,7 +12,7 @@ import (
 	"github.com/luevano/mangoprovider/scraper"
 )
 
-var ProviderInfo = libmangal.ProviderInfo{
+var Info = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-manganato",
 	Name:        "Manganato",
 	Version:     "0.1.0",
@@ -20,12 +20,11 @@ var ProviderInfo = libmangal.ProviderInfo{
 	Website:     "https://manganato.com/",
 }
 
-var Options = &scraper.Options{
-	Name:            ProviderInfo.ID,
+var Config = &scraper.Configuration{
+	Name:            Info.ID,
 	Delay:           50 * time.Millisecond,
-	Parallelism:     15,
 	ReverseChapters: true,
-	BaseURL:         ProviderInfo.Website,
+	BaseURL:         Info.Website,
 	GenerateSearchURL: func(baseUrl string, query string) (string, error) {
 		// path is /search/story/
 		// No longer required? the baseurl works just fine
@@ -100,7 +99,7 @@ var Options = &scraper.Options{
 			}
 		},
 		ScanlationGroup: func(_ *goquery.Selection) string {
-			return ProviderInfo.Name
+			return Info.Name
 		},
 	},
 	PageExtractor: &scraper.PageExtractor{

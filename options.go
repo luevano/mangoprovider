@@ -38,10 +38,10 @@ func (f *Filter) String() string {
 	)
 }
 
-// TODO: include parallelism option
 type Options struct {
 	HTTPClient        *http.Client
 	HTTPStoreProvider func(providerID string) (gokv.Store, error)
+	Parallelism       uint8
 	Headless
 	Filter
 }

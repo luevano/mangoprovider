@@ -2,8 +2,8 @@ package scraper
 
 import "time"
 
-// Options: Defines behavior of the scraper.
-type Options struct {
+// Configuration: Defines behavior of the scraper.
+type Configuration struct {
 	// Name: Name of the scraper. E.g. "mangapill"
 	Name string
 	// Delay: Delay between requests.

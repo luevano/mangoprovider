@@ -13,7 +13,7 @@ import (
 
 // TODO: add extra option for extracting chapter number (solo leveling is wrong)
 
-var ProviderInfo = libmangal.ProviderInfo{
+var Info = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-asurascans",
 	Name:        "AsuraScans",
 	Version:     "0.1.1",
@@ -21,13 +21,12 @@ var ProviderInfo = libmangal.ProviderInfo{
 	Website:     "https://asuracomics.com/",
 }
 
-var Options = &scraper.Options{
-	Name:                 ProviderInfo.ID,
+var Config = &scraper.Configuration{
+	Name:                 Info.ID,
 	Delay:                50 * time.Millisecond,
-	Parallelism:          15,
 	ReverseChapters:      true,
 	NeedsHeadlessBrowser: true, // TODO: does it really need it?
-	BaseURL:              ProviderInfo.Website,
+	BaseURL:              Info.Website,
 	GenerateSearchURL: func(baseUrl string, query string) (string, error) {
 		// path is /?s=
 		params := url.Values{}
@@ -96,7 +95,7 @@ var Options = &scraper.Options{
 			}
 		},
 		ScanlationGroup: func(_ *goquery.Selection) string {
-			return ProviderInfo.Name
+			return Info.Name
 		},
 	},
 	PageExtractor: &scraper.PageExtractor{

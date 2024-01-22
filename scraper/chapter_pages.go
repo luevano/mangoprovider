@@ -22,7 +22,7 @@ func (s *Scraper) ChapterPages(_ctx context.Context, store gokv.Store, chapter m
 		return nil, err
 	}
 	if found {
-		mango.Log(fmt.Sprintf("[%s]found pages in cache for manga %q with id %q", s.options.Name, chapter.Volume_.Manga_.Title, chapter.Volume_.Manga_.ID))
+		mango.Log(fmt.Sprintf("[%s]found pages in cache for manga %q with id %q", s.config.Name, chapter.Volume_.Manga_.Title, chapter.Volume_.Manga_.ID))
 		return pages, nil
 	}
 

@@ -8,7 +8,7 @@ import (
 	mango "github.com/luevano/mangoprovider"
 )
 
-func setupCollector(collector *colly.Collector, refererType string, options Options) error {
+func setupCollector(collector *colly.Collector, refererType string, config Configuration) error {
 	collector.OnRequest(func(r *colly.Request) {
 		var referer string
 		switch refererType {
@@ -24,16 +24,16 @@ func setupCollector(collector *colly.Collector, refererType string, options Opti
 		r.Headers.Set("Referer", referer)
 		r.Headers.Set("accept-language", "en-US") // TODO: remove this? shouldn't specify a language
 		r.Headers.Set("Accept", "text/html")
-		r.Headers.Set("Host", options.BaseURL)
+		r.Headers.Set("Host", config.BaseURL)
 		r.Headers.Set("User-Agent", mango.UserAgent)
-		if options.Cookies != "" {
-			r.Headers.Set("Cookie", options.Cookies)
+		if config.Cookies != "" {
+			r.Headers.Set("Cookie", config.Cookies)
 		}
 	})
 
 	err := collector.Limit(&colly.LimitRule{
-		Parallelism: int(options.Parallelism),
-		RandomDelay: options.Delay,
+		Parallelism: int(config.Parallelism),
+		RandomDelay: config.Delay,
 		DomainGlob:  "*",
 	})
 	if err != nil {
@@ -44,7 +44,7 @@ func setupCollector(collector *colly.Collector, refererType string, options Opti
 }
 
 // TODO: refactor this function? is it needed?
-func checkForRedirect(options *Options) error {
+func checkForRedirect(options *Configuration) error {
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse

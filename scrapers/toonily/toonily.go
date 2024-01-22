@@ -12,7 +12,7 @@ import (
 	"github.com/luevano/mangoprovider/scraper"
 )
 
-var ProviderInfo = libmangal.ProviderInfo{
+var Info = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-toonily",
 	Name:        "Toonily",
 	Version:     "0.1.0",
@@ -20,13 +20,12 @@ var ProviderInfo = libmangal.ProviderInfo{
 	Website:     "https://toonily.com/",
 }
 
-var Options = &scraper.Options{
-	Name:            ProviderInfo.ID,
+var Config = &scraper.Configuration{
+	Name:            Info.ID,
 	Delay:           50 * time.Millisecond,
-	Parallelism:     15,
 	ReverseChapters: true,
 	Cookies:         "toonily-mature=1",
-	BaseURL:         ProviderInfo.Website,
+	BaseURL:         Info.Website,
 	GenerateSearchURL: func(baseUrl string, query string) (string, error) {
 		// path is /search/
 		u, _ := url.Parse(baseUrl)
@@ -84,7 +83,7 @@ var Options = &scraper.Options{
 			}
 		},
 		ScanlationGroup: func(_ *goquery.Selection) string {
-			return ProviderInfo.Name
+			return Info.Name
 		},
 	},
 	PageExtractor: &scraper.PageExtractor{

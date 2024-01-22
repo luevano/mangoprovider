@@ -23,7 +23,7 @@ func (s *Scraper) VolumeChapters(_ctx context.Context, store gokv.Store, volume 
 		return nil, err
 	}
 	if found {
-		mango.Log(fmt.Sprintf("[%s]found chapters in cache for manga %q with id %q", s.options.Name, volume.Manga_.Title, volume.Manga_.ID))
+		mango.Log(fmt.Sprintf("[%s]found chapters in cache for manga %q with id %q", s.config.Name, volume.Manga_.Title, volume.Manga_.ID))
 		return chapters, nil
 	}
 
@@ -39,7 +39,7 @@ func (s *Scraper) VolumeChapters(_ctx context.Context, store gokv.Store, volume 
 	}
 	s.chaptersCollector.Wait()
 
-	if s.options.ReverseChapters {
+	if s.config.ReverseChapters {
 		slices.Reverse(chapters)
 	}
 

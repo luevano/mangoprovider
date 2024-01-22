@@ -28,7 +28,7 @@ func IsLoaded() bool {
 }
 
 // GetTransport returns the singleton rod or flaresolverr transport.
-func GetTransport(options Options) Transport {
+func GetTransport(options mango.Headless) Transport {
 	once.Do(func() {
 		if options.UseFlaresolverr && options.FlaresolverrURL != "" {
 			url, err := url.Parse(options.FlaresolverrURL)

@@ -12,7 +12,7 @@ import (
 
 var _ libmangal.Provider = (*Provider)(nil)
 
-type ProviderFuncs struct {
+type Functions struct {
 	SearchMangas   func(context.Context, gokv.Store, string) ([]libmangal.Manga, error)
 	MangaVolumes   func(context.Context, gokv.Store, Manga) ([]libmangal.Volume, error)
 	VolumeChapters func(context.Context, gokv.Store, Volume) ([]libmangal.Chapter, error)
@@ -23,7 +23,7 @@ type ProviderFuncs struct {
 type Provider struct {
 	libmangal.ProviderInfo
 	Options Options
-	Funcs   ProviderFuncs
+	F   Functions
 
 	store  gokv.Store
 }
@@ -50,7 +50,7 @@ func (p *Provider) SearchMangas(
 ) ([]libmangal.Manga, error) {
 	Log(fmt.Sprintf("Searching mangas with %q", query))
 
-	return p.Funcs.SearchMangas(ctx, p.store, query)
+	return p.F.SearchMangas(ctx, p.store, query)
 }
 
 func (p *Provider) MangaVolumes(
@@ -63,7 +63,7 @@ func (p *Provider) MangaVolumes(
 	}
 
 	Log(fmt.Sprintf("Fetching volumes for %q", m))
-	return p.Funcs.MangaVolumes(ctx, p.store, m)
+	return p.F.MangaVolumes(ctx, p.store, m)
 }
 
 func (p *Provider) VolumeChapters(
@@ -76,7 +76,7 @@ func (p *Provider) VolumeChapters(
 	}
 
 	Log(fmt.Sprintf("Fetching chapters for %q", v))
-	return p.Funcs.VolumeChapters(ctx, p.store, v)
+	return p.F.VolumeChapters(ctx, p.store, v)
 }
 
 func (p *Provider) ChapterPages(
@@ -89,7 +89,7 @@ func (p *Provider) ChapterPages(
 	}
 
 	Log(fmt.Sprintf("Fetching pages for %q", c))
-	return p.Funcs.ChapterPages(ctx, p.store, c)
+	return p.F.ChapterPages(ctx, p.store, c)
 }
 
 func (p *Provider) GetPageImage(
@@ -102,8 +102,8 @@ func (p *Provider) GetPageImage(
 	}
 
 	Log(fmt.Sprintf("Making HTTP GET request for %q", page_.URL))
-	if p.Funcs.GetPageImage != nil {
-		return p.Funcs.GetPageImage(ctx, page_)
+	if p.F.GetPageImage != nil {
+		return p.F.GetPageImage(ctx, page_)
 	} else {
 		return p.GenericGetPageImage(ctx, page_)
 	}

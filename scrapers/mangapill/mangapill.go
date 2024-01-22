@@ -11,7 +11,7 @@ import (
 	"github.com/luevano/mangoprovider/scraper"
 )
 
-var ProviderInfo = libmangal.ProviderInfo{
+var Info = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-mangapill",
 	Name:        "Mangapill",
 	Version:     "0.3.1",
@@ -19,12 +19,11 @@ var ProviderInfo = libmangal.ProviderInfo{
 	Website:     "https://mangapill.com/",
 }
 
-var Options = &scraper.Options{
-	Name:            ProviderInfo.ID,
+var Config = &scraper.Configuration{
+	Name:            Info.ID,
 	Delay:           50 * time.Millisecond,
-	Parallelism:     15,
 	ReverseChapters: true,
-	BaseURL:         ProviderInfo.Website,
+	BaseURL:         Info.Website,
 	GenerateSearchURL: func(baseUrl string, query string) (string, error) {
 		// path is /search?q=<query>&type=&status=
 		params := url.Values{}

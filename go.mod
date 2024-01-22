@@ -7,10 +7,9 @@ require (
 	github.com/go-rod/rod v0.114.6
 	github.com/gocolly/colly/v2 v2.1.0
 	github.com/google/uuid v1.5.0
-	github.com/luevano/libmangal v0.9.6
+	github.com/luevano/libmangal v0.9.7
 	github.com/luevano/mangodex v0.3.0
 	github.com/philippgille/gokv v0.6.0
-	github.com/ysmood/gson v0.7.3
 )
 
 require (
@@ -40,6 +39,7 @@ require (
 	github.com/ysmood/fetchup v0.2.4 // indirect
 	github.com/ysmood/goob v0.4.0 // indirect
 	github.com/ysmood/got v0.39.4 // indirect
+	github.com/ysmood/gson v0.7.3 // indirect
 	github.com/ysmood/leakless v0.8.0 // indirect
 	golang.org/x/image v0.15.0 // indirect
 	golang.org/x/mod v0.14.0 // indirect
