@@ -11,27 +11,29 @@ import (
 )
 
 var (
-	transportInstance TransportHeadless
-	once              sync.Once
+	transport Transport
+	once      sync.Once
 )
 
-type TransportHeadless interface {
+// Transport defines a transport used for colly.
+type Transport interface {
 	http.RoundTripper
 	io.Closer
 }
 
-// IsLoaded returns true if the headless transport is loaded
+// IsLoaded returns true if the transport is loaded.
 func IsLoaded() bool {
-	return transportInstance != nil
+	return transport != nil
 }
 
-func GetTransportSingleton(options Options) TransportHeadless {
+// GetTransport returns the singleton rod or flaresolverr transport.
+func GetTransport(options Options) Transport {
 	once.Do(func() {
 		if options.UseFlaresolverr && options.FlaresolverrURL != "" {
 			url, err := url.Parse(options.FlaresolverrURL)
 			if err != nil {
 				// log.Error("Couldn't parse flaresolverr url, falling back to rod")
-				transportInstance = rod.NewTransport()
+				transport = rod.NewTransport()
 				return
 			}
 
@@ -44,13 +46,13 @@ func GetTransportSingleton(options Options) TransportHeadless {
 			}()
 			if err != nil || result.StatusCode != 200 {
 				// log.Error("Couldn't connect to flaresolverr, falling back to rod")
-				transportInstance = rod.NewTransport()
+				transport = rod.NewTransport()
 				return
 			}
-			transportInstance = flaresolverr.NewTransport(options.FlaresolverrURL)
+			transport = flaresolverr.NewTransport(options.FlaresolverrURL)
 			return
 		}
-		transportInstance = rod.NewTransport()
+		transport = rod.NewTransport()
 	})
-	return transportInstance
+	return transport
 }

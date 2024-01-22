@@ -49,7 +49,7 @@ func NewScraper(options *Options, headlessOptions headless.Options) (*Scraper, e
 	baseCollector.SetRequestTimeout(30 * time.Second)
 
 	if options.NeedsHeadlessBrowser {
-		transport := headless.GetTransportSingleton(headlessOptions)
+		transport := headless.GetTransport(headlessOptions)
 		baseCollector.WithTransport(transport)
 	}
 

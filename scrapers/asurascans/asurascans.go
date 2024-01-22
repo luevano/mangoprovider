@@ -13,8 +13,6 @@ import (
 
 // TODO: add extra option for extracting chapter number (solo leveling is wrong)
 
-const dateLayout = "January 2, 2006"
-
 var ProviderInfo = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-asurascans",
 	Name:        "AsuraScans",
@@ -28,7 +26,7 @@ var Options = &scraper.Options{
 	Delay:                50 * time.Millisecond,
 	Parallelism:          15,
 	ReverseChapters:      true,
-	NeedsHeadlessBrowser: true,
+	NeedsHeadlessBrowser: true, // TODO: does it really need it?
 	BaseURL:              ProviderInfo.Website,
 	GenerateSearchURL: func(baseUrl string, query string) (string, error) {
 		// path is /?s=
@@ -84,8 +82,9 @@ var Options = &scraper.Options{
 			return selection.Find("a").AttrOr("href", "")
 		},
 		Date: func(selection *goquery.Selection) libmangal.Date {
+			layout := "January 2, 2006"
 			date := selection.Find(".chapterdate").Text()
-			t, err := time.Parse(dateLayout, date)
+			t, err := time.Parse(layout, date)
 			if err != nil {
 				// if failed to parse date, use scraping day
 				t = time.Now()
