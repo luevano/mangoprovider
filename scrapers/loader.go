@@ -4,6 +4,7 @@ import (
 	"github.com/luevano/libmangal"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/scraper"
+	"github.com/luevano/mangoprovider/scraper/headless"
 	"github.com/luevano/mangoprovider/scrapers/asurascans"
 	"github.com/luevano/mangoprovider/scrapers/flamescans"
 	"github.com/luevano/mangoprovider/scrapers/manganato"
@@ -26,7 +27,13 @@ func Loaders(options mango.Options) []libmangal.ProviderLoader {
 }
 
 func Loader(providerInfo libmangal.ProviderInfo, scraperOptions *scraper.Options, options mango.Options) libmangal.ProviderLoader {
-	s, err := scraper.NewScraper(scraperOptions, options.HeadlessOptions)
+	// Could also ve directly converted as they structs are identical?
+	// s, err := scraper.NewScraper(scraperOptions, headless.Options(options.Headless))
+	headlessOptions := headless.Options{
+		UseFlaresolverr: options.Headless.UseFlaresolverr,
+		FlaresolverrURL: options.Headless.FlaresolverrURL,
+	}
+	s, err := scraper.NewScraper(scraperOptions, headlessOptions)
 	if err != nil {
 		panic(err)
 	}
