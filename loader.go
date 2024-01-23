@@ -11,7 +11,7 @@ var _ libmangal.ProviderLoader = (*Loader)(nil)
 type Loader struct {
 	libmangal.ProviderInfo
 	Options Options
-	F   Functions
+	F       func() Functions // So that the scrapers are loaded on ProviderLoader.Load(ctx)
 }
 
 func (l Loader) String() string {
@@ -26,7 +26,7 @@ func (l Loader) Load(ctx context.Context) (libmangal.Provider, error) {
 	provider := &Provider{
 		ProviderInfo: l.ProviderInfo,
 		Options:      l.Options,
-		F:        l.F,
+		F:            l.F(),
 	}
 
 	store, err := l.Options.HTTPStoreProvider(l.ProviderInfo.ID)

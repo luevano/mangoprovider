@@ -29,11 +29,13 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 	return mango.Loader{
 		ProviderInfo: providerInfo,
 		Options:      options,
-		F: mango.Functions{
-			SearchMangas:   d.SearchMangas,
-			MangaVolumes:   d.MangaVolumes,
-			VolumeChapters: d.VolumeChapters,
-			ChapterPages:   d.ChapterPages,
+		F: func() mango.Functions {
+			return mango.Functions{
+				SearchMangas:   d.SearchMangas,
+				MangaVolumes:   d.MangaVolumes,
+				VolumeChapters: d.VolumeChapters,
+				ChapterPages:   d.ChapterPages,
+			}
 		},
 	}
 }
