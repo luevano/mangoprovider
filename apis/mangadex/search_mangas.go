@@ -47,30 +47,25 @@ func (d *dex) SearchMangas(ctx context.Context, store gokv.Store, query string) 
 	}
 
 	for _, manga := range mangaList {
-		mangaTitle := manga.GetTitle(d.filter.Language)
-		mangaID := manga.ID
-
 		var mangaCoverFileNames []string
 		for _, relationship := range manga.Relationships {
 			if relationship.Type == mangodex.RelationshipTypeCoverArt {
-				coverRel, ok := relationship.Attributes.(*mangodex.CoverAttributes)
-				if !ok {
-					return nil, fmt.Errorf("unexpected error, failed to convert relationship attribute to cover type despite being of type %q", mangodex.RelationshipTypeCoverArt)
-				}
+				coverRel, _ := relationship.Attributes.(*mangodex.CoverAttributes)
 				mangaCoverFileNames = append(mangaCoverFileNames, coverRel.FileName)
 			}
 		}
 
 		var cover string
 		if len(mangaCoverFileNames) != 0 {
-			cover = fmt.Sprintf("https://mangadex.org/covers/%s/%s", mangaID, mangaCoverFileNames[0])
+			cover = fmt.Sprintf("https://mangadex.org/covers/%s/%s", manga.ID, mangaCoverFileNames[0])
 		}
 
+		mangaTitle := manga.GetTitle(d.filter.Language)
 		m := mango.Manga{
 			Title:         mangaTitle,
 			AnilistSearch: mangaTitle,
-			URL:           fmt.Sprintf("https://mangadex.org/title/%s", mangaID),
-			ID:            mangaID,
+			URL:           fmt.Sprintf("https://mangadex.org/title/%s", manga.ID),
+			ID:            manga.ID,
 			Cover:         cover,
 		}
 

@@ -61,7 +61,7 @@ func (d *dex) MangaVolumes(ctx context.Context, store gokv.Store, manga mango.Ma
 		}
 	}
 
-	sort.Slice(volumes, func(i, j int) bool {
+	sort.SliceStable(volumes, func(i, j int) bool {
 		return volumes[i].Info().Number < volumes[j].Info().Number
 	})
 
