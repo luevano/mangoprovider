@@ -34,7 +34,7 @@ type Scraper struct {
 func NewScraper(config *Configuration, options mango.Options) (*Scraper, error) {
 	// Set the parallelism is not set by the scraper, use the provided parallelism option
 	if config.Parallelism == 0 {
-		mango.Log(fmt.Sprintf("[%s]setting parallelism to %d", config.Name, options.Parallelism))
+		mango.Log(fmt.Sprintf("setting parallelism to %d", options.Parallelism))
 		config.Parallelism = options.Parallelism
 	}
 

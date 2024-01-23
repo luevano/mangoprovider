@@ -23,7 +23,7 @@ func (s *Scraper) SearchMangas(_ctx context.Context, store gokv.Store, query str
 		return nil, err
 	}
 	if found {
-		mango.Log(fmt.Sprintf("[%s]found mangas in cache with query %q", s.config.Name, query))
+		mango.Log(fmt.Sprintf("found mangas in cache with query %q", query))
 		return mangas, nil
 	}
 

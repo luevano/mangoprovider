@@ -62,7 +62,7 @@ func (d *dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango
 		return nil, err
 	}
 	if found {
-		mango.Log(fmt.Sprintf("[%s]found chapters in cache for manga %q with id %q", providerInfo.ID, volume.Manga_.Title, volume.Manga_.ID))
+		mango.Log(fmt.Sprintf("found chapters in cache for manga %q with id %q", volume.Manga_.Title, volume.Manga_.ID))
 		return agg.chapters, nil
 	}
 

@@ -33,7 +33,7 @@ func GetTransport(options mango.Headless) Transport {
 		if options.UseFlaresolverr && options.FlaresolverrURL != "" {
 			url, err := url.Parse(options.FlaresolverrURL)
 			if err != nil {
-				mango.Log("Couldn't parse flaresolverr url, falling back to rod.")
+				mango.Log("couldn't parse flaresolverr url, falling back to rod")
 				transport = rod.NewTransport()
 				return
 			}
@@ -46,7 +46,7 @@ func GetTransport(options mango.Headless) Transport {
 				}
 			}()
 			if err != nil || result.StatusCode != 200 {
-				mango.Log("Couldn't connect to flaresolverr, falling back to rod.")
+				mango.Log("couldn't connect to flaresolverr, falling back to rod")
 				transport = rod.NewTransport()
 				return
 			}

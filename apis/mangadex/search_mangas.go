@@ -37,7 +37,7 @@ func (d *dex) SearchMangas(ctx context.Context, store gokv.Store, query string) 
 		return nil, err
 	}
 	if found {
-		mango.Log(fmt.Sprintf("[%s]found mangas in cache with query %q", providerInfo.ID, query))
+		mango.Log(fmt.Sprintf("found mangas in cache with query %q", query))
 		return mangas, nil
 	}
 

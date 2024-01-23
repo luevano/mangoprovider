@@ -25,7 +25,7 @@ func (d *dex) MangaVolumes(ctx context.Context, store gokv.Store, manga mango.Ma
 		return nil, err
 	}
 	if found {
-		mango.Log(fmt.Sprintf("[%s]found volumes in cache for manga %q with id %q", providerInfo.ID, manga.Title, manga.ID))
+		mango.Log(fmt.Sprintf("found volumes in cache for manga %q with id %q", manga.Title, manga.ID))
 		return volumes, nil
 	}
 

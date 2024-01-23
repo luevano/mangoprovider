@@ -21,7 +21,7 @@ func (s *Scraper) MangaVolumes(_ctx context.Context, store gokv.Store, manga man
 		return nil, err
 	}
 	if found {
-		mango.Log(fmt.Sprintf("[%s]found volumes in cache for manga %q with id %q", s.config.Name, manga.Title, manga.ID))
+		mango.Log(fmt.Sprintf("found volumes in cache for manga %q with id %q", manga.Title, manga.ID))
 		return volumes, nil
 	}
 
