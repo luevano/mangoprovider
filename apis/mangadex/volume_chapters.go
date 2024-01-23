@@ -14,7 +14,7 @@ import (
 )
 
 func (d *dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango.Volume) ([]libmangal.Chapter, error) {
-	var chapters []libmangal.Chapter
+	chapters := []libmangal.Chapter{}
 
 	// Mangadex api returns "none" for "non-volumed" chapters,
 	// which are saved as 0 in libmangal.Volume
@@ -25,11 +25,12 @@ func (d *dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango
 
 	params := url.Values{}
 	params.Set("manga", volume.Manga_.ID)
-	params.Set("volume[]", volumeNumber)
+	params.Add("volume[]", volumeNumber)
 	params.Set("limit", strconv.Itoa(100))
 	params.Set("order[chapter]", mangodex.OrderAscending)
-	params.Set("translatedLanguage[]", d.filter.Language)
-	params.Set("includes[]", string(mangodex.RelationshipTypeScanlationGroup))
+	params.Add("translatedLanguage[]", d.filter.Language)
+	params.Add("includes[]", string(mangodex.RelationshipTypeScanlationGroup))
+	params.Add("includes[]", string(mangodex.RelationshipTypeUser))
 
 	ratings := []mangodex.ContentRating{mangodex.ContentRatingSafe, mangodex.ContentRatingSuggestive}
 	if d.filter.NSFW {
@@ -54,19 +55,14 @@ func (d *dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango
 
 	offset := 0
 	for {
-		chaptersTemp, ended, err := d.populateChapters(store, offset, params, volume)
+		ended, err := d.populateChapters(&chapters, offset, params, volume)
 		if err != nil {
 			return nil, err
 		}
-		offset += 100
-
-		if chaptersTemp != nil {
-			chapters = append(chapters, chaptersTemp...)
-		}
-
 		if ended {
 			break
 		}
+		offset += 100
 	}
 
 	// TODO: add option to exclude list of scanlators/prefer list of scanlators
@@ -93,19 +89,15 @@ func (d *dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango
 	return chaptersFiltered, nil
 }
 
-func (d *dex) populateChapters(store gokv.Store, offset int, params url.Values, volume mango.Volume) ([]libmangal.Chapter, bool, error) {
-	var chapters []libmangal.Chapter
-
-	volumeNumber := params.Get("volume[]")
+func (d *dex) populateChapters(chapters *[]libmangal.Chapter, offset int, params url.Values, volume mango.Volume) (bool, error) {
 	params.Set("offset", strconv.Itoa(offset))
-
 	chapterList, err := d.client.Chapter.List(params)
 	if err != nil {
-		return nil, false, err
+		return false, err
 	}
 
 	if len(chapterList) == 0 {
-		return nil, true, nil
+		return true, nil
 	}
 
 	for _, chapter := range chapterList {
@@ -114,25 +106,16 @@ func (d *dex) populateChapters(store gokv.Store, offset int, params url.Values, 
 			continue
 		}
 
-		chapterTitleRaw := chapter.GetTitle()
-		chapterID := chapter.ID
-		chapterNumberStr := chapter.GetChapterNum()
-
-		if chapterNumberStr == "-" {
-			return nil, false, fmt.Errorf("chapter number for manga %q volume %q with title %q wasn't found", volume.Manga_.Title, volumeNumber, chapterTitleRaw)
-		}
-
-		chapterNumber, err := strconv.ParseFloat(chapterNumberStr, 32)
-		if err != nil {
-			return nil, false, err
-		}
-
-		// Add "Chapter #" when wanted or when no title for the chapter is found.
 		var chapterTitle string
-		if chapterTitleRaw != "" {
-			chapterTitle = chapterTitleRaw
+		if chapter.GetTitle() != "" {
+			chapterTitle = chapter.GetTitle()
 		}
-		chapterTitleNumber := fmt.Sprintf("Chapter %06.1f", chapterNumber)
+
+		chapterNumber, chapterTitleNumber, err := getChapterNum(chapter)
+		if err != nil {
+			return false, err
+		}
+		// Add "Chapter #" when wanted or when no title for the chapter is found.
 		if d.filter.TitleChapterNumber || chapterTitle == "" {
 			if chapterTitle == "" {
 				chapterTitle = chapterTitleNumber
@@ -141,44 +124,83 @@ func (d *dex) populateChapters(store gokv.Store, offset int, params url.Values, 
 			}
 		}
 
-		var chapterDate libmangal.Date
-		date, err := time.Parse(time.RFC3339, chapter.Attributes.PublishAt)
-		if err == nil {
-			chapterDate.Year = date.Year()
-			chapterDate.Month = int(date.Month())
-			chapterDate.Day = date.Day()
-		}
-
-		var scanlator string
-		for _, relationship := range chapter.Relationships {
-			if relationship.Type == mangodex.RelationshipTypeScanlationGroup {
-				groupRel, ok := relationship.Attributes.(*mangodex.ScanlationGroupAttributes)
-				if !ok {
-					return nil, false, fmt.Errorf("unexpected error, failed to convert relationship attribute to scanlation_group type despite being of type %q", mangodex.RelationshipTypeScanlationGroup)
-				}
-
-				scanlator = groupRel.Name
-				break
-			}
-		}
+		chapterID := chapter.ID
+		date := getDate(chapter.Attributes.PublishAt)
+		scanlator := getScanlator(chapter.Relationships)
 
 		c := mango.Chapter{
 			Title:           chapterTitle,
 			ID:              chapterID,
 			URL:             fmt.Sprintf("https://mangadex.org/chapter/%s", chapterID),
-			Number:          float32(chapterNumber),
-			Date:            chapterDate,
+			Number:          chapterNumber,
+			Date:            date,
 			ScanlationGroup: scanlator,
 			Volume_:         &volume,
 		}
 
-		chapters = append(chapters, c)
+		*chapters = append(*chapters, c)
 	}
 
 	// If received 100 entries means it probably has more
 	if len(chapterList) == 100 {
-		return chapters, false, nil
+		return false, nil
 	}
 
-	return chapters, true, nil
+	return true, nil
+}
+
+func getChapterNum(chapter *mangodex.Chapter) (float32, string, error) {
+	chapterNumberStr := chapter.GetChapterNum()
+	chapterNumber, err := strconv.ParseFloat(chapterNumberStr, 32)
+	if err != nil {
+		return 0.0, "", err
+	}
+
+	chapterTitleNumber := fmt.Sprintf("Chapter %06.1f", chapterNumber)
+	return float32(chapterNumber), chapterTitleNumber, nil
+}
+
+func getDate(publishAt string) libmangal.Date {
+	publishedDate, err := time.Parse(time.RFC3339, publishAt)
+	if err != nil {
+		mango.Log("failed to parse chapter date, using today")
+		now := time.Now()
+		return libmangal.Date{
+			Year:  now.Year(),
+			Month: int(now.Month()),
+			Day:   now.Day(),
+		}
+
+	}
+	return libmangal.Date{
+		Year:  publishedDate.Year(),
+		Month: int(publishedDate.Month()),
+		Day:   publishedDate.Day(),
+	}
+}
+
+func getScanlator(relationships []*mangodex.Relationship) string {
+	var scanlator string
+	for _, relationship := range relationships {
+		if relationship.Type == mangodex.RelationshipTypeScanlationGroup {
+			groupRel, _ := relationship.Attributes.(*mangodex.ScanlationGroupAttributes)
+			scanlator = groupRel.Name
+			break
+		}
+	}
+	// If no scanlator group is linked to the chapter, use the uploader user
+	if scanlator == "" {
+		for _, relationship := range relationships {
+			if relationship.Type == mangodex.RelationshipTypeUser {
+				userRel, _ := relationship.Attributes.(*mangodex.UserAttributes)
+				scanlator = userRel.Username
+				break
+			}
+		}
+	}
+	// If even then the scanlator is not set, just use "mangadex"
+	if scanlator == "" {
+		scanlator = "mangadex"
+	}
+	return scanlator
 }

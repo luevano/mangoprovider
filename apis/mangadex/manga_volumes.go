@@ -16,7 +16,7 @@ func (d *dex) MangaVolumes(ctx context.Context, store gokv.Store, manga mango.Ma
 	var volumes []libmangal.Volume
 
 	params := url.Values{}
-	params.Set("translatedLanguage[]", d.filter.Language)
+	params.Add("translatedLanguage[]", d.filter.Language)
 
 	cacheID := fmt.Sprintf("%s?%s-%s", manga.ID, params.Encode(), d.filter.String())
 
