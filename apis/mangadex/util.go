@@ -54,6 +54,7 @@ func getScanlator(relationships []*mangodex.Relationship) string {
 	}
 	// If no scanlator group is linked to the chapter, use the uploader user.
 	if scanlator == "" {
+		mango.Log("no scanlator for chapter, using username")
 		for _, relationship := range relationships {
 			if relationship.Type == mangodex.RelationshipTypeUser {
 				userRel, _ := relationship.Attributes.(*mangodex.UserAttributes)
@@ -64,6 +65,7 @@ func getScanlator(relationships []*mangodex.Relationship) string {
 	}
 	// If even then the scanlator is not set, just use "mangadex".
 	if scanlator == "" {
+		mango.Log("no scanlator or username for chapter, defaulting to 'mangadex'")
 		scanlator = "mangadex"
 	}
 	return scanlator

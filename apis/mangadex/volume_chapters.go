@@ -79,8 +79,6 @@ func (d *dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango
 		}
 		offset += 100
 	}
-	mango.Log(fmt.Sprintf("%v", agg.groupsCount))
-	mango.Log(fmt.Sprintf("%v", agg.chaptersMap))
 
 	// TODO: add option to exclude list of scanlators/prefer list of scanlators
 	var chaptersFiltered []libmangal.Chapter
