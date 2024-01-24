@@ -66,7 +66,7 @@ func (s *Scraper) getChaptersCollector() *colly.Collector {
 		elements.Each(func(_ int, selection *goquery.Selection) {
 			link := s.config.ChapterExtractor.URL(selection)
 			url := e.Request.AbsoluteURL(link)
-			title := cleanName(s.config.ChapterExtractor.Title(selection))
+			title := cleanString(s.config.ChapterExtractor.Title(selection))
 
 			match := chapterNumberRegex.FindString(title)
 			chapterNumber := float32(e.Index)

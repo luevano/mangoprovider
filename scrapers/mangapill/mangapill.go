@@ -40,7 +40,7 @@ var Config = &scraper.Configuration{
 	MangaExtractor: &scraper.MangaExtractor{
 		Selector: "body > div.container.py-3 > div.my-3.grid.justify-end.gap-3.grid-cols-2.md\\:grid-cols-3.lg\\:grid-cols-5 > div",
 		Title: func(selection *goquery.Selection) string {
-			return strings.TrimSpace(selection.Find("div a div.leading-tight").Text())
+			return selection.Find("div a div.leading-tight").Text()
 		},
 		URL: func(selection *goquery.Selection) string {
 			return selection.Find("div a:first-child").AttrOr("href", "")
@@ -64,7 +64,7 @@ var Config = &scraper.Configuration{
 	ChapterExtractor: &scraper.ChapterExtractor{
 		Selector: "div[data-filter-list] a",
 		Title: func(selection *goquery.Selection) string {
-			return strings.TrimSpace(selection.Text())
+			return selection.Text()
 		},
 		// id is constructed similar to manga id above, <number>/<chapter-name>
 		ID: func(_url string) string {

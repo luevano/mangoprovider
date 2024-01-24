@@ -9,10 +9,10 @@ import (
 )
 
 // Sets request headers via OnRequest callback for the collector.
-func setCollectorOnRequest(collector *colly.Collector, config *Configuration, refererType string) {
+func setCollectorOnRequest(collector *colly.Collector, config *Configuration, collectorType string) {
 	collector.OnRequest(func(r *colly.Request) {
 		var referer string
-		switch refererType {
+		switch collectorType {
 		case "volume":
 			referer = r.Ctx.GetAny("manga").(mango.Manga).URL
 		case "chapter":
@@ -63,7 +63,7 @@ func standardizeSpaces(s string) string {
 	return strings.Join(strings.Fields(s), " ")
 }
 
-// Get the name with all whitespace standardized.
-func cleanName(name string) string {
-	return standardizeSpaces(newLineCharacters.ReplaceAllString(name, " "))
+// Get the string with all whitespace standardized.
+func cleanString(s string) string {
+	return standardizeSpaces(newLineCharacters.ReplaceAllString(s, " "))
 }

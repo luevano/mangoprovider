@@ -37,7 +37,7 @@ var Config = &scraper.Configuration{
 	MangaExtractor: &scraper.MangaExtractor{
 		Selector: ".page-item-detail.manga",
 		Title: func(selection *goquery.Selection) string {
-			return strings.TrimSpace(selection.Find(".item-summary .post-title a").Text())
+			return selection.Find(".item-summary .post-title a").Text()
 		},
 		URL: func(selection *goquery.Selection) string {
 			return selection.Find(".item-summary .post-title a").AttrOr("href", "")

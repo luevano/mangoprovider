@@ -57,7 +57,7 @@ func (s *Scraper) getMangasCollector() *colly.Collector {
 		elements.Each(func(_ int, selection *goquery.Selection) {
 			link := s.config.MangaExtractor.URL(selection)
 			url := e.Request.AbsoluteURL(link)
-			title := cleanName(s.config.MangaExtractor.Title(selection))
+			title := cleanString(s.config.MangaExtractor.Title(selection))
 			m := mango.Manga{
 				Title:         title,
 				AnilistSearch: title,
