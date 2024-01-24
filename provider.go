@@ -23,9 +23,9 @@ type Functions struct {
 type Provider struct {
 	libmangal.ProviderInfo
 	Options Options
-	F   Functions
+	F       Functions
 
-	store  gokv.Store
+	store gokv.Store
 }
 
 func (p *Provider) String() string {

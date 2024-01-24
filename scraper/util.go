@@ -8,7 +8,8 @@ import (
 	mango "github.com/luevano/mangoprovider"
 )
 
-func setupCollector(collector *colly.Collector, refererType string, config Configuration) error {
+// Sets request headers via OnRequest callback for the collector.
+func setCollectorOnRequest(collector *colly.Collector, config *Configuration, refererType string) {
 	collector.OnRequest(func(r *colly.Request) {
 		var referer string
 		switch refererType {
@@ -24,34 +25,23 @@ func setupCollector(collector *colly.Collector, refererType string, config Confi
 		r.Headers.Set("Referer", referer)
 		r.Headers.Set("accept-language", "en-US") // TODO: remove this? shouldn't specify a language
 		r.Headers.Set("Accept", "text/html")
-		r.Headers.Set("Host", config.BaseURL)
+		r.Headers.Set("Host", config.BaseURL) // TODO: remove this? even rod breaks when setting it
 		r.Headers.Set("User-Agent", mango.UserAgent)
 		if config.Cookies != "" {
 			r.Headers.Set("Cookie", config.Cookies)
 		}
 	})
-
-	err := collector.Limit(&colly.LimitRule{
-		Parallelism: int(config.Parallelism),
-		RandomDelay: config.Delay,
-		DomainGlob:  "*",
-	})
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
-// TODO: refactor this function? is it needed?
-func checkForRedirect(options *Configuration) error {
+// Checks redirections and sets the new BaseURL if needed.
+func setBaseURLOnRedirect(config *Configuration) error {
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
 	}
 
-	resp, err := client.Get(options.BaseURL)
+	resp, err := client.Get(config.BaseURL)
 	if err != nil {
 		return err
 	}
@@ -63,16 +53,17 @@ func checkForRedirect(options *Configuration) error {
 		if err != nil {
 			return err
 		}
-		options.BaseURL = loc.String()
+		config.BaseURL = loc.String()
 	}
 	return nil
 }
 
-// TODO: refactor these 2 functions, unnecessary abstraction?
+// Returns the string with single spaces. E.g. "    " -> " "
 func standardizeSpaces(s string) string {
 	return strings.Join(strings.Fields(s), " ")
 }
 
+// Get the name with all whitespace standardized.
 func cleanName(name string) string {
 	return standardizeSpaces(newLineCharacters.ReplaceAllString(name, " "))
 }

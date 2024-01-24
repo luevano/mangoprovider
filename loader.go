@@ -23,18 +23,15 @@ func (l Loader) Info() libmangal.ProviderInfo {
 }
 
 func (l Loader) Load(ctx context.Context) (libmangal.Provider, error) {
-	provider := &Provider{
-		ProviderInfo: l.ProviderInfo,
-		Options:      l.Options,
-		F:            l.F(),
-	}
-
 	store, err := l.Options.HTTPStoreProvider(l.ProviderInfo.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	provider.store = store
-
-	return provider, nil
+	return &Provider{
+		ProviderInfo: l.ProviderInfo,
+		Options:      l.Options,
+		F:            l.F(),
+		store:        store,
+	}, nil
 }

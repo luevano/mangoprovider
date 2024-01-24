@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/gocolly/colly/v2"
 	"github.com/luevano/libmangal"
 	mango "github.com/luevano/mangoprovider"
@@ -29,11 +30,12 @@ func (s *Scraper) MangaVolumes(_ctx context.Context, store gokv.Store, manga man
 	ctx.Put("manga", manga)
 	ctx.Put("volumes", &volumes)
 
-	err = s.volumesCollector.Request("GET", manga.URL, nil, ctx, nil)
+	collector := s.getVolumesCollector()
+	err = collector.Request("GET", manga.URL, nil, ctx, nil)
 	if err != nil {
 		return nil, err
 	}
-	s.volumesCollector.Wait()
+	collector.Wait()
 
 	err = store.Set(cacheID, volumes)
 	if err != nil {
@@ -41,4 +43,24 @@ func (s *Scraper) MangaVolumes(_ctx context.Context, store gokv.Store, manga man
 	}
 
 	return volumes, nil
+}
+
+// Get the volumes collector, the actual scraping logic is defined here.
+func (s *Scraper) getVolumesCollector() *colly.Collector {
+	collector := s.collector.Clone()
+	setCollectorOnRequest(collector, s.config, "volume")
+	collector.OnHTML("html", func(e *colly.HTMLElement) {
+		elements := e.DOM.Find(s.config.VolumeExtractor.Selector)
+		manga := e.Request.Ctx.GetAny("manga").(mango.Manga)
+		volumes := e.Request.Ctx.GetAny("volumes").(*[]libmangal.Volume)
+
+		elements.Each(func(_ int, selection *goquery.Selection) {
+			v := mango.Volume{
+				Number: s.config.VolumeExtractor.Number(selection),
+				Manga_: &manga,
+			}
+			*volumes = append(*volumes, v)
+		})
+	})
+	return collector
 }

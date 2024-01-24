@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
+	"strconv"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/gocolly/colly/v2"
 	"github.com/luevano/libmangal"
 	mango "github.com/luevano/mangoprovider"
@@ -33,11 +35,12 @@ func (s *Scraper) VolumeChapters(_ctx context.Context, store gokv.Store, volume 
 
 	// TODO: check if using this URL is good enough, only works for sources that
 	// don't provide volumes and thus everything is in the manga url
-	err = s.chaptersCollector.Request(http.MethodGet, volume.Manga_.URL, nil, ctx, nil)
+	collector := s.getChaptersCollector()
+	err = collector.Request(http.MethodGet, volume.Manga_.URL, nil, ctx, nil)
 	if err != nil {
 		return nil, err
 	}
-	s.chaptersCollector.Wait()
+	collector.Wait()
 
 	if s.config.ReverseChapters {
 		slices.Reverse(chapters)
@@ -50,4 +53,51 @@ func (s *Scraper) VolumeChapters(_ctx context.Context, store gokv.Store, volume 
 	}
 
 	return chapters, nil
+}
+
+func (s *Scraper) getChaptersCollector() *colly.Collector {
+	collector := s.collector.Clone()
+	setCollectorOnRequest(collector, s.config, "chapter")
+	collector.OnHTML("html", func(e *colly.HTMLElement) {
+		elements := e.DOM.Find(s.config.ChapterExtractor.Selector)
+		volume := e.Request.Ctx.GetAny("volume").(mango.Volume)
+		chapters := e.Request.Ctx.GetAny("chapters").(*[]libmangal.Chapter)
+
+		elements.Each(func(_ int, selection *goquery.Selection) {
+			link := s.config.ChapterExtractor.URL(selection)
+			url := e.Request.AbsoluteURL(link)
+			title := cleanName(s.config.ChapterExtractor.Title(selection))
+
+			match := chapterNumberRegex.FindString(title)
+			chapterNumber := float32(e.Index)
+			if match != "" {
+				number, err := strconv.ParseFloat(match, 32)
+				if err == nil {
+					chapterNumber = float32(number)
+				}
+			}
+
+			var chapterDate libmangal.Date
+			if s.config.ChapterExtractor.Date != nil {
+				chapterDate = s.config.ChapterExtractor.Date(selection)
+			}
+
+			var scanlationGroup string
+			if s.config.ChapterExtractor.ScanlationGroup != nil {
+				scanlationGroup = s.config.ChapterExtractor.ScanlationGroup(selection)
+			}
+
+			c := mango.Chapter{
+				Title:           title,
+				ID:              s.config.ChapterExtractor.ID(url),
+				URL:             url,
+				Number:          chapterNumber,
+				Date:            chapterDate,
+				ScanlationGroup: scanlationGroup,
+				Volume_:         &volume,
+			}
+			*chapters = append(*chapters, c)
+		})
+	})
+	return collector
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/gocolly/colly/v2"
 	"github.com/luevano/libmangal"
 	mango "github.com/luevano/mangoprovider"
@@ -30,11 +31,12 @@ func (s *Scraper) SearchMangas(_ctx context.Context, store gokv.Store, query str
 	ctx := colly.NewContext()
 	ctx.Put("mangas", &mangas)
 
-	err = s.mangasCollector.Request("GET", searchURL, nil, ctx, nil)
+	collector := s.getMangasCollector()
+	err = collector.Request("GET", searchURL, nil, ctx, nil)
 	if err != nil {
 		return nil, err
 	}
-	s.mangasCollector.Wait()
+	collector.Wait()
 
 	err = store.Set(searchURL, mangas)
 	if err != nil {
@@ -42,4 +44,29 @@ func (s *Scraper) SearchMangas(_ctx context.Context, store gokv.Store, query str
 	}
 
 	return mangas, nil
+}
+
+// Get the mangas collector, the actual scraping logic is defined here.
+func (s *Scraper) getMangasCollector() *colly.Collector {
+	collector := s.collector.Clone()
+	setCollectorOnRequest(collector, s.config, "manga")
+	collector.OnHTML("html", func(e *colly.HTMLElement) {
+		elements := e.DOM.Find(s.config.MangaExtractor.Selector)
+		mangas := e.Request.Ctx.GetAny("mangas").(*[]libmangal.Manga)
+
+		elements.Each(func(_ int, selection *goquery.Selection) {
+			link := s.config.MangaExtractor.URL(selection)
+			url := e.Request.AbsoluteURL(link)
+			title := cleanName(s.config.MangaExtractor.Title(selection))
+			m := mango.Manga{
+				Title:         title,
+				AnilistSearch: title,
+				URL:           url,
+				ID:            s.config.MangaExtractor.ID(url),
+				Cover:         s.config.MangaExtractor.Cover(selection),
+			}
+			*mangas = append(*mangas, m)
+		})
+	})
+	return collector
 }
