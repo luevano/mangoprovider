@@ -6,6 +6,7 @@ import (
 
 	"github.com/gocolly/colly/v2"
 	mango "github.com/luevano/mangoprovider"
+	"github.com/luevano/mangoprovider/scraper/headless/rod"
 )
 
 // Sets request headers via OnRequest callback for the collector.
@@ -30,6 +31,8 @@ func setCollectorOnRequest(collector *colly.Collector, config *Configuration, co
 		if config.Cookies != "" {
 			r.Headers.Set("Cookie", config.Cookies)
 		}
+		// Used to call the corresponding rod.Action.
+		r.Headers.Set(rod.CollectorTypeHeader, collectorType)
 	})
 }
 

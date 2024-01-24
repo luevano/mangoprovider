@@ -1,6 +1,10 @@
 package scraper
 
-import "time"
+import (
+	"time"
+
+	"github.com/luevano/mangoprovider/scraper/headless/rod"
+)
 
 // Configuration: Defines behavior of the scraper.
 type Configuration struct {
@@ -33,4 +37,14 @@ type Configuration struct {
 	ChapterExtractor *ChapterExtractor
 	// PageExtractor: Responsible for finding page elements and extracting required the data.
 	PageExtractor *PageExtractor
+}
+
+// Get the extractor Actions.
+func (c *Configuration) GetActions() map[rod.ActionType]rod.Action {
+	return map[rod.ActionType]rod.Action{
+		rod.ActionManga:   c.MangaExtractor.Action,
+		rod.ActionVolume:  c.VolumeExtractor.Action,
+		rod.ActionChapter: c.ChapterExtractor.Action,
+		rod.ActionPage:    c.PageExtractor.Action,
+	}
 }

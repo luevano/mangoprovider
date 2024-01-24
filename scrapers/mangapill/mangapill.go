@@ -84,9 +84,7 @@ var Config = &scraper.Configuration{
 			}
 		},
 		ScanlationGroup: func(_ *goquery.Selection) string {
-			// mangapill doens't provide scanlators, just use "mangapill"
-			// to avoid using anilist translators
-			return "mangapill"
+			return Info.Name
 		},
 	},
 	PageExtractor: &scraper.PageExtractor{

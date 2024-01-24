@@ -1,4 +1,4 @@
-package asurascans
+package mangasee
 
 import (
 	"net/url"
@@ -6,83 +6,75 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/go-rod/rod"
 	"github.com/luevano/libmangal"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/scraper"
 )
 
-// TODO: add extra option for extracting chapter number (solo leveling is wrong)
-
 var Info = libmangal.ProviderInfo{
-	ID:          mango.BundleID + "-asurascans",
-	Name:        "AsuraScans",
-	Version:     "0.1.1",
-	Description: "AsuraScans scraper",
-	Website:     "https://asuracomics.com/",
+	ID:          mango.BundleID + "-mangasee",
+	Name:        "MangaSee",
+	Version:     "0.1.0",
+	Description: "MangaSee scraper",
+	Website:     "https://mangasee123.com/",
 }
 
 var Config = &scraper.Configuration{
 	Name:                 Info.ID,
 	Delay:                50 * time.Millisecond,
 	ReverseChapters:      true,
-	NeedsHeadlessBrowser: true, // TODO: does it really need it?
+	NeedsHeadlessBrowser: true,
+	Cookies:              "FullPage=yes", // To show chapter images in a strip (instead of page per url), or use Action to click navbar
 	BaseURL:              Info.Website,
 	GenerateSearchURL: func(baseUrl string, query string) (string, error) {
-		// path is /?s=
+		// path is /search/?name=
 		params := url.Values{}
-		params.Set("s", query)
+		params.Set("name", query)
 		u, _ := url.Parse(baseUrl)
-		u.Path = "/"
+		u.Path = "/search/"
 		u.RawQuery = params.Encode()
 
 		return u.String(), nil
 	},
 	MangaExtractor: &scraper.MangaExtractor{
-		Selector: ".bsx > a",
+		Selector: ".top-15.ng-scope > .row",
 		Title: func(selection *goquery.Selection) string {
-			return selection.AttrOr("title", "")
+			selector := `.SeriesName[ng-bind-html="Series.s"]`
+			return selection.Find(selector).First().Text()
 		},
 		URL: func(selection *goquery.Selection) string {
-			return selection.AttrOr("href", "")
+			selector := `.SeriesName[ng-bind-html="Series.s"]`
+			return selection.Find(selector).First().AttrOr("href", "")
 		},
 		Cover: func(selection *goquery.Selection) string {
-			return selection.Find("img").AttrOr("src", "")
+			return selection.Find("a.SeriesName > img.img-fluid").AttrOr("src", "")
 		},
 		ID: func(_url string) string {
 			return strings.Split(_url, "/")[4]
 		},
 	},
 	VolumeExtractor: &scraper.VolumeExtractor{
-		// selector that points to only 1 element ("Chapter MangaName" header)
-		Selector: "body > div > div.wrapper > div.postbody > article.hentry > div.bixbox.bxcl.epcheck > div.releases > h2",
+		Selector: "body",
 		Number: func(selection *goquery.Selection) int {
 			return 1
 		},
-		// AsuraScans doesn't really provide volumes, some chapters have "Vol." prefix, need to figure out how to implement this as this was used inside the chapter extractor on original mangal
-		// Volume: func(selection *goquery.Selection) string {
-		// 	name := selection.Find(".chapternum").Text()
-		// 	if strings.HasPrefix(name, "Vol.") {
-		// 		splitted := strings.Split(name, " ")
-		// 		return splitted[0]
-		// 	}
-		// 	return ""
-		// },
 	},
 	ChapterExtractor: &scraper.ChapterExtractor{
-		Selector: "#chapterlist > ul li",
+		Selector: ".ChapterLink",
 		Title: func(selection *goquery.Selection) string {
-			name := selection.Find(".chapternum").Text()
+			name := selection.Find("span").First().Text()
 			return name
 		},
 		ID: func(_url string) string {
-			return strings.Split(_url, "/")[3]
+			return strings.Split(_url, "/")[4]
 		},
 		URL: func(selection *goquery.Selection) string {
-			return selection.Find("a").AttrOr("href", "")
+			return selection.AttrOr("href", "")
 		},
 		Date: func(selection *goquery.Selection) libmangal.Date {
-			layout := "January 2, 2006"
-			publishedDate := selection.Find(".chapterdate").Text()
+			layout := "01/02/2006"
+			publishedDate := selection.Find("span.float-right").Text()
 			date, err := time.Parse(layout, publishedDate)
 			if err != nil {
 				// if failed to parse date, use scraping day
@@ -97,11 +89,36 @@ var Config = &scraper.Configuration{
 		ScanlationGroup: func(_ *goquery.Selection) string {
 			return Info.Name
 		},
+		Action: func(p *rod.Page) error {
+			selector := ".ShowAllChapters"
+			if p.MustHas(selector) {
+				element, err := p.Element(selector)
+				if err != nil {
+					return err
+				}
+				_ = element.MustClick()
+				mango.Log("clicked on Show All Chapters")
+			}
+			return nil
+		},
 	},
 	PageExtractor: &scraper.PageExtractor{
-		Selector: "#readerarea img",
+		Selector: ".img-fluid",
 		URL: func(selection *goquery.Selection) string {
 			return selection.AttrOr("src", "")
 		},
+		// Either use the Cookie "FullPage=yes" or this action
+		// Action: func(p *rod.Page) error {
+		// 	selector := ".DesktopNav > div > div:nth-child(4) > button"
+		// 	if p.MustHas(selector) {
+		// 		element, err := p.Element(selector)
+		// 		if err != nil {
+		// 			return err
+		// 		}
+		// 		_ = element.MustClick()
+		// 		mango.Log("clicked on Long Strip on nav bar")
+		// 	}
+		// 	return nil
+		// },
 	},
 }

@@ -9,12 +9,14 @@ import (
 	"github.com/luevano/mangoprovider/scrapers/manganato"
 	"github.com/luevano/mangoprovider/scrapers/manganelo"
 	"github.com/luevano/mangoprovider/scrapers/mangapill"
+	"github.com/luevano/mangoprovider/scrapers/mangasee"
 	"github.com/luevano/mangoprovider/scrapers/toonily"
 )
 
 func Loaders(options mango.Options) []libmangal.ProviderLoader {
 	loaders := []libmangal.ProviderLoader{
 		Loader(mangapill.Info, mangapill.Config, options),
+		Loader(mangasee.Info, mangasee.Config, options),
 		Loader(asurascans.Info, asurascans.Config, options),
 		Loader(flamescans.Info, flamescans.Config, options),
 		Loader(manganato.Info, manganato.Config, options),

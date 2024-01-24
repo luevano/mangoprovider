@@ -28,13 +28,13 @@ func IsLoaded() bool {
 }
 
 // GetTransport returns the singleton rod or flaresolverr transport.
-func GetTransport(options mango.Headless) Transport {
+func GetTransport(options mango.Headless, actions map[rod.ActionType]rod.Action) Transport {
 	once.Do(func() {
 		if options.UseFlaresolverr && options.FlaresolverrURL != "" {
 			url, err := url.Parse(options.FlaresolverrURL)
 			if err != nil {
 				mango.Log("couldn't parse flaresolverr url, falling back to rod")
-				transport = rod.NewTransport()
+				transport = rod.NewTransport(actions)
 				return
 			}
 
@@ -47,13 +47,13 @@ func GetTransport(options mango.Headless) Transport {
 			}()
 			if err != nil || result.StatusCode != 200 {
 				mango.Log("couldn't connect to flaresolverr, falling back to rod")
-				transport = rod.NewTransport()
+				transport = rod.NewTransport(actions)
 				return
 			}
 			transport = flaresolverr.NewTransport(options.FlaresolverrURL)
 			return
 		}
-		transport = rod.NewTransport()
+		transport = rod.NewTransport(actions)
 	})
 	return transport
 }

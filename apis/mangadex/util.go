@@ -66,7 +66,7 @@ func getScanlator(relationships []*mangodex.Relationship) string {
 	// If even then the scanlator is not set, just use "mangadex".
 	if scanlator == "" {
 		mango.Log("no scanlator or username for chapter, defaulting to 'mangadex'")
-		scanlator = "mangadex"
+		scanlator = "MangaDex"
 	}
 	return scanlator
 }
