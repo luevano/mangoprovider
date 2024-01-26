@@ -17,9 +17,5 @@ var ManganatoInfo = libmangal.ProviderInfo{
 var ManganatoConfig = manganato()
 
 func manganato() *scraper.Configuration {
-	m := Mangabox(ManganatoInfo.ID, ManganatoInfo.Website, "/search/story/%s", "Jan 02,06")
-
-	m.MangaExtractor.Selector = "div.search-story-item"
-
-	return m
+	return Mangabox(ManganatoInfo.ID, ManganatoInfo.Website, "/search/story/%s", "Jan 02,06", "span.chapter-time")
 }

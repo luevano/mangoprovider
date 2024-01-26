@@ -14,7 +14,7 @@ import (
 // TODO: add manga search pager?
 
 // Mangabox is a generic type of website used by Manganato, Manganelo, Mangakakalot, etc.
-func Mangabox(name, baseUrl, searchPath, dateLayout string) *scraper.Configuration {
+func Mangabox(name, baseUrl, searchPath, dateLayout, dateSelector string) *scraper.Configuration {
 	return &scraper.Configuration{
 		Name:            name,
 		Delay:           50 * time.Millisecond,
@@ -28,7 +28,7 @@ func Mangabox(name, baseUrl, searchPath, dateLayout string) *scraper.Configurati
 			return u.String(), nil
 		},
 		MangaExtractor: &scraper.MangaExtractor{
-			Selector: ".panel_story_list .story_item",
+			Selector: ".panel-search-story .search-story-item",
 			Title: func(selection *goquery.Selection) string {
 				return selection.Find("a.item-title").Text()
 			},
@@ -36,7 +36,7 @@ func Mangabox(name, baseUrl, searchPath, dateLayout string) *scraper.Configurati
 				return selection.Find("a.item-title").AttrOr("href", "")
 			},
 			Cover: func(selection *goquery.Selection) string {
-				return selection.Find("a.item-img > img").AttrOr("src", "")
+				return selection.Find("a img").AttrOr("src", "")
 			},
 			ID: func(_url string) string {
 				return strings.Split(_url, "/")[3]
@@ -67,7 +67,7 @@ func Mangabox(name, baseUrl, searchPath, dateLayout string) *scraper.Configurati
 				return selection.Find("a").AttrOr("href", "")
 			},
 			Date: func(selection *goquery.Selection) libmangal.Date {
-				publishedDate := strings.TrimSpace(selection.Find("span.chapter-time").Text())
+				publishedDate := strings.TrimSpace(selection.Find(dateSelector).Text())
 				date, err := time.Parse(dateLayout, publishedDate)
 				if err != nil {
 					// if failed to parse date, use scraping day

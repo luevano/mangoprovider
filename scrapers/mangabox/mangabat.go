@@ -17,9 +17,9 @@ var MangabatInfo = libmangal.ProviderInfo{
 var MangabatConfig = mangabat()
 
 func mangabat() *scraper.Configuration {
-	m := Mangabox(MangabatInfo.ID, MangabatInfo.Website, "/search/manga/%s", "Jan 02,06")
+	m := Mangabox(MangabatInfo.ID, MangabatInfo.Website, "/search/manga/%s", "Jan 02,06", "span.chapter-time")
 
-	m.MangaExtractor.Selector = "div.list-story-item"
+	m.MangaExtractor.Selector = ".panel-list-story .list-story-item"
 
 	return m
 }
