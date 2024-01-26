@@ -20,6 +20,7 @@ func Loaders(options mango.Options) []libmangal.ProviderLoader {
 		Loader(flamescans.Info, flamescans.Config, options),
 		// Mangabox
 		Loader(mangabox.ManganatoInfo, mangabox.ManganatoConfig, options),
+		Loader(mangabox.MangabatInfo, mangabox.MangabatConfig, options),
 		Loader(toonily.Info, toonily.Config, options),
 	}
 
