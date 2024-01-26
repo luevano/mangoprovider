@@ -21,6 +21,9 @@ func Loaders(options mango.Options) []libmangal.ProviderLoader {
 		// Mangabox
 		Loader(mangabox.ManganatoInfo, mangabox.ManganatoConfig, options),
 		Loader(mangabox.MangabatInfo, mangabox.MangabatConfig, options),
+		Loader(mangabox.MangairoInfo, mangabox.MangairoConfig, options),
+		Loader(mangabox.MangakakalotInfo, mangabox.MangakakalotConfig, options),
+
 		Loader(toonily.Info, toonily.Config, options),
 	}
 
