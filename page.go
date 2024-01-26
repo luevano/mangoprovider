@@ -11,10 +11,10 @@ var ImageExtensionRegex = regexp.MustCompile(`^\.[a-zA-Z0-9][a-zA-Z0-9.]*[a-zA-Z
 var _ libmangal.Page = (*Page)(nil)
 
 type Page struct {
-	Extension string            `json:"extension"`
+	Extension string            `json:"-"`
 	URL       string            `json:"url"`
-	Headers   map[string]string `json:"headers"`
-	Cookies   map[string]string `json:"cookies"`
+	Headers   map[string]string `json:"-"`
+	Cookies   map[string]string `json:"-"`
 
 	Chapter_ *Chapter `json:"-"`
 }
