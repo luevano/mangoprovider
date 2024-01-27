@@ -23,7 +23,7 @@ func (l Loader) Info() libmangal.ProviderInfo {
 }
 
 func (l Loader) Load(ctx context.Context) (libmangal.Provider, error) {
-	store, err := l.Options.HTTPStoreProvider(l.ProviderInfo.ID)
+	store, err := l.Options.HTTPStore(l.ProviderInfo.ID)
 	if err != nil {
 		return nil, err
 	}
