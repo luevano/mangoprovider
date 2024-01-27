@@ -43,8 +43,12 @@ func (m *Manga) MarshalJSON() ([]byte, error) {
 	return json.Marshal(m.Info())
 }
 
-func (m *Manga) AnilistManga() (libmangal.AnilistManga, bool) {
-	return m.Anilist_, m.AnilistSet_
+func (m *Manga) AnilistManga() (libmangal.AnilistManga, error) {
+	if m.AnilistSet_ {
+		return m.Anilist_, nil
+	} else {
+		return libmangal.AnilistManga{}, fmt.Errorf("AnilistManga is not set")
+	}
 }
 
 func (m *Manga) SetAnilistManga(anilist libmangal.AnilistManga) {
