@@ -7,7 +7,7 @@ require (
 	github.com/go-rod/rod v0.114.6
 	github.com/gocolly/colly/v2 v2.1.0
 	github.com/google/uuid v1.6.0
-	github.com/luevano/libmangal v0.10.0
+	github.com/luevano/libmangal v0.11.0
 	github.com/luevano/mangodex v0.3.2
 	github.com/philippgille/gokv v0.6.0
 )
@@ -30,7 +30,7 @@ require (
 	github.com/philippgille/gokv/syncmap v0.6.0 // indirect
 	github.com/philippgille/gokv/util v0.6.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/rivo/uniseg v0.4.4 // indirect
+	github.com/rivo/uniseg v0.4.5 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d // indirect
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966 // indirect

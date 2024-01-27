@@ -96,7 +96,7 @@ func (s *Scraper) getChaptersCollector() *colly.Collector {
 				ScanlationGroup: scanlationGroup,
 				Volume_:         &volume,
 			}
-			*chapters = append(*chapters, c)
+			*chapters = append(*chapters, &c)
 		})
 	})
 	return collector

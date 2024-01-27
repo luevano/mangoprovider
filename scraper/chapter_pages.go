@@ -75,7 +75,7 @@ func (s *Scraper) getPagesCollector() *colly.Collector {
 				Headers:   headers,
 				Chapter_:  &chapter,
 			}
-			*pages = append(*pages, p)
+			*pages = append(*pages, &p)
 		})
 	})
 	return collector

@@ -2,11 +2,15 @@ package mangoprovider
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/luevano/libmangal"
 )
 
-var _ libmangal.Manga = (*Manga)(nil)
+var (
+	_ libmangal.MangaWithSeriesJSON = (*Manga)(nil)
+	_ libmangal.Manga               = (*Manga)(nil)
+)
 
 type Manga struct {
 	Title         string `json:"title"`
@@ -15,23 +19,44 @@ type Manga struct {
 	ID            string `json:"id"`
 	Cover         string `json:"cover"`
 	Banner        string `json:"banner"`
+
+	AnilistSet_ bool                   `json:"-"`
+	Anilist_    libmangal.AnilistManga `json:"-"`
 }
 
-func (m Manga) String() string {
+func (m *Manga) String() string {
 	return m.Title
 }
 
-func (m Manga) Info() libmangal.MangaInfo {
+func (m *Manga) Info() libmangal.MangaInfo {
 	return libmangal.MangaInfo{
-		Title: m.Title,
+		Title:         m.Title,
 		AnilistSearch: m.AnilistSearch,
-		URL: m.URL,
-		ID: m.ID,
-		Cover: m.Cover,
-		Banner: m.Banner,
+		URL:           m.URL,
+		ID:            m.ID,
+		Cover:         m.Cover,
+		Banner:        m.Banner,
 	}
 }
 
-func (m Manga) MarshalJSON() ([]byte, error) {
+func (m *Manga) MarshalJSON() ([]byte, error) {
 	return json.Marshal(m.Info())
+}
+
+func (m *Manga) AnilistManga() (libmangal.AnilistManga, bool) {
+	return m.Anilist_, m.AnilistSet_
+}
+
+func (m *Manga) SetAnilistManga(anilist libmangal.AnilistManga) {
+	m.Anilist_ = anilist
+	m.AnilistSet_ = true
+}
+
+func (m *Manga) SeriesJSON() (libmangal.SeriesJSON, bool, error) {
+	if !m.AnilistSet_ {
+		Log(fmt.Sprintf("manga %q doesn't contain anilist data", m.Title))
+		return libmangal.SeriesJSON{}, false, nil
+	}
+
+	return libmangal.AnilistSeriesJSON(m.Anilist_), true, nil
 }

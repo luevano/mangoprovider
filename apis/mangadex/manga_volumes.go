@@ -57,7 +57,7 @@ func (d *dex) MangaVolumes(ctx context.Context, store gokv.Store, manga mango.Ma
 		if number == 0 {
 			noneVolume = v
 		} else {
-			volumes = append(volumes, v)
+			volumes = append(volumes, &v)
 		}
 	}
 
@@ -66,7 +66,7 @@ func (d *dex) MangaVolumes(ctx context.Context, store gokv.Store, manga mango.Ma
 	})
 
 	if noneVolume != (mango.Volume{}) {
-		volumes = append(volumes, noneVolume)
+		volumes = append(volumes, &noneVolume)
 	}
 
 	err = store.Set(cacheID, volumes)

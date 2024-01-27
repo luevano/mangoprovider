@@ -14,15 +14,15 @@ type Loader struct {
 	F       func() Functions // So that the scrapers are loaded on ProviderLoader.Load(ctx)
 }
 
-func (l Loader) String() string {
+func (l *Loader) String() string {
 	return l.Name
 }
 
-func (l Loader) Info() libmangal.ProviderInfo {
+func (l *Loader) Info() libmangal.ProviderInfo {
 	return l.ProviderInfo
 }
 
-func (l Loader) Load(ctx context.Context) (libmangal.Provider, error) {
+func (l *Loader) Load(ctx context.Context) (libmangal.Provider, error) {
 	store, err := l.Options.HTTPStore(l.ProviderInfo.ID)
 	if err != nil {
 		return nil, err

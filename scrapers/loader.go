@@ -31,7 +31,7 @@ func Loaders(options mango.Options) []libmangal.ProviderLoader {
 }
 
 func Loader(info libmangal.ProviderInfo, config *scraper.Configuration, options mango.Options) libmangal.ProviderLoader {
-	return mango.Loader{
+	return &mango.Loader{
 		ProviderInfo: info,
 		Options:      options,
 		F: func() mango.Functions {

@@ -154,9 +154,9 @@ func (d *dex) populateChapters(agg *aggregate, offset int, params url.Values, vo
 		}
 
 		mapKey := strings.Split(chapterTitleNumber, " ")[1]
-		agg.chaptersMap[mapKey] = append(agg.chaptersMap[mapKey], c)
+		agg.chaptersMap[mapKey] = append(agg.chaptersMap[mapKey], &c)
 		agg.groupsCount[scanlator] += 1
-		agg.chapters = append(agg.chapters, c)
+		agg.chapters = append(agg.chapters, &c)
 	}
 
 	// If received 100 entries means it probably has more.

@@ -56,7 +56,7 @@ func (d *dex) ChapterPages(ctx context.Context, store gokv.Store, chapter mango.
 			Chapter_:  &chapter,
 		}
 
-		pages = append(pages, p)
+		pages = append(pages, &p)
 	}
 	return pages, nil
 }

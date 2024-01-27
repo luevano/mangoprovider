@@ -59,7 +59,7 @@ func (s *Scraper) getVolumesCollector() *colly.Collector {
 				Number: s.config.VolumeExtractor.Number(selection),
 				Manga_: &manga,
 			}
-			*volumes = append(*volumes, v)
+			*volumes = append(*volumes, &v)
 		})
 	})
 	return collector

@@ -65,7 +65,7 @@ func (s *Scraper) getMangasCollector() *colly.Collector {
 				ID:            s.config.MangaExtractor.ID(url),
 				Cover:         s.config.MangaExtractor.Cover(selection),
 			}
-			*mangas = append(*mangas, m)
+			*mangas = append(*mangas, &m)
 		})
 	})
 	return collector

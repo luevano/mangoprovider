@@ -19,11 +19,11 @@ type Chapter struct {
 	Volume_ *Volume `json:"-"`
 }
 
-func (c Chapter) String() string {
+func (c *Chapter) String() string {
 	return c.Title
 }
 
-func (c Chapter) Info() libmangal.ChapterInfo {
+func (c *Chapter) Info() libmangal.ChapterInfo {
 	return libmangal.ChapterInfo{
 		Title:           c.Title,
 		URL:             c.URL,
@@ -33,10 +33,10 @@ func (c Chapter) Info() libmangal.ChapterInfo {
 	}
 }
 
-func (c Chapter) Volume() libmangal.Volume {
+func (c *Chapter) Volume() libmangal.Volume {
 	return c.Volume_
 }
 
-func (c Chapter) MarshalJSON() ([]byte, error) {
+func (c *Chapter) MarshalJSON() ([]byte, error) {
 	return json.Marshal(c.Info())
 }

@@ -69,7 +69,7 @@ func (d *dex) SearchMangas(ctx context.Context, store gokv.Store, query string) 
 			Cover:         cover,
 		}
 
-		mangas = append(mangas, m)
+		mangas = append(mangas, &m)
 	}
 
 	err = store.Set(cacheID, mangas)

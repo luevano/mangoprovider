@@ -57,55 +57,55 @@ func (p *Provider) MangaVolumes(
 	ctx context.Context,
 	manga libmangal.Manga,
 ) ([]libmangal.Volume, error) {
-	m, ok := manga.(Manga)
+	m, ok := manga.(*Manga)
 	if !ok {
 		return nil, fmt.Errorf("unexpected manga type: %T", manga)
 	}
 
 	Log(fmt.Sprintf("Fetching volumes for %q", m))
-	return p.F.MangaVolumes(ctx, p.store, m)
+	return p.F.MangaVolumes(ctx, p.store, *m)
 }
 
 func (p *Provider) VolumeChapters(
 	ctx context.Context,
 	volume libmangal.Volume,
 ) ([]libmangal.Chapter, error) {
-	v, ok := volume.(Volume)
+	v, ok := volume.(*Volume)
 	if !ok {
 		return nil, fmt.Errorf("unexpected volume type: %T", volume)
 	}
 
 	Log(fmt.Sprintf("Fetching chapters for %q", v))
-	return p.F.VolumeChapters(ctx, p.store, v)
+	return p.F.VolumeChapters(ctx, p.store, *v)
 }
 
 func (p *Provider) ChapterPages(
 	ctx context.Context,
 	chapter libmangal.Chapter,
 ) ([]libmangal.Page, error) {
-	c, ok := chapter.(Chapter)
+	c, ok := chapter.(*Chapter)
 	if !ok {
 		return nil, fmt.Errorf("unexpected chapter type: %T", chapter)
 	}
 
 	Log(fmt.Sprintf("Fetching pages for %q", c))
-	return p.F.ChapterPages(ctx, p.store, c)
+	return p.F.ChapterPages(ctx, p.store, *c)
 }
 
 func (p *Provider) GetPageImage(
 	ctx context.Context,
 	page libmangal.Page,
 ) ([]byte, error) {
-	page_, ok := page.(Page)
+	page_, ok := page.(*Page)
 	if !ok {
 		return nil, fmt.Errorf("unexpected page type: %T", page)
 	}
 
 	Log(fmt.Sprintf("Making HTTP GET request for %q", page_.URL))
 	if p.F.GetPageImage != nil {
-		return p.F.GetPageImage(ctx, page_)
+		return p.F.GetPageImage(ctx, *page_)
 	} else {
-		return p.GenericGetPageImage(ctx, page_)
+		return p.GenericGetPageImage(ctx, *page_)
 	}
 }
 

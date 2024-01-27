@@ -19,14 +19,14 @@ type Page struct {
 	Chapter_ *Chapter `json:"-"`
 }
 
-func (p Page) String() string {
+func (p *Page) String() string {
 	return p.URL
 }
 
-func (p Page) GetExtension() string {
+func (p *Page) GetExtension() string {
 	return p.Extension
 }
 
-func (p Page) Chapter() libmangal.Chapter {
+func (p *Page) Chapter() libmangal.Chapter {
 	return p.Chapter_
 }
