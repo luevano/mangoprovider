@@ -62,5 +62,5 @@ func (m *Manga) SeriesJSON() (libmangal.SeriesJSON, bool, error) {
 		return libmangal.SeriesJSON{}, false, nil
 	}
 
-	return libmangal.AnilistSeriesJSON(m.Anilist_), true, nil
+	return m.Anilist_.SeriesJSON(), true, nil
 }
