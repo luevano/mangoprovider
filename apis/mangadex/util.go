@@ -11,7 +11,7 @@ import (
 )
 
 // TODO: make this configurable, in line with mangal's template formatting
-const chapterNumberFormat = "Chapter %06.1f"
+const chapterNumberFormat = "Chapter %07.2f"
 
 // Get parsed chapter number as a float and string.
 func getChapterNum(chapter *mangodex.Chapter) (float32, string, error) {
