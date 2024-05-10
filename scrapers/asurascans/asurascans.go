@@ -55,8 +55,8 @@ var Config = &scraper.Configuration{
 	VolumeExtractor: &scraper.VolumeExtractor{
 		// selector that points to only 1 element ("Chapter MangaName" header)
 		Selector: "body > div > div.wrapper > div.postbody > article.hentry > div.bixbox.bxcl.epcheck > div.releases > h2",
-		Number: func(selection *goquery.Selection) int {
-			return 1
+		Number: func(selection *goquery.Selection) float32 {
+			return 1.0
 		},
 		// AsuraScans doesn't really provide volumes, some chapters have "Vol." prefix, need to figure out how to implement this as this was used inside the chapter extractor on original mangal
 		// Volume: func(selection *goquery.Selection) string {

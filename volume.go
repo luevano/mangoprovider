@@ -10,13 +10,13 @@ import (
 var _ libmangal.Volume = (*Volume)(nil)
 
 type Volume struct {
-	Number int `json:"number"`
+	Number float32 `json:"number"`
 
 	Manga_ *Manga `json:"-"`
 }
 
 func (v *Volume) String() string {
-	return strconv.Itoa(v.Number)
+	return strconv.FormatFloat(float64(v.Number), 'f', -1, 32)
 }
 
 func (v *Volume) Info() libmangal.VolumeInfo {

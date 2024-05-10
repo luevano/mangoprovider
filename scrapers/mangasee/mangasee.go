@@ -56,8 +56,8 @@ var Config = &scraper.Configuration{
 	},
 	VolumeExtractor: &scraper.VolumeExtractor{
 		Selector: "body",
-		Number: func(selection *goquery.Selection) int {
-			return 1
+		Number: func(selection *goquery.Selection) float32 {
+			return 1.0
 		},
 	},
 	ChapterExtractor: &scraper.ChapterExtractor{

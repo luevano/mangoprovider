@@ -27,7 +27,7 @@ type VolumeExtractor struct {
 	// Selector: CSS selector.
 	Selector string
 	// Number: Get number from element found by selector.
-	Number func(*goquery.Selection) int
+	Number func(*goquery.Selection) float32
 	// Action: Something to execute on a headless browser after page is loaded.
 	Action rod.Action
 }

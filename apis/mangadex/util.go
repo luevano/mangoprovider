@@ -10,15 +10,22 @@ import (
 	mango "github.com/luevano/mangoprovider"
 )
 
+// TODO: make this configurable, in line with mangal's template formatting
+const chapterNumberFormat = "Chapter %06.1f"
+
 // Get parsed chapter number as a float and string.
 func getChapterNum(chapter *mangodex.Chapter) (float32, string, error) {
 	chapterNumberStr := chapter.GetChapterNum()
+	if chapterNumberStr == "-" {
+		return 0.01, fmt.Sprintf(chapterNumberFormat, float32(0.01)), nil
+	}
+
 	chapterNumber, err := strconv.ParseFloat(chapterNumberStr, 32)
 	if err != nil {
 		return 0.0, "", err
 	}
 
-	chapterTitleNumber := fmt.Sprintf(fmt.Sprintf("Chapter %s", chapterNumberFormat), chapterNumber)
+	chapterTitleNumber := fmt.Sprintf(chapterNumberFormat, chapterNumber)
 	return float32(chapterNumber), chapterTitleNumber, nil
 }
 

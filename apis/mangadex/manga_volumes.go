@@ -39,14 +39,14 @@ func (d *dex) MangaVolumes(ctx context.Context, store gokv.Store, manga mango.Ma
 
 	// n is a string, could be "none", represents the volume number
 	for n := range volumeList {
-		// Using 0 for the "none"; shouldn't be used according to libmangal
-		number := 0
+		// Using -1.0 for the "none"; shouldn't be used according to libmangal
+		number := float32(-1.0)
 		if n != "none" {
-			numberI, err := strconv.Atoi(n)
+			numberF, err := strconv.ParseFloat(n, 32)
 			if err != nil {
 				return nil, err
 			}
-			number = numberI
+			number = float32(numberF)
 		}
 
 		v := mango.Volume{
@@ -54,7 +54,7 @@ func (d *dex) MangaVolumes(ctx context.Context, store gokv.Store, manga mango.Ma
 			Manga_: &manga,
 		}
 	
-		if number == 0 {
+		if n == "none" {
 			noneVolume = v
 		} else {
 			volumes = append(volumes, &v)

@@ -14,8 +14,6 @@ import (
 	"github.com/philippgille/gokv"
 )
 
-const chapterNumberFormat = "%06.1f"
-
 // Contains the actual chapter list as well as helper values for filtering.
 type aggregate struct {
 	chapters    []libmangal.Chapter
@@ -31,9 +29,9 @@ func (d *dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango
 	}
 
 	// Mangadex api returns "none" for "non-volumed" chapters,
-	// which are saved as 0 in libmangal.Volume
+	// which are saved as -1.0 in libmangal.Volume
 	volumeNumber := "none"
-	if volume.Number != 0 {
+	if volume.Number != float32(-1.0) {
 		volumeNumber = volume.String()
 	}
 
@@ -70,7 +68,7 @@ func (d *dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango
 	for {
 		// The offset is set on each iteration, shouldn't be included in the cacheID.
 		params.Set("offset", strconv.Itoa(offset))
-		ended, err := d.populateChapters(&agg, offset, params, volume)
+		ended, err := d.populateChapters(&agg, params, volume)
 		if err != nil {
 			return nil, err
 		}
@@ -105,7 +103,7 @@ func (d *dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango
 }
 
 // Make the request and parse the responses, populating the actual chapter list and extra info useful for filtering.
-func (d *dex) populateChapters(agg *aggregate, offset int, params url.Values, volume mango.Volume) (bool, error) {
+func (d *dex) populateChapters(agg *aggregate, params url.Values, volume mango.Volume) (bool, error) {
 	chapterList, err := d.client.Chapter.List(params)
 	if err != nil {
 		return false, err
