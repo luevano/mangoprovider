@@ -29,7 +29,7 @@ func (d *dex) ChapterPages(ctx context.Context, store gokv.Store, chapter mango.
 	}
 
 	if len(chapterPages) == 0 {
-		return nil, fmt.Errorf("no pages for chapter %q (%s); volume %q; manga %q", chapter.Title, chapter.ID, chapter.Volume_.Number, chapter.Volume_.Manga_.Title)
+		return nil, fmt.Errorf("no pages for chapter %q (%s); volume %s; manga %q", chapter.Title, chapter.ID, chapter.Volume_.String(), chapter.Volume_.Manga_.Title)
 	}
 
 	for _, page := range chapterPages {

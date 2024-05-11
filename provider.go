@@ -48,7 +48,7 @@ func (p *Provider) SearchMangas(
 	ctx context.Context,
 	query string,
 ) ([]libmangal.Manga, error) {
-	Log(fmt.Sprintf("Searching mangas with %q", query))
+	Log(fmt.Sprintf("Searching mangas with query %q", query))
 
 	return p.F.SearchMangas(ctx, p.store, query)
 }
@@ -62,7 +62,7 @@ func (p *Provider) MangaVolumes(
 		return nil, fmt.Errorf("unexpected manga type: %T", manga)
 	}
 
-	Log(fmt.Sprintf("Fetching volumes for %q", m))
+	Log(fmt.Sprintf("Fetching volumes for manga %q", m))
 	return p.F.MangaVolumes(ctx, p.store, *m)
 }
 
@@ -75,7 +75,7 @@ func (p *Provider) VolumeChapters(
 		return nil, fmt.Errorf("unexpected volume type: %T", volume)
 	}
 
-	Log(fmt.Sprintf("Fetching chapters for %q", v))
+	Log(fmt.Sprintf("Fetching chapters for volume %s", v.String()))
 	return p.F.VolumeChapters(ctx, p.store, *v)
 }
 
@@ -88,7 +88,7 @@ func (p *Provider) ChapterPages(
 		return nil, fmt.Errorf("unexpected chapter type: %T", chapter)
 	}
 
-	Log(fmt.Sprintf("Fetching pages for %q", c))
+	Log(fmt.Sprintf("Fetching pages for chapter %q", c))
 	return p.F.ChapterPages(ctx, p.store, *c)
 }
 
@@ -101,7 +101,7 @@ func (p *Provider) GetPageImage(
 		return nil, fmt.Errorf("unexpected page type: %T", page)
 	}
 
-	Log(fmt.Sprintf("Making HTTP GET request for %q", page_.URL))
+	// Log(fmt.Sprintf("Making HTTP GET request for %q", page_.URL))
 	if p.F.GetPageImage != nil {
 		return p.F.GetPageImage(ctx, *page_)
 	} else {
@@ -113,7 +113,7 @@ func (p *Provider) GenericGetPageImage(
 	ctx context.Context,
 	page Page,
 ) ([]byte, error) {
-	Log("Making request using generic getter.")
+	// Log("Making request using generic getter.")
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, page.URL, nil)
 	if err != nil {
 		return nil, err
@@ -133,7 +133,7 @@ func (p *Provider) GenericGetPageImage(
 	}
 	defer response.Body.Close()
 
-	Log("Got response")
+	// Log("Got response")
 
 	if response.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected status code: %d", response.StatusCode)
