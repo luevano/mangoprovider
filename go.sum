@@ -75,10 +75,10 @@ github.com/kr/pretty v0.3.1/go.mod h1:hoEshYVHaxMs3cyo3Yncou5ZscifuDolrwPKZanG3x
 github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
 github.com/kr/text v0.1.0 h1:45sCR5RtlFHMR4UwH9sdQ5TC8v0qDQCHnXt+kaKSTVE=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
-github.com/luevano/libmangal v0.13.0 h1:I68gAM7ciFziNCiBkg8dT4unRVE1Xl+9heMAePLIClQ=
-github.com/luevano/libmangal v0.13.0/go.mod h1:AG8fCCiQ3KWUVhtw6WWbkNLV2CKHFEwB61zCO0M9xQo=
-github.com/luevano/mangodex v0.3.2 h1:XSsxJrg7mUxfSIrb7Z3FmApzjs9leDu0PihSz2/2P70=
-github.com/luevano/mangodex v0.3.2/go.mod h1:eTLfG76HUxj8aQJgBAnoNEsYHAgBS/du6+HKdXFytRo=
+github.com/luevano/libmangal v0.14.1 h1:fSwteike5EZhHh7oynIgewnGumYfgfEqxj3EBSqWDlQ=
+github.com/luevano/libmangal v0.14.1/go.mod h1:nJUdEwVRubNf84wH2k7ZuCymYM0WuBqSQhxQqqJStgY=
+github.com/luevano/mangodex v0.3.3 h1:aHryrIjW/NrkVHq3nKHq4qnFdrz8ZF/vl+k4OTC/S/Q=
+github.com/luevano/mangodex v0.3.3/go.mod h1:FdjJzUAr0Xo+gUMakiEMA2ogJKHPIXit+cVvJbroG6Y=
 github.com/mattn/go-runewidth v0.0.15 h1:UNAjwbU9l54TA3KzvqLGxwWjHmMgBUVhBiTjelZgg3U=
 github.com/mattn/go-runewidth v0.0.15/go.mod h1:Jdepj2loyihRzMpdS35Xk/zdY8IAYHsh153qUoGf23w=
 github.com/pdfcpu/pdfcpu v0.8.0 h1:SuEB4uVsPFz1nb802r38YpFpj9TtZh/oB0bGG34IRZw=

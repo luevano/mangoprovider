@@ -1,14 +1,14 @@
 module github.com/luevano/mangoprovider
 
-go 1.21
+go 1.22
 
 require (
 	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/go-rod/rod v0.114.6
 	github.com/gocolly/colly/v2 v2.1.0
 	github.com/google/uuid v1.6.0
-	github.com/luevano/libmangal v0.13.0
-	github.com/luevano/mangodex v0.3.2
+	github.com/luevano/libmangal v0.14.1
+	github.com/luevano/mangodex v0.3.3
 	github.com/philippgille/gokv v0.7.0
 )
 
