@@ -25,8 +25,10 @@ var Config = &scraper.Configuration{
 	Delay:                50 * time.Millisecond,
 	ReverseChapters:      true,
 	NeedsHeadlessBrowser: true,
-	Cookies:              "FullPage=yes", // To show chapter images in a strip (instead of page per url), or use Action to click navbar
 	BaseURL:              Info.Website,
+	Headers: map[string]string{
+		"Cookie": "FullPage=yes",
+	},
 	GenerateSearchURL: func(baseUrl string, query string) (string, error) {
 		// path is /search/?name=
 		params := url.Values{}

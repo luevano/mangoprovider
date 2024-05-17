@@ -24,8 +24,10 @@ var Config = &scraper.Configuration{
 	Name:            Info.ID,
 	Delay:           50 * time.Millisecond,
 	ReverseChapters: true,
-	Cookies:         "toonily-mature=1",
 	BaseURL:         Info.Website,
+	Headers: map[string]string{
+		"Cookie": "toonily-mature=1",
+	},
 	GenerateSearchURL: func(baseUrl string, query string) (string, error) {
 		// path is /search/
 		u, _ := url.Parse(baseUrl)

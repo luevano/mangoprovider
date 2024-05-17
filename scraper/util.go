@@ -24,13 +24,16 @@ func setCollectorOnRequest(collector *colly.Collector, config *Configuration, co
 			referer = "https://google.com"
 		}
 		r.Headers.Set("Referer", referer)
-		r.Headers.Set("accept-language", "en-US") // TODO: remove this? shouldn't specify a language
+		r.Headers.Set("Accept-Language", "en-US") // TODO: remove this? shouldn't specify a language
 		r.Headers.Set("Accept", "text/html")
 		r.Headers.Set("Host", config.BaseURL) // TODO: remove this? even rod breaks when setting it
 		r.Headers.Set("User-Agent", mango.UserAgent)
-		if config.Cookies != "" {
-			r.Headers.Set("Cookie", config.Cookies)
+
+		// Custom scraper headers (like "Cookie" for some sites)
+		for k, v := range config.Headers {
+			r.Headers.Set(k, v)
 		}
+
 		// Used to call the corresponding rod.Action.
 		r.Headers.Set(rod.CollectorTypeHeader, collectorType)
 	})

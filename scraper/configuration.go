@@ -20,8 +20,8 @@ type Configuration struct {
 
 	// NeedsHeadlessBrowser: If a headless browser should be used to proxy any request.
 	NeedsHeadlessBrowser bool
-	// Cookies: Custom cookies to pass to the request. It is a string, as it is passed as a header.
-	Cookies string
+	// Headers: Custom headers to pass to the request.
+	Headers map[string]string
 
 	// BaseURL: Base URL of the source.
 	BaseURL string
