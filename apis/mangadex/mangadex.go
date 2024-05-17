@@ -8,8 +8,8 @@ import (
 
 var providerInfo = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-mangadex",
-	Name:        "Mangadex",
-	Version:     "0.4.0",
+	Name:        "MangaDex",
+	Version:     "0.4.1",
 	Description: "Mangadex scraper using mangodex",
 	Website:     "https://mangadex.org/",
 }

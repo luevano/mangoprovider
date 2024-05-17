@@ -20,6 +20,8 @@ type Configuration struct {
 
 	// NeedsHeadlessBrowser: If a headless browser should be used to proxy any request.
 	NeedsHeadlessBrowser bool
+	// LocalStorage: local storage values to set before the requests.
+	LocalStorage map[string]string
 	// Headers: Custom headers to pass to the request.
 	Headers map[string]string
 

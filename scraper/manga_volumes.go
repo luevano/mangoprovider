@@ -8,6 +8,7 @@ import (
 	"github.com/gocolly/colly/v2"
 	"github.com/luevano/libmangal"
 	mango "github.com/luevano/mangoprovider"
+	"github.com/luevano/mangoprovider/scraper/headless/rod"
 	"github.com/philippgille/gokv"
 )
 
@@ -48,7 +49,7 @@ func (s *Scraper) MangaVolumes(_ctx context.Context, store gokv.Store, manga man
 // Get the volumes collector, the actual scraping logic is defined here.
 func (s *Scraper) getVolumesCollector() *colly.Collector {
 	collector := s.collector.Clone()
-	setCollectorOnRequest(collector, s.config, "volume")
+	setCollectorOnRequest(collector, s.config, rod.ActionVolume)
 	collector.OnHTML("html", func(e *colly.HTMLElement) {
 		elements := e.DOM.Find(s.config.VolumeExtractor.Selector)
 		manga := e.Request.Ctx.GetAny("manga").(mango.Manga)

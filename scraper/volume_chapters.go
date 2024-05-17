@@ -11,6 +11,7 @@ import (
 	"github.com/gocolly/colly/v2"
 	"github.com/luevano/libmangal"
 	mango "github.com/luevano/mangoprovider"
+	"github.com/luevano/mangoprovider/scraper/headless/rod"
 	"github.com/philippgille/gokv"
 )
 
@@ -57,7 +58,7 @@ func (s *Scraper) VolumeChapters(_ctx context.Context, store gokv.Store, volume 
 
 func (s *Scraper) getChaptersCollector() *colly.Collector {
 	collector := s.collector.Clone()
-	setCollectorOnRequest(collector, s.config, "chapter")
+	setCollectorOnRequest(collector, s.config, rod.ActionChapter)
 	collector.OnHTML("html", func(e *colly.HTMLElement) {
 		elements := e.DOM.Find(s.config.ChapterExtractor.Selector)
 		volume := e.Request.Ctx.GetAny("volume").(mango.Volume)

@@ -65,8 +65,8 @@ func (s *Scraper) setCollector() error {
 	}
 
 	if s.config.NeedsHeadlessBrowser {
-		mango.Log("using headless browser")
-		transport := headless.GetTransport(s.options.Headless, s.config.GetActions())
+		mango.Log("Using headless browser")
+		transport := headless.GetTransport(s.options.Headless, s.config.LocalStorage, s.config.GetActions())
 		s.collector.WithTransport(transport)
 	}
 	return nil

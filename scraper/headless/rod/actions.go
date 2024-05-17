@@ -2,7 +2,7 @@ package rod
 
 import "github.com/go-rod/rod"
 
-const CollectorTypeHeader = "Mangoprovider-Collector-Type"
+const ActionTypeHeader = "Mangoprovider-Action-Type"
 
 type ActionType string
 

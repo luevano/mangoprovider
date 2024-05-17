@@ -11,6 +11,7 @@ import (
 	"github.com/gocolly/colly/v2"
 	"github.com/luevano/libmangal"
 	mango "github.com/luevano/mangoprovider"
+	"github.com/luevano/mangoprovider/scraper/headless/rod"
 	"github.com/philippgille/gokv"
 )
 
@@ -51,7 +52,7 @@ func (s *Scraper) ChapterPages(_ctx context.Context, store gokv.Store, chapter m
 // Get the pages collector, the actual scraping logic is defined here.
 func (s *Scraper) getPagesCollector() *colly.Collector {
 	collector := s.collector.Clone()
-	setCollectorOnRequest(collector, s.config, "page")
+	setCollectorOnRequest(collector, s.config, rod.ActionPage)
 	collector.OnHTML("html", func(e *colly.HTMLElement) {
 		elements := e.DOM.Find(s.config.PageExtractor.Selector)
 		chapter := e.Request.Ctx.GetAny("chapter").(mango.Chapter)

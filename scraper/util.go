@@ -10,15 +10,15 @@ import (
 )
 
 // Sets request headers via OnRequest callback for the collector.
-func setCollectorOnRequest(collector *colly.Collector, config *Configuration, collectorType string) {
+func setCollectorOnRequest(collector *colly.Collector, config *Configuration, collectorType rod.ActionType) {
 	collector.OnRequest(func(r *colly.Request) {
 		var referer string
 		switch collectorType {
-		case "volume":
+		case rod.ActionVolume:
 			referer = r.Ctx.GetAny("manga").(mango.Manga).URL
-		case "chapter":
+		case rod.ActionChapter:
 			referer = r.Ctx.GetAny("volume").(mango.Volume).Manga_.URL
-		case "page":
+		case rod.ActionPage:
 			referer = r.Ctx.GetAny("chapter").(mango.Chapter).URL
 		default:
 			referer = "https://google.com"
@@ -35,7 +35,7 @@ func setCollectorOnRequest(collector *colly.Collector, config *Configuration, co
 		}
 
 		// Used to call the corresponding rod.Action.
-		r.Headers.Set(rod.CollectorTypeHeader, collectorType)
+		r.Headers.Set(rod.ActionTypeHeader, string(collectorType))
 	})
 }
 
