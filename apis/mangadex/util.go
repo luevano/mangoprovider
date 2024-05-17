@@ -10,14 +10,20 @@ import (
 	mango "github.com/luevano/mangoprovider"
 )
 
-// TODO: make this configurable, in line with mangal's template formatting
-const chapterNumberFormat = "Chapter %07.2f"
+// TODO: make this configurable?
+const chapterNumberFormat = "Chapter %s"
+
+// Get the float number with all of the insignificant digits removed.
+func getFormattedFloat(n float32) string {
+	return strconv.FormatFloat(float64(n), 'f', -1, 32)
+}
 
 // Get parsed chapter number as a float and string.
 func getChapterNum(chapter *mangodex.Chapter) (float32, string, error) {
+
 	chapterNumberStr := chapter.GetChapterNum()
 	if chapterNumberStr == "-" {
-		return 0.01, fmt.Sprintf(chapterNumberFormat, float32(0.01)), nil
+		return 0.01, fmt.Sprintf(chapterNumberFormat, getFormattedFloat(0.01)), nil
 	}
 
 	chapterNumber, err := strconv.ParseFloat(chapterNumberStr, 32)
@@ -25,7 +31,7 @@ func getChapterNum(chapter *mangodex.Chapter) (float32, string, error) {
 		return 0.0, "", err
 	}
 
-	chapterTitleNumber := fmt.Sprintf(chapterNumberFormat, chapterNumber)
+	chapterTitleNumber := fmt.Sprintf(chapterNumberFormat, getFormattedFloat(float32(chapterNumber)))
 	return float32(chapterNumber), chapterTitleNumber, nil
 }
 
