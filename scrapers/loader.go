@@ -8,14 +8,14 @@ import (
 	"github.com/luevano/mangoprovider/scrapers/flamescans"
 	"github.com/luevano/mangoprovider/scrapers/mangabox"
 	"github.com/luevano/mangoprovider/scrapers/mangapill"
-	"github.com/luevano/mangoprovider/scrapers/mangaplus"
 	"github.com/luevano/mangoprovider/scrapers/mangasee"
 	"github.com/luevano/mangoprovider/scrapers/toonily"
 )
 
 func Loaders(options mango.Options) []libmangal.ProviderLoader {
 	loaders := []libmangal.ProviderLoader{
-		Loader(mangaplus.Info, mangaplus.Config, options),
+		// Remove in favor of MangaPlus API implementation
+		// Loader(mangaplus.Info, mangaplus.Config, options),
 		Loader(mangapill.Info, mangapill.Config, options),
 		Loader(mangasee.Info, mangasee.Config, options),
 		Loader(asurascans.Info, asurascans.Config, options),

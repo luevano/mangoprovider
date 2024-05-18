@@ -9,6 +9,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/luevano/libmangal v0.14.1
 	github.com/luevano/mangodex v0.3.3
+	github.com/luevano/mangoplus v0.1.1
 	github.com/philippgille/gokv v0.7.0
 )
 

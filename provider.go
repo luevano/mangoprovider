@@ -17,7 +17,7 @@ type Functions struct {
 	MangaVolumes   func(context.Context, gokv.Store, Manga) ([]libmangal.Volume, error)
 	VolumeChapters func(context.Context, gokv.Store, Volume) ([]libmangal.Chapter, error)
 	ChapterPages   func(context.Context, gokv.Store, Chapter) ([]libmangal.Page, error)
-	GetPageImage   func(context.Context, Page) ([]byte, error)
+	GetPageImage   func(context.Context, *http.Client, Page) ([]byte, error)
 }
 
 type Provider struct {
@@ -25,7 +25,8 @@ type Provider struct {
 	Options Options
 	F       Functions
 
-	store gokv.Store
+	client *http.Client
+	store  gokv.Store
 }
 
 func (p *Provider) String() string {
@@ -103,14 +104,15 @@ func (p *Provider) GetPageImage(
 
 	// Log(fmt.Sprintf("Making HTTP GET request for %q", page_.URL))
 	if p.F.GetPageImage != nil {
-		return p.F.GetPageImage(ctx, *page_)
+		return p.F.GetPageImage(ctx, p.client, *page_)
 	} else {
-		return p.GenericGetPageImage(ctx, *page_)
+		return GenericGetPageImage(ctx, p.client, *page_)
 	}
 }
 
-func (p *Provider) GenericGetPageImage(
+func GenericGetPageImage(
 	ctx context.Context,
+	client *http.Client,
 	page Page,
 ) ([]byte, error) {
 	// Log("Making request using generic getter.")
@@ -127,7 +129,7 @@ func (p *Provider) GenericGetPageImage(
 		request.AddCookie(&http.Cookie{Name: key, Value: value})
 	}
 
-	response, err := p.Options.HTTPClient.Do(request)
+	response, err := client.Do(request)
 	if err != nil {
 		return nil, err
 	}

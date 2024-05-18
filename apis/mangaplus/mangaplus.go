@@ -1,34 +1,32 @@
-package mangadex
+package mangaplus
 
 import (
 	"github.com/luevano/libmangal"
-	"github.com/luevano/mangodex"
+	"github.com/luevano/mangoplus"
 	mango "github.com/luevano/mangoprovider"
 )
 
-// TODO: use this instead of hardcoding urls
-const website = "https://mangadex.org/"
+const website = "https://mangaplus.shueisha.co.jp/"
 
 var providerInfo = libmangal.ProviderInfo{
-	ID:          mango.BundleID + "-mangadex",
-	Name:        "MangaDex",
-	Version:     "0.4.1",
-	Description: "Mangadex scraper using mangodex",
+	ID:          mango.BundleID + "-mangaplus",
+	Name:        "MangaPlus",
+	Version:     "0.1.0",
+	Description: "MangaPlus scraper using mangoplus",
 	Website:     website,
 }
 
-type dex struct {
-	client *mangodex.DexClient
+type plus struct {
+	client *mangoplus.PlusClient
 	filter mango.Filter
 }
 
 func Loader(options mango.Options) libmangal.ProviderLoader {
-	d := dex{
-		client: mangodex.NewDexClient(),
+	d := plus{
+		client: mangoplus.NewPlusClient(),
 		filter: options.Filter,
 	}
 
-	// TODO: use mangodex get chapter page for downloading, instead of the mangoloader generic one
 	return &mango.Loader{
 		ProviderInfo: providerInfo,
 		Options:      options,
@@ -38,6 +36,7 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 				MangaVolumes:   d.MangaVolumes,
 				VolumeChapters: d.VolumeChapters,
 				ChapterPages:   d.ChapterPages,
+				GetPageImage:   d.GetPageImage,
 			}
 		},
 	}

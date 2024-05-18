@@ -32,6 +32,7 @@ func (l *Loader) Load(ctx context.Context) (libmangal.Provider, error) {
 		ProviderInfo: l.ProviderInfo,
 		Options:      l.Options,
 		F:            l.F(),
+		client:       l.Options.HTTPClient,
 		store:        store,
 	}, nil
 }
