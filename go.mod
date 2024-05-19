@@ -7,7 +7,8 @@ require (
 	github.com/go-rod/rod v0.114.6
 	github.com/gocolly/colly/v2 v2.1.0
 	github.com/google/uuid v1.6.0
-	github.com/luevano/libmangal v0.14.1
+	github.com/lithammer/fuzzysearch v1.1.8
+	github.com/luevano/libmangal v0.14.2
 	github.com/luevano/mangodex v0.3.3
 	github.com/luevano/mangoplus v0.2.1
 	github.com/philippgille/gokv v0.7.0
@@ -25,7 +26,6 @@ require (
 	github.com/hhrutter/tiff v1.0.1 // indirect
 	github.com/kennygrant/sanitize v1.2.4 // indirect
 	github.com/kr/text v0.1.0 // indirect
-	github.com/lithammer/fuzzysearch v1.1.8 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/pdfcpu/pdfcpu v0.8.0 // indirect
 	github.com/philippgille/gokv/encoding v0.7.0 // indirect
