@@ -69,9 +69,9 @@ func (s *Scraper) getChaptersCollector() *colly.Collector {
 		elements.Each(func(_ int, selection *goquery.Selection) {
 			link := s.config.ChapterExtractor.URL(selection)
 			url := e.Request.AbsoluteURL(link)
-			title := cleanString(s.config.ChapterExtractor.Title(selection))
+			title := mango.CleanString(s.config.ChapterExtractor.Title(selection))
 
-			match := chapterNumberRegex.FindString(title)
+			match := mango.ChapterNumberRegex.FindString(title)
 			chapterNumber := float32(e.Index)
 			if match != "" {
 				number, err := strconv.ParseFloat(match, 32)

@@ -2,7 +2,6 @@ package scraper
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/gocolly/colly/v2"
 	mango "github.com/luevano/mangoprovider"
@@ -62,14 +61,4 @@ func setBaseURLOnRedirect(config *Configuration) error {
 		config.BaseURL = loc.String()
 	}
 	return nil
-}
-
-// Returns the string with single spaces. E.g. "    " -> " "
-func standardizeSpaces(s string) string {
-	return strings.Join(strings.Fields(s), " ")
-}
-
-// Get the string with all whitespace standardized.
-func cleanString(s string) string {
-	return standardizeSpaces(newLineCharacters.ReplaceAllString(s, " "))
 }

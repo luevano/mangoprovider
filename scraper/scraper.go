@@ -2,17 +2,11 @@ package scraper
 
 import (
 	"fmt"
-	"regexp"
 	"time"
 
 	"github.com/gocolly/colly/v2"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/scraper/headless"
-)
-
-var (
-	chapterNumberRegex = regexp.MustCompile(`(?m)(\d+\.\d+|\d+)`)
-	newLineCharacters  = regexp.MustCompile(`\r?\n`)
 )
 
 // Scraper: Generic scraper downloads html pages and parses them.

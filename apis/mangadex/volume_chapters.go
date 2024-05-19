@@ -144,7 +144,7 @@ func (d *dex) populateChapters(agg *aggregate, params url.Values, volume mango.V
 		c := mango.Chapter{
 			Title:           chapterTitle,
 			ID:              chapterID,
-			URL:             fmt.Sprintf("https://mangadex.org/chapter/%s", chapterID),
+			URL:             fmt.Sprintf("%schapter/%s", website, chapterID),
 			Number:          chapterNumber,
 			Date:            date,
 			ScanlationGroup: scanlator,
