@@ -53,7 +53,7 @@ func (s *Scraper) setCollector() error {
 		colly.Async(true),
 	}
 	s.collector = colly.NewCollector(collectorOptions...)
-	s.collector.SetRequestTimeout(30 * time.Second)
+	s.collector.SetRequestTimeout(60 * time.Second)
 
 	err := s.collector.Limit(&colly.LimitRule{
 		Parallelism: int(s.config.Parallelism),

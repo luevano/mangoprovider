@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/launcher"
+	"github.com/go-rod/rod/lib/proto"
 	mango "github.com/luevano/mangoprovider"
 )
 
@@ -41,16 +42,23 @@ func NewTransport(localStorage map[string]string, actions map[ActionType]Action)
 // RoundTrip gets called on each colly request.
 func (t *TransportRod) RoundTrip(r *http.Request) (*http.Response, error) {
 	var page *rod.Page
+	var err error
 	// Only use the base URL when there are local storage values to set
 	if len(t.localStorage) == 0 {
-		page = t.browser.Context(r.Context()).MustPage("")
+		page, err = t.browser.Context(r.Context()).Page(proto.TargetCreateTarget{URL: ""})
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		baseURL, err := url.Parse(r.URL.String())
 		if err != nil {
 			return nil, err
 		}
 		baseURL.Path = ""
-		page = t.browser.Context(r.Context()).MustPage(baseURL.String())
+		page, err = t.browser.Context(r.Context()).Page(proto.TargetCreateTarget{URL: baseURL.String()})
+		if err != nil {
+			return nil, err
+		}
 
 		for k, v := range t.localStorage {
 			_, err = page.Eval("(k, v) => localStorage[k] = v", k, v)
@@ -63,18 +71,36 @@ func (t *TransportRod) RoundTrip(r *http.Request) (*http.Response, error) {
 
 	if r.Header.Get("Cookie") != "" {
 		cookies := getHeaderCookies(r)
-		page = page.MustSetCookies(cookies...)
+		err = page.SetCookies(cookies)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Same headers as defined in mangoprovider/scraper/util.go.
 	// Only set Referer for now, don't set "Host" as the request will fail.
 	headers := []string{"Referer"}
 	headersMap := getRequestHeaderMap(r, headers)
-	_ = page.MustSetExtraHeaders(headersMap...)
+	_, err = page.SetExtraHeaders(headersMap)
+	if err != nil {
+		return nil, err
+	}
 
-	page = page.MustNavigate(r.URL.String()).MustWaitLoad()
-	// More than enough time to let the page actually load
-	time.Sleep(1 * time.Second)
+	err = page.Navigate(r.URL.String())
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: make this configurable
+	//
+	// Looks like it is necessary to wait for some time (at least for asurascans),
+	// no other kind of page.WaitX seems to work, just raw time.Sleep.
+	// Has to be done before any kind of page.WaitX. Still using WaitLoad in case it's needed.
+	time.Sleep(2 * time.Second)
+	err = page.WaitLoad()
+	if err != nil {
+		return nil, err
+	}
 
 	// Once loaded, check if there are any actions that need to be execued.
 	actionType := ActionType(r.Header.Get(ActionTypeHeader))
