@@ -75,12 +75,14 @@ github.com/kr/pretty v0.3.1/go.mod h1:hoEshYVHaxMs3cyo3Yncou5ZscifuDolrwPKZanG3x
 github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
 github.com/kr/text v0.1.0 h1:45sCR5RtlFHMR4UwH9sdQ5TC8v0qDQCHnXt+kaKSTVE=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
+github.com/lithammer/fuzzysearch v1.1.8 h1:/HIuJnjHuXS8bKaiTMeeDlW2/AyIWk2brx1V8LFgLN4=
+github.com/lithammer/fuzzysearch v1.1.8/go.mod h1:IdqeyBClc3FFqSzYq/MXESsS4S0FsZ5ajtkr5xPLts4=
 github.com/luevano/libmangal v0.14.1 h1:fSwteike5EZhHh7oynIgewnGumYfgfEqxj3EBSqWDlQ=
 github.com/luevano/libmangal v0.14.1/go.mod h1:nJUdEwVRubNf84wH2k7ZuCymYM0WuBqSQhxQqqJStgY=
 github.com/luevano/mangodex v0.3.3 h1:aHryrIjW/NrkVHq3nKHq4qnFdrz8ZF/vl+k4OTC/S/Q=
 github.com/luevano/mangodex v0.3.3/go.mod h1:FdjJzUAr0Xo+gUMakiEMA2ogJKHPIXit+cVvJbroG6Y=
-github.com/luevano/mangoplus v0.1.1 h1:f+X1QOXTDfEktC5vrp54GNg4fZNGfVPdwZaHQjoLZrE=
-github.com/luevano/mangoplus v0.1.1/go.mod h1:COOFVXrEEEccRUp2be5YXkv9+lreiW/s4PYIpq4/RcE=
+github.com/luevano/mangoplus v0.2.1 h1:ekDV1Ngeu4W9IXCKWAbVIZz40dfB5Nw8hb5HvTJDayg=
+github.com/luevano/mangoplus v0.2.1/go.mod h1:COOFVXrEEEccRUp2be5YXkv9+lreiW/s4PYIpq4/RcE=
 github.com/mattn/go-runewidth v0.0.15 h1:UNAjwbU9l54TA3KzvqLGxwWjHmMgBUVhBiTjelZgg3U=
 github.com/mattn/go-runewidth v0.0.15/go.mod h1:Jdepj2loyihRzMpdS35Xk/zdY8IAYHsh153qUoGf23w=
 github.com/pdfcpu/pdfcpu v0.8.0 h1:SuEB4uVsPFz1nb802r38YpFpj9TtZh/oB0bGG34IRZw=

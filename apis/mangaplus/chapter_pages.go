@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/luevano/libmangal"
+	"github.com/luevano/mangoplus"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/philippgille/gokv"
 )
@@ -15,7 +16,9 @@ import (
 func (p *plus) ChapterPages(ctx context.Context, store gokv.Store, chapter mango.Chapter) ([]libmangal.Page, error) {
 	var pages []libmangal.Page
 
-	chapterPages, err := p.client.Page.Get(chapter.ID, false, "super_high")
+	// Will default to "super_high"
+	imgQuality := mangoplus.StringToImageQuality(p.filter.MangaPlusQuality)
+	chapterPages, err := p.client.Page.Get(chapter.ID, false, imgQuality)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +37,6 @@ func (p *plus) ChapterPages(ctx context.Context, store gokv.Store, chapter mango
 		pageHeaders := map[string]string{
 			"Origin":        website,
 			"Referer":       chapter.URL,
-			// "Accept":        "image/webp,image/apng,image/*,*/*;q=0.8",
 			"User-Agent":    mango.UserAgent,
 			"SESSION-TOKEN": randUUID.String(),
 		}

@@ -20,6 +20,7 @@ type Headless struct {
 type Filter struct {
 	NSFW                    bool
 	Language                string
+	MangaPlusQuality        string
 	MangaDexDataSaver       bool
 	TitleChapterNumber      bool
 	AvoidDuplicateChapters  bool
@@ -28,9 +29,10 @@ type Filter struct {
 
 func (f *Filter) String() string {
 	return fmt.Sprintf(
-		"loaderOptions[%t&%s&%t&%t&%t&%t]",
+		"loaderOptions[%t&%s&%s&%t&%t&%t&%t]",
 		f.NSFW,
 		f.Language,
+		f.MangaPlusQuality,
 		f.MangaDexDataSaver,
 		f.TitleChapterNumber,
 		f.AvoidDuplicateChapters,

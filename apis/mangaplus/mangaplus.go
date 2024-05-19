@@ -11,7 +11,7 @@ const website = "https://mangaplus.shueisha.co.jp/"
 var providerInfo = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-mangaplus",
 	Name:        "MangaPlus",
-	Version:     "0.1.0",
+	Version:     "0.2.0",
 	Description: "MangaPlus scraper using mangoplus",
 	Website:     website,
 }
@@ -22,7 +22,7 @@ type plus struct {
 }
 
 func Loader(options mango.Options) libmangal.ProviderLoader {
-	d := plus{
+	p := plus{
 		client: mangoplus.NewPlusClient(),
 		filter: options.Filter,
 	}
@@ -32,11 +32,11 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 		Options:      options,
 		F: func() mango.Functions {
 			return mango.Functions{
-				SearchMangas:   d.SearchMangas,
-				MangaVolumes:   d.MangaVolumes,
-				VolumeChapters: d.VolumeChapters,
-				ChapterPages:   d.ChapterPages,
-				GetPageImage:   d.GetPageImage,
+				SearchMangas:   p.SearchMangas,
+				MangaVolumes:   p.MangaVolumes,
+				VolumeChapters: p.VolumeChapters,
+				ChapterPages:   p.ChapterPages,
+				GetPageImage:   p.GetPageImage,
 			}
 		},
 	}

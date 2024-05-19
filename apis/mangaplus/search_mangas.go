@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"strings"
 
+	"github.com/lithammer/fuzzysearch/fuzzy"
 	"github.com/luevano/libmangal"
+	"github.com/luevano/mangoplus"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/philippgille/gokv"
 )
@@ -14,8 +15,7 @@ import (
 func (p *plus) SearchMangas(ctx context.Context, store gokv.Store, query string) ([]libmangal.Manga, error) {
 	var mangas []libmangal.Manga
 
-	// TODO: include other options such as image quality
-	cacheID := query
+	cacheID := fmt.Sprintf("%s-%s-%s", query, p.filter.Language, p.filter.MangaPlusQuality)
 
 	found, err := store.Get(cacheID, &mangas)
 	if err != nil {
@@ -31,26 +31,25 @@ func (p *plus) SearchMangas(ctx context.Context, store gokv.Store, query string)
 		return nil, err
 	}
 
-	sanQuery := strings.TrimSpace(strings.ToLower(query))
+	// Will default to english
+	prefLang := mangoplus.StringToLanguage(p.filter.Language)
 	for _, manga := range mangaList {
-		// TODO: use helper method once implemented
-		//
-		// The main title is probably the english one
-		// mangaTitle := manga.TheTitle
-
-		// TODO: actually select the manga that best matches
 		for _, title := range manga.Titles {
-			currTitle := strings.TrimSpace(strings.ToLower(title.Name))
-			if strings.Contains(currTitle, sanQuery) {
-				m := mango.Manga{
-					Title:         title.Name,
-					AnilistSearch: title.Name,
-					URL:           fmt.Sprintf("%stitles/%d", website, title.TitleID),
-					ID:            strconv.Itoa(title.TitleID),
-					Cover:         title.PortraitImageURL,
-				}
+			// Sometimes when the language is not provided
+			// it's because it's the english one
+			lang := title.Language
+			if lang == nil || lang == &prefLang {
+				if fuzzy.MatchNormalizedFold(query, title.Name) {
+					m := mango.Manga{
+						Title:         title.Name,
+						AnilistSearch: title.Name,
+						URL:           fmt.Sprintf("%stitles/%d", website, title.TitleID),
+						ID:            strconv.Itoa(title.TitleID),
+						Cover:         title.PortraitImageURL,
+					}
 
-				mangas = append(mangas, &m)
+					mangas = append(mangas, &m)
+				}
 			}
 		}
 	}
