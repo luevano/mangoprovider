@@ -14,8 +14,6 @@ import (
 
 func Loaders(options mango.Options) []libmangal.ProviderLoader {
 	loaders := []libmangal.ProviderLoader{
-		// Remove in favor of MangaPlus API implementation
-		// Loader(mangaplus.Info, mangaplus.Config, options),
 		Loader(mangapill.Info, mangapill.Config, options),
 		Loader(mangasee.Info, mangasee.Config, options),
 		Loader(asurascans.Info, asurascans.Config, options),

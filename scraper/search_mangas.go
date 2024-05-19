@@ -59,18 +59,14 @@ func (s *Scraper) getMangasCollector() *colly.Collector {
 			link := s.config.MangaExtractor.URL(selection)
 			url := e.Request.AbsoluteURL(link)
 			title := mango.CleanString(s.config.MangaExtractor.Title(selection))
-			if title != "" {
-				m := mango.Manga{
-					Title:         title,
-					AnilistSearch: title,
-					URL:           url,
-					ID:            s.config.MangaExtractor.ID(url),
-					Cover:         s.config.MangaExtractor.Cover(selection),
-				}
-				*mangas = append(*mangas, &m)
-			} else {
-				mango.Log(fmt.Sprintf("Warning, omitting manga with empty title (%s)", url))
+			m := mango.Manga{
+				Title:         title,
+				AnilistSearch: title,
+				URL:           url,
+				ID:            s.config.MangaExtractor.ID(url),
+				Cover:         s.config.MangaExtractor.Cover(selection),
 			}
+			*mangas = append(*mangas, &m)
 		})
 	})
 	return collector

@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"slices"
 	"strconv"
-	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gocolly/colly/v2"
@@ -65,7 +64,6 @@ func (s *Scraper) getChaptersCollector() *colly.Collector {
 		volume := e.Request.Ctx.GetAny("volume").(mango.Volume)
 		chapters := e.Request.Ctx.GetAny("chapters").(*[]libmangal.Chapter)
 
-		lastMainChapter := float32(0.0)
 		elements.Each(func(_ int, selection *goquery.Selection) {
 			link := s.config.ChapterExtractor.URL(selection)
 			url := e.Request.AbsoluteURL(link)
@@ -90,18 +88,6 @@ func (s *Scraper) getChaptersCollector() *colly.Collector {
 				scanlationGroup = s.config.ChapterExtractor.ScanlationGroup(selection)
 			}
 
-			// Need to handle MangaPlus' extra chapters that don't have numbers
-			if scanlationGroup == "MangaPlus" {
-				t := strings.ToLower(title)
-				// TODO: need to check what other kinds of "extra" chapters exist
-				if strings.Contains(t, "bonus") ||
-					strings.Contains(t, "extra") ||
-					chapterNumber < lastMainChapter {
-
-					chapterNumber = lastMainChapter + float32(0.5)
-				}
-			}
-
 			c := mango.Chapter{
 				Title:           title,
 				ID:              s.config.ChapterExtractor.ID(url),
@@ -112,11 +98,6 @@ func (s *Scraper) getChaptersCollector() *colly.Collector {
 				Volume_:         &volume,
 			}
 			*chapters = append(*chapters, &c)
-
-			// Keep track of the latest "main" (integer) chapter number
-			if chapterNumber == float32(int(chapterNumber)) {
-				lastMainChapter = chapterNumber
-			}
 		})
 	})
 	return collector
