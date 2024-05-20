@@ -3,6 +3,7 @@ package scraper
 import (
 	"context"
 	"fmt"
+	"sort"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gocolly/colly/v2"
@@ -37,6 +38,10 @@ func (s *Scraper) MangaVolumes(_ctx context.Context, store gokv.Store, manga man
 		return nil, err
 	}
 	collector.Wait()
+
+	sort.SliceStable(volumes, func(i, j int) bool {
+		return volumes[i].Info().Number < volumes[j].Info().Number
+	})
 
 	err = store.Set(cacheID, volumes)
 	if err != nil {

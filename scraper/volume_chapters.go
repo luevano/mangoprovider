@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
+	"sort"
 	"strconv"
 
 	"github.com/PuerkitoBio/goquery"
@@ -46,6 +47,10 @@ func (s *Scraper) VolumeChapters(_ctx context.Context, store gokv.Store, volume 
 	if s.config.ReverseChapters {
 		slices.Reverse(chapters)
 	}
+
+	sort.SliceStable(chapters, func(i, j int) bool {
+		return chapters[i].Info().Number < chapters[j].Info().Number
+	})
 
 	// TODO: only cache if there are chapters (len > 0)?
 	err = store.Set(cacheID, chapters)

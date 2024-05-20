@@ -24,8 +24,9 @@ var Info = libmangal.ProviderInfo{
 var Config = &scraper.Configuration{
 	Name:                 Info.ID,
 	Delay:                50 * time.Millisecond,
+	LoadWait:             2 * time.Second,
 	ReverseChapters:      true,
-	NeedsHeadlessBrowser: true, // TODO: does it really need it?
+	NeedsHeadlessBrowser: true,
 	BaseURL:              Info.Website,
 	GenerateSearchURL: func(baseUrl string, query string) (string, error) {
 		// path is /?s=

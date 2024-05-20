@@ -35,7 +35,11 @@ func (p *plus) VolumeChapters(ctx context.Context, store gokv.Store, volume mang
 	}
 	chapterListGroup := mangaDetails.ChapterListGroup
 
-	lastMainChapNum := float32(0.0)
+	// TODO: need to better handle extra chapters, in cases where
+	// it's not possible to determine the chapter number it might
+	// be needed to "peek" into the future (check the latest chapter numbers).
+	// Or peek into the "Middle" chapter lists (undownloadable chapters that could be parsed)
+	lastMainNumber := float32(0.0)
 	for _, chapterGroup := range chapterListGroup {
 		var chapterLists []mangoplus.Chapter
 		chapterLists = append(chapterLists, chapterGroup.FirstChapterList...)
@@ -43,13 +47,13 @@ func (p *plus) VolumeChapters(ctx context.Context, store gokv.Store, volume mang
 
 		for _, chapter := range chapterLists {
 			// Initialize to -1.0 to keep track of failed to parse numbers
-			currChapNum := float32(-1.0)
+			number := float32(-1.0)
 			title := chapter.Name
 			chNumMatch := mango.ChapterNumberRegex.FindString(title)
 			if chNumMatch != "" {
-				number, err := strconv.ParseFloat(chNumMatch, 32)
+				number64, err := strconv.ParseFloat(chNumMatch, 32)
 				if err == nil {
-					currChapNum = float32(number)
+					number = float32(number64)
 				}
 			}
 			if chapter.SubTitle != nil {
@@ -62,10 +66,10 @@ func (p *plus) VolumeChapters(ctx context.Context, store gokv.Store, volume mang
 			// and if the current chapter number wasn't parsed
 			if (fuzzy.MatchNormalizedFold("bonus", title) ||
 				fuzzy.MatchNormalizedFold("ex", title)) &&
-				currChapNum == float32(-1.0) {
+				number == float32(-1.0) {
 				// What if there are 2 bonus chapters back to back?
 				// Need to add 0.1 instead I guess...
-				currChapNum = lastMainChapNum + float32(0.5)
+				number = lastMainNumber + float32(0.5)
 			}
 
 			chNameMatch := mango.ChapterNameRegex.FindStringSubmatch(title)
@@ -84,7 +88,7 @@ func (p *plus) VolumeChapters(ctx context.Context, store gokv.Store, volume mang
 				Title:           title,
 				ID:              strconv.Itoa(chapter.ChapterId),
 				URL:             fmt.Sprintf("%sviewer/%d", website, chapter.ChapterId),
-				Number:          currChapNum,
+				Number:          number,
 				Date:            date,
 				ScanlationGroup: "MangaPlus",
 				Volume_:         &volume,
@@ -92,8 +96,8 @@ func (p *plus) VolumeChapters(ctx context.Context, store gokv.Store, volume mang
 			chapters = append(chapters, &c)
 
 			// Keep track of the latest "main" (integer) chapter number
-			if currChapNum == float32(int(currChapNum)) {
-				lastMainChapNum = currChapNum
+			if number == float32(int(number)) {
+				lastMainNumber = number
 			}
 		}
 	}

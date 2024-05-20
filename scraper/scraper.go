@@ -20,7 +20,7 @@ type Scraper struct {
 func NewScraper(config *Configuration, options mango.Options) (scraper *Scraper, err error) {
 	// Set the parallelism if not set by the scraper, use the provided parallelism option
 	if config.Parallelism == 0 {
-		mango.Log(fmt.Sprintf("setting parallelism to %d", options.Parallelism))
+		mango.Log(fmt.Sprintf("Setting parallelism to %d", options.Parallelism))
 		config.Parallelism = options.Parallelism
 	}
 	// Set the new BaseURL if there are redirects.
@@ -60,7 +60,11 @@ func (s *Scraper) setCollector() error {
 
 	if s.config.NeedsHeadlessBrowser {
 		mango.Log("Using headless browser")
-		transport := headless.GetTransport(s.options.Headless, s.config.LocalStorage, s.config.GetActions())
+		transport := headless.GetTransport(
+			s.options.Headless,
+			s.config.LoadWait,
+			s.config.LocalStorage,
+			s.config.GetActions())
 		s.collector.WithTransport(transport)
 	}
 	return nil

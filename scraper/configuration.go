@@ -12,6 +12,9 @@ type Configuration struct {
 	Name string
 	// Delay: Delay between requests.
 	Delay time.Duration
+	// LoadWait: Wait time for the page to load
+	// (for headless requests where the HTML is loading dynamically for example).
+	LoadWait time.Duration
 	// Parallelism: Parallelism of the scraper.
 	Parallelism uint8
 

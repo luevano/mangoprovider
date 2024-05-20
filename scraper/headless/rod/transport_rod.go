@@ -18,6 +18,7 @@ var _ http.RoundTripper = (*TransportRod)(nil)
 // TransportRod implementation of Transport used for colly.
 type TransportRod struct {
 	browser      *rod.Browser
+	loadWait     time.Duration
 	localStorage map[string]string
 	actions      map[ActionType]Action
 }
@@ -30,10 +31,15 @@ func (t *TransportRod) Close() error {
 }
 
 // NewTransport creates a new transport with the browser setup.
-func NewTransport(localStorage map[string]string, actions map[ActionType]Action) *TransportRod {
+func NewTransport(
+	loadWait time.Duration,
+	localStorage map[string]string,
+	actions map[ActionType]Action,
+) *TransportRod {
 	u := launcher.New().Leakless(runtime.GOOS == "linux").MustLaunch()
 	return &TransportRod{
 		browser:      rod.New().ControlURL(u).MustConnect(),
+		loadWait:     loadWait,
 		localStorage: localStorage,
 		actions:      actions,
 	}
@@ -91,12 +97,8 @@ func (t *TransportRod) RoundTrip(r *http.Request) (*http.Response, error) {
 		return nil, err
 	}
 
-	// TODO: make this configurable
-	//
-	// Looks like it is necessary to wait for some time (at least for asurascans),
-	// no other kind of page.WaitX seems to work, just raw time.Sleep.
-	// Has to be done before any kind of page.WaitX. Still using WaitLoad in case it's needed.
-	time.Sleep(2 * time.Second)
+	// Some scrapers require extra load time, as page.WaitLoad crashes.
+	time.Sleep(t.loadWait)
 	err = page.WaitLoad()
 	if err != nil {
 		return nil, err
