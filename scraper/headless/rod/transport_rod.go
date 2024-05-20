@@ -97,11 +97,15 @@ func (t *TransportRod) RoundTrip(r *http.Request) (*http.Response, error) {
 		return nil, err
 	}
 
-	// Some scrapers require extra load time, as page.WaitLoad crashes.
-	time.Sleep(t.loadWait)
-	err = page.WaitLoad()
-	if err != nil {
-		return nil, err
+	// Some scrapers don't work with page.WaitLoad directly,
+	// better to use some time as per their config
+	if t.loadWait > 0.0 {
+		time.Sleep(t.loadWait)
+	} else {
+		err = page.WaitLoad()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Once loaded, check if there are any actions that need to be execued.

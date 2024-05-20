@@ -16,7 +16,7 @@ import (
 var AsurascansInfo = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-asurascans",
 	Name:        "AsuraScans",
-	Version:     "0.1.3",
+	Version:     "0.1.4",
 	Description: "AsuraScans scraper",
 	Website:     "https://asuracomic.net/",
 }
@@ -24,7 +24,7 @@ var AsurascansInfo = libmangal.ProviderInfo{
 var AsurascansConfig = &scraper.Configuration{
 	Name:                 AsurascansInfo.ID,
 	Delay:                50 * time.Millisecond,
-	LoadWait:             2 * time.Second,
+	LoadWait:             1 * time.Second,
 	ReverseChapters:      true,
 	NeedsHeadlessBrowser: true,
 	BaseURL:              AsurascansInfo.Website,
