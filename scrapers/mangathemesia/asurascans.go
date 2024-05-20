@@ -1,4 +1,4 @@
-package asurascans
+package mangathemesia
 
 import (
 	"net/url"
@@ -13,21 +13,21 @@ import (
 
 // TODO: add extra option for extracting chapter number (solo leveling is wrong)
 
-var Info = libmangal.ProviderInfo{
+var AsurascansInfo = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-asurascans",
 	Name:        "AsuraScans",
-	Version:     "0.1.2",
+	Version:     "0.1.3",
 	Description: "AsuraScans scraper",
-	Website:     "https://asuratoon.com/",
+	Website:     "https://asuracomic.net/",
 }
 
-var Config = &scraper.Configuration{
-	Name:                 Info.ID,
+var AsurascansConfig = &scraper.Configuration{
+	Name:                 AsurascansInfo.ID,
 	Delay:                50 * time.Millisecond,
 	LoadWait:             2 * time.Second,
 	ReverseChapters:      true,
 	NeedsHeadlessBrowser: true,
-	BaseURL:              Info.Website,
+	BaseURL:              AsurascansInfo.Website,
 	GenerateSearchURL: func(baseUrl string, query string) (string, error) {
 		// path is /?s=
 		params := url.Values{}
@@ -96,7 +96,7 @@ var Config = &scraper.Configuration{
 			}
 		},
 		ScanlationGroup: func(_ *goquery.Selection) string {
-			return Info.Name
+			return AsurascansInfo.Name
 		},
 	},
 	PageExtractor: &scraper.PageExtractor{

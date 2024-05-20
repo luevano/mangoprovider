@@ -1,4 +1,4 @@
-package flamescans
+package mangathemesia
 
 import (
 	"net/url"
@@ -13,19 +13,19 @@ import (
 
 // TODO: add extra option for extracting chapter number (solo leveling is wrong)
 
-var Info = libmangal.ProviderInfo{
-	ID:          mango.BundleID + "-flamescans",
-	Name:        "FlameScans",
+var FlamecomicsInfo = libmangal.ProviderInfo{
+	ID:          mango.BundleID + "-flamecomics",
+	Name:        "FlameComics",
 	Version:     "0.1.0",
-	Description: "FlameScans scraper",
+	Description: "FlameComics scraper",
 	Website:     "https://flamecomics.com/",
 }
 
-var Config = &scraper.Configuration{
-	Name:            Info.ID,
+var FlamecomicsConfig = &scraper.Configuration{
+	Name:            FlamecomicsInfo.ID,
 	Delay:           50 * time.Millisecond,
 	ReverseChapters: true,
-	BaseURL:         Info.Website,
+	BaseURL:         FlamecomicsInfo.Website,
 	GenerateSearchURL: func(baseUrl string, query string) (string, error) {
 		// path is /?s=
 		params := url.Values{}
@@ -94,7 +94,7 @@ var Config = &scraper.Configuration{
 			}
 		},
 		ScanlationGroup: func(_ *goquery.Selection) string {
-			return Info.Name
+			return FlamecomicsInfo.Name
 		},
 	},
 	PageExtractor: &scraper.PageExtractor{

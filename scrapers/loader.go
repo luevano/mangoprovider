@@ -4,11 +4,10 @@ import (
 	"github.com/luevano/libmangal"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/scraper"
-	"github.com/luevano/mangoprovider/scrapers/asurascans"
-	"github.com/luevano/mangoprovider/scrapers/flamescans"
 	"github.com/luevano/mangoprovider/scrapers/mangabox"
 	"github.com/luevano/mangoprovider/scrapers/mangapill"
 	"github.com/luevano/mangoprovider/scrapers/mangasee"
+	"github.com/luevano/mangoprovider/scrapers/mangathemesia"
 	"github.com/luevano/mangoprovider/scrapers/toonily"
 )
 
@@ -16,8 +15,9 @@ func Loaders(options mango.Options) []libmangal.ProviderLoader {
 	loaders := []libmangal.ProviderLoader{
 		Loader(mangapill.Info, mangapill.Config, options),
 		Loader(mangasee.Info, mangasee.Config, options),
-		Loader(asurascans.Info, asurascans.Config, options),
-		Loader(flamescans.Info, flamescans.Config, options),
+		// Mangathemesia
+		Loader(mangathemesia.AsurascansInfo, mangathemesia.AsurascansConfig, options),
+		Loader(mangathemesia.FlamecomicsInfo, mangathemesia.FlamecomicsConfig, options),
 		// Mangabox
 		Loader(mangabox.ManganatoInfo, mangabox.ManganatoConfig, options),
 		Loader(mangabox.MangabatInfo, mangabox.MangabatConfig, options),
