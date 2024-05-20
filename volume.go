@@ -12,6 +12,7 @@ var _ libmangal.Volume = (*Volume)(nil)
 type Volume struct {
 	Number float32 `json:"number"`
 
+	None   bool   `json:"-"`
 	Manga_ *Manga `json:"-"`
 }
 

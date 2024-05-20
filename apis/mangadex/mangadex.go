@@ -6,13 +6,12 @@ import (
 	mango "github.com/luevano/mangoprovider"
 )
 
-// TODO: use this instead of hardcoding urls
 const website = "https://mangadex.org/"
 
 var providerInfo = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-mangadex",
 	Name:        "MangaDex",
-	Version:     "0.4.2",
+	Version:     "0.4.3",
 	Description: "MangaDex scraper using mangodex",
 	Website:     website,
 }

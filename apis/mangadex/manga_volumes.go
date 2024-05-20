@@ -34,40 +34,42 @@ func (d *dex) MangaVolumes(ctx context.Context, store gokv.Store, manga mango.Ma
 		return nil, err
 	}
 
-	// represents the "none" volume
-	var noneVolume mango.Volume
-
+	none := false
+	latestNumber := float32(0.0)
 	// n is a string, could be "none", represents the volume number
 	for n := range volumeList {
-		// Using -1.0 for the "none"; shouldn't be used according to libmangal
-		number := float32(-1.0)
-		if n != "none" {
-			numberF, err := strconv.ParseFloat(n, 32)
-			if err != nil {
-				return nil, err
-			}
-			number = float32(numberF)
+		if n == "none" {
+			none = true
+			continue
+		}
+
+		number64, err := strconv.ParseFloat(n, 32)
+		if err != nil {
+			return nil, err
+		}
+		number := float32(number64)
+		if number > latestNumber {
+			latestNumber = number
 		}
 
 		v := mango.Volume{
 			Number: number,
 			Manga_: &manga,
 		}
-	
-		if n == "none" {
-			noneVolume = v
-		} else {
-			volumes = append(volumes, &v)
-		}
+		volumes = append(volumes, &v)
+	}
+
+	if none {
+		volumes = append(volumes, &mango.Volume{
+			Number: float32(int(latestNumber + float32(1.0))),
+			None:   none,
+			Manga_: &manga,
+		})
 	}
 
 	sort.SliceStable(volumes, func(i, j int) bool {
 		return volumes[i].Info().Number < volumes[j].Info().Number
 	})
-
-	if noneVolume != (mango.Volume{}) {
-		volumes = append(volumes, &noneVolume)
-	}
 
 	err = store.Set(cacheID, volumes)
 	if err != nil {

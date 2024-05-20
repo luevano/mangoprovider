@@ -13,11 +13,12 @@ import (
 )
 
 func (d *dex) SearchMangas(ctx context.Context, store gokv.Store, query string) ([]libmangal.Manga, error) {
+	limit := 100
 	var mangas []libmangal.Manga
 
 	params := url.Values{}
 	params.Set("title", query)
-	params.Set("limit", strconv.Itoa(100))
+	params.Set("limit", strconv.Itoa(limit))
 	params.Set("order[followedCount]", mangodex.OrderDescending)
 	params.Add("includes[]", string(mangodex.RelationshipTypeCoverArt))
 
@@ -41,9 +42,33 @@ func (d *dex) SearchMangas(ctx context.Context, store gokv.Store, query string) 
 		return mangas, nil
 	}
 
-	mangaList, err := d.client.Manga.List(params)
+	offset := 0
+	for {
+		// The offset is set on each iteration, shouldn't be included in the cacheID.
+		params.Set("offset", strconv.Itoa(offset))
+		ended, err := d.populateMangas(&mangas, params)
+		if err != nil {
+			return nil, err
+		}
+		if ended {
+			break
+		}
+		offset += limit
+	}
+
+	err = store.Set(cacheID, mangas)
 	if err != nil {
 		return nil, err
+	}
+
+	return mangas, nil
+}
+
+// Make the request and parse the responses, populating the manga list and extra info useful for filtering.
+func (d *dex) populateMangas(mangas *[]libmangal.Manga, params url.Values) (bool, error) {
+	mangaList, err := d.client.Manga.List(params)
+	if err != nil {
+		return false, err
 	}
 
 	for _, manga := range mangaList {
@@ -69,13 +94,12 @@ func (d *dex) SearchMangas(ctx context.Context, store gokv.Store, query string) 
 			Cover:         cover,
 		}
 
-		mangas = append(mangas, &m)
+		*mangas = append(*mangas, &m)
+	}
+	// If received 100 entries means it probably has more.
+	if len(mangaList) == 100 {
+		return false, nil
 	}
 
-	err = store.Set(cacheID, mangas)
-	if err != nil {
-		return nil, err
-	}
-
-	return mangas, nil
+	return true, nil
 }

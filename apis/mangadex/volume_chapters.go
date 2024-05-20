@@ -22,6 +22,7 @@ type aggregate struct {
 }
 
 func (d *dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango.Volume) ([]libmangal.Chapter, error) {
+	limit := 100
 	agg := aggregate{
 		chapters:    []libmangal.Chapter{},
 		chaptersMap: map[string][]libmangal.Chapter{},
@@ -31,14 +32,14 @@ func (d *dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango
 	// Mangadex api returns "none" for "non-volumed" chapters,
 	// which are saved as -1.0 in libmangal.Volume
 	volumeNumber := "none"
-	if volume.Number != float32(-1.0) {
+	if !volume.None {
 		volumeNumber = volume.String()
 	}
 
 	params := url.Values{}
 	params.Set("manga", volume.Manga_.ID)
 	params.Add("volume[]", volumeNumber)
-	params.Set("limit", strconv.Itoa(100))
+	params.Set("limit", strconv.Itoa(limit))
 	params.Set("order[chapter]", mangodex.OrderAscending)
 	params.Add("translatedLanguage[]", d.filter.Language)
 	params.Add("includes[]", string(mangodex.RelationshipTypeScanlationGroup))
@@ -75,7 +76,7 @@ func (d *dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango
 		if ended {
 			break
 		}
-		offset += 100
+		offset += limit
 	}
 
 	// TODO: add option to exclude list of scanlators/prefer list of scanlators
