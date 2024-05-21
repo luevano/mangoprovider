@@ -30,10 +30,20 @@ type Configuration struct {
 
 	// BaseURL: Base URL of the source.
 	BaseURL string
+	// TODO: remove unnecessary baseUrl in these generate methods
+	//
 	// GenerateSearchURL: Create search URL from the query.
-	// E.g. "one piece" -> "https://manganelo.com/search/story/one%20piece"
+	// E.g. "one piece" -> "https://manganelo.com/search/story/one_piece"
 	GenerateSearchURL func(baseUrl, query string) (string, error)
+	// GenerateSearchByIDURL: Create search URL from the id.
+	// E.g. (one piece) "manga-aa88620" -> "https://chapmanganelo.com/manga-aa88620"
+	GenerateSearchByIDURL func(baseUrl, id string) (string, error)
 
+	// MangaByIDExtractor: Responsible for finding manga elements and extracting the data.
+	//
+	// Used when the id of the manga is provided and the elements need to be fetched from the
+	// manga page instead of the mangas list.
+	MangaByIDExtractor *MangaByIDExtractor
 	// MangaExtractor: Responsible for finding manga elements and extracting the data.
 	MangaExtractor *MangaExtractor
 	// VolumeExtractor: Responsible for finding volume elements and extracting the data.

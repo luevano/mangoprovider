@@ -20,7 +20,7 @@ func (s *Scraper) setCollectorOnRequest(collector *colly.Collector, config *Conf
 		case rod.ActionPage:
 			referer = r.Ctx.GetAny("chapter").(mango.Chapter).URL
 		default:
-			referer = "https://google.com"
+			referer = s.config.BaseURL
 		}
 		r.Headers.Set("Referer", referer)
 		r.Headers.Set("Accept-Language", "en-US") // TODO: remove this? shouldn't specify a language

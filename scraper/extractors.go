@@ -6,9 +6,22 @@ import (
 	"github.com/luevano/mangoprovider/scraper/headless/rod"
 )
 
+// MangaByIDExtractor: responsible for finding manga elements by selector and extracting the data.
+//
+// Used when the id of the manga is provided and the elements need to be fetched from the
+// manga page instead of the mangas list.
+type MangaByIDExtractor struct {
+	// Selector: CSS selector.
+	Selector string
+	// Title: Get title from element found by selector.
+	Title func(*goquery.Selection) string
+	// Cover: Get cover from element found by selector.
+	Cover func(*goquery.Selection) string
+}
+
 // MangaExtractor: responsible for finding manga elements by selector and extracting the data.
 type MangaExtractor struct {
-	// Selector: CSS selector
+	// Selector: CSS selector.
 	Selector string
 	// Title: Get title from element found by selector.
 	Title func(*goquery.Selection) string
