@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/luevano/libmangal"
+	"github.com/luevano/mangodex"
 )
 
 var _ libmangal.Chapter = (*Chapter)(nil)
@@ -16,7 +17,9 @@ type Chapter struct {
 	Date            libmangal.Date `json:"date"`
 	ScanlationGroup string         `json:"scanlation_group"`
 
-	Volume_ *Volume `json:"-"`
+	// AtHome is only required for mangadex
+	AtHome  *mangodex.AtHomeServer `json:"-"`
+	Volume_ *Volume                `json:"-"`
 }
 
 func (c *Chapter) String() string {

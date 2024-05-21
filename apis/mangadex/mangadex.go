@@ -11,7 +11,7 @@ const website = "https://mangadex.org/"
 var providerInfo = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-mangadex",
 	Name:        "MangaDex",
-	Version:     "0.4.3",
+	Version:     "0.5.0",
 	Description: "MangaDex scraper using mangodex",
 	Website:     website,
 }
@@ -27,7 +27,6 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 		filter: options.Filter,
 	}
 
-	// TODO: use mangodex get chapter page for downloading, instead of the mangoloader generic one
 	return &mango.Loader{
 		ProviderInfo: providerInfo,
 		Options:      options,
@@ -37,6 +36,7 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 				MangaVolumes:   d.MangaVolumes,
 				VolumeChapters: d.VolumeChapters,
 				ChapterPages:   d.ChapterPages,
+				GetPageImage:   d.GetPageImage,
 			}
 		},
 	}

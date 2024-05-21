@@ -9,7 +9,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/lithammer/fuzzysearch v1.1.8
 	github.com/luevano/libmangal v0.15.2
-	github.com/luevano/mangodex v0.3.3
+	github.com/luevano/mangodex v0.3.4
 	github.com/luevano/mangoplus v0.2.1
 	github.com/philippgille/gokv v0.7.0
 )
@@ -25,7 +25,7 @@ require (
 	github.com/hhrutter/lzw v1.0.0 // indirect
 	github.com/hhrutter/tiff v1.0.1 // indirect
 	github.com/kennygrant/sanitize v1.2.4 // indirect
-	github.com/kr/text v0.1.0 // indirect
+	github.com/kr/text v0.2.0 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/pdfcpu/pdfcpu v0.8.0 // indirect
 	github.com/philippgille/gokv/encoding v0.7.0 // indirect

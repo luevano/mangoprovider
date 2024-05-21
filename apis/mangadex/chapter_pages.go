@@ -12,50 +12,39 @@ import (
 )
 
 func (d *dex) ChapterPages(ctx context.Context, store gokv.Store, chapter mango.Chapter) ([]libmangal.Page, error) {
-	// Note that this doesn't use the store "cache" as mangadex provides a dynamic
-	// baseURL/hash/page each time it is consulted
 	var pages []libmangal.Page
 
 	atHome, err := d.client.AtHome.Get(chapter.ID, url.Values{})
 	if err != nil {
 		return nil, err
 	}
+	// Required for d.GetPageImage
+	chapter.AtHome = atHome
 
-	data := "data"
-	chapterPages := atHome.Chapter.Data
+	filenames := atHome.Chapter.Data
 	if d.filter.MangaDexDataSaver {
-		chapterPages = atHome.Chapter.DataSaver
-		data = "data-saver"
+		filenames = atHome.Chapter.DataSaver
 	}
-
-	if len(chapterPages) == 0 {
+	if len(filenames) == 0 {
 		return nil, fmt.Errorf("no pages for chapter %q (%s); volume %s; manga %q", chapter.Title, chapter.ID, chapter.Volume_.String(), chapter.Volume_.Manga_.Title)
 	}
 
-	for _, page := range chapterPages {
-		pageSplit := strings.Split(page, ".")
-		if len(pageSplit) != 2 {
+	for _, filename := range filenames {
+		filenameSplit := strings.Split(filename, ".")
+		if len(filenameSplit) != 2 {
 			return nil, fmt.Errorf("unexpected error when extracting page extension; chapter %q (%s)", chapter.Title, chapter.ID)
 		}
-		pageExtension := fmt.Sprintf(".%s", pageSplit[1])
 
-		if !mango.ImageExtensionRegex.MatchString(pageExtension) {
-			return nil, fmt.Errorf("invalid page extension: %s", pageExtension)
-		}
-
-		pageHeaders := map[string]string{
-			"Referer":    chapter.URL,
-			"Accept":     "image/webp,image/apng,image/*,*/*;q=0.8",
-			"User-Agent": mango.UserAgent,
+		extension := fmt.Sprintf(".%s", filenameSplit[1])
+		if !mango.ImageExtensionRegex.MatchString(extension) {
+			return nil, fmt.Errorf("invalid page extension: %s", extension)
 		}
 
 		p := mango.Page{
-			Extension: pageExtension,
-			URL:       fmt.Sprintf("%s/%s/%s/%s", atHome.BaseURL, data, atHome.Chapter.Hash, page),
-			Headers:   pageHeaders,
+			Extension: extension,
+			URL:       filename,
 			Chapter_:  &chapter,
 		}
-
 		pages = append(pages, &p)
 	}
 	return pages, nil
