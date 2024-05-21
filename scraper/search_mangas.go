@@ -78,7 +78,7 @@ func (s *Scraper) getMangaCollector(id string) *colly.Collector {
 	collector := s.collector.Clone()
 	s.setCollectorOnRequest(collector, s.config, rod.ActionManga)
 	collector.OnHTML("html", func(e *colly.HTMLElement) {
-		selection := e.DOM.Find(s.config.MangaByIDExtractor.Selector)
+		selection := e.DOM.Find(s.config.MangaByIDExtractor.Selector).First()
 		mangas := e.Request.Ctx.GetAny("mangas").(*[]libmangal.Manga)
 
 		title := mango.CleanString(s.config.MangaByIDExtractor.Title(selection))

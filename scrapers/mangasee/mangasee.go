@@ -1,6 +1,7 @@
 package mangasee
 
 import (
+	"fmt"
 	"net/url"
 	"strings"
 	"time"
@@ -15,7 +16,7 @@ import (
 var Info = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-mangasee",
 	Name:        "MangaSee",
-	Version:     "0.1.0",
+	Version:     "0.2.0",
 	Description: "MangaSee scraper",
 	Website:     "https://mangasee123.com/",
 }
@@ -38,6 +39,18 @@ var Config = &scraper.Configuration{
 		u.RawQuery = params.Encode()
 
 		return u.String(), nil
+	},
+	GenerateSearchByIDURL: func(baseUrl string, id string) (string, error) {
+		return fmt.Sprintf("%smanga/%s", baseUrl, id), nil
+	},
+	MangaByIDExtractor: &scraper.MangaByIDExtractor{
+		Selector: "div.Box > div.BoxBody > div.row",
+		Title: func(selection *goquery.Selection) string {
+			return selection.Find("div.col-md-9.col-sm-8.top-5 > ul > li").First().Find("h1").Text()
+		},
+		Cover: func(selection *goquery.Selection) string {
+			return selection.Find("div.col-md-3.col-sm-4.col-3.top-5 > img").AttrOr("src", "")
+		},
 	},
 	MangaExtractor: &scraper.MangaExtractor{
 		Selector: ".top-15.ng-scope > .row",

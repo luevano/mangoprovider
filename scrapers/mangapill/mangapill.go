@@ -1,6 +1,7 @@
 package mangapill
 
 import (
+	"fmt"
 	"net/url"
 	"strings"
 	"time"
@@ -14,7 +15,7 @@ import (
 var Info = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-mangapill",
 	Name:        "Mangapill",
-	Version:     "0.3.1",
+	Version:     "0.4.0",
 	Description: "Mangapill scraper",
 	Website:     "https://mangapill.com/",
 }
@@ -36,6 +37,18 @@ var Config = &scraper.Configuration{
 		u.RawQuery = params.Encode()
 
 		return u.String(), nil
+	},
+	GenerateSearchByIDURL: func(baseUrl string, id string) (string, error) {
+		return fmt.Sprintf("%smanga/%s", baseUrl, id), nil
+	},
+	MangaByIDExtractor: &scraper.MangaByIDExtractor{
+		Selector: "div.container > div.flex.flex-col.sm\\:flex-row.my-3",
+		Title: func(selection *goquery.Selection) string {
+			return selection.Find("div.flex.flex-col > div.mb-3 > h1").Text()
+		},
+		Cover: func(selection *goquery.Selection) string {
+			return selection.Find("div.text-transparent > img").AttrOr("data-src", "")
+		},
 	},
 	MangaExtractor: &scraper.MangaExtractor{
 		Selector: "body > div.container.py-3 > div.my-3.grid.justify-end.gap-3.grid-cols-2.md\\:grid-cols-3.lg\\:grid-cols-5 > div",
