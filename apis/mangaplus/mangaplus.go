@@ -17,14 +17,16 @@ var providerInfo = libmangal.ProviderInfo{
 }
 
 type plus struct {
-	client *mangoplus.PlusClient
-	filter mango.Filter
+	client    *mangoplus.PlusClient
+	userAgent string
+	filter    mango.Filter
 }
 
 func Loader(options mango.Options) libmangal.ProviderLoader {
 	p := plus{
-		client: mangoplus.NewPlusClient(),
-		filter: options.Filter,
+		client:    mangoplus.NewPlusClient(),
+		userAgent: options.UserAgent,
+		filter:    options.Filter,
 	}
 
 	return &mango.Loader{

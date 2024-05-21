@@ -63,7 +63,7 @@ func (s *Scraper) VolumeChapters(_ctx context.Context, store gokv.Store, volume 
 
 func (s *Scraper) getChaptersCollector() *colly.Collector {
 	collector := s.collector.Clone()
-	setCollectorOnRequest(collector, s.config, rod.ActionChapter)
+	s.setCollectorOnRequest(collector, s.config, rod.ActionChapter)
 	collector.OnHTML("html", func(e *colly.HTMLElement) {
 		elements := e.DOM.Find(s.config.ChapterExtractor.Selector)
 		volume := e.Request.Ctx.GetAny("volume").(mango.Volume)

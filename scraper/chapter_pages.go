@@ -52,7 +52,7 @@ func (s *Scraper) ChapterPages(_ctx context.Context, store gokv.Store, chapter m
 // Get the pages collector, the actual scraping logic is defined here.
 func (s *Scraper) getPagesCollector() *colly.Collector {
 	collector := s.collector.Clone()
-	setCollectorOnRequest(collector, s.config, rod.ActionPage)
+	s.setCollectorOnRequest(collector, s.config, rod.ActionPage)
 	collector.OnHTML("html", func(e *colly.HTMLElement) {
 		elements := e.DOM.Find(s.config.PageExtractor.Selector)
 		chapter := e.Request.Ctx.GetAny("chapter").(mango.Chapter)
@@ -67,7 +67,7 @@ func (s *Scraper) getPagesCollector() *colly.Collector {
 			headers := map[string]string{
 				"Referer":    chapter.URL,
 				"Accept":     "image/webp,image/apng,image/*,*/*;q=0.8",
-				"User-Agent": mango.UserAgent,
+				"User-Agent": s.options.UserAgent,
 			}
 
 			p := mango.Page{

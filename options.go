@@ -7,10 +7,7 @@ import (
 	"github.com/philippgille/gokv"
 )
 
-const (
-	BundleID  = "mango"
-	UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
-)
+const BundleID = "mango"
 
 type Headless struct {
 	UseFlaresolverr bool
@@ -42,6 +39,7 @@ func (f *Filter) String() string {
 
 type Options struct {
 	HTTPClient  *http.Client
+	UserAgent   string
 	HTTPStore   func(providerID string) (gokv.Store, error)
 	Parallelism uint8
 	Headless

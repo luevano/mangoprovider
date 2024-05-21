@@ -50,7 +50,7 @@ func (s *Scraper) SearchMangas(_ctx context.Context, store gokv.Store, query str
 // Get the mangas collector, the actual scraping logic is defined here.
 func (s *Scraper) getMangasCollector() *colly.Collector {
 	collector := s.collector.Clone()
-	setCollectorOnRequest(collector, s.config, rod.ActionManga)
+	s.setCollectorOnRequest(collector, s.config, rod.ActionManga)
 	collector.OnHTML("html", func(e *colly.HTMLElement) {
 		elements := e.DOM.Find(s.config.MangaExtractor.Selector)
 		mangas := e.Request.Ctx.GetAny("mangas").(*[]libmangal.Manga)

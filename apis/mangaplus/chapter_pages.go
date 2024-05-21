@@ -37,7 +37,7 @@ func (p *plus) ChapterPages(ctx context.Context, store gokv.Store, chapter mango
 		pageHeaders := map[string]string{
 			"Origin":        website,
 			"Referer":       chapter.URL,
-			"User-Agent":    mango.UserAgent,
+			"User-Agent":    p.userAgent,
 			"SESSION-TOKEN": randUUID.String(),
 		}
 
