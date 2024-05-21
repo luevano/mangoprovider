@@ -13,9 +13,81 @@ import (
 )
 
 func (d *dex) SearchMangas(ctx context.Context, store gokv.Store, query string) ([]libmangal.Manga, error) {
-	limit := 100
 	var mangas []libmangal.Manga
 
+	matchGroups := mango.ReNamedGroups(mango.MangaQueryIDRegex, query)
+	mangaID, byID := matchGroups[mango.MangaQueryIDName]
+
+	limit := 100
+	var params url.Values
+	var cacheID string
+	if byID {
+		cacheID = fmt.Sprintf("mid:%s", mangaID)
+	} else {
+		params = d.getSearchMangasParams(query, limit)
+		cacheID = fmt.Sprintf("%s-%s", params.Encode(), d.filter.String())
+	}
+
+	found, err := store.Get(cacheID, &mangas)
+	if err != nil {
+		return nil, err
+	}
+	if found {
+		mango.Log(fmt.Sprintf("Found mangas in cache (%s)", query))
+		return mangas, nil
+	}
+
+	if byID {
+		err = d.searchManga(&mangas, mangaID)
+	} else {
+		err = d.searchMangas(&mangas, params, limit)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	err = store.Set(cacheID, mangas)
+	if err != nil {
+		return nil, err
+	}
+
+	return mangas, nil
+}
+
+// find manga by id and populate the list
+func (d *dex) searchManga(mangas *[]libmangal.Manga, id string) error {
+	params := url.Values{}
+	params.Add("includes[]", string(mangodex.RelationshipTypeCoverArt))
+	manga, err := d.client.Manga.Get(id, params)
+	if err != nil {
+		return err
+	}
+	*mangas = []libmangal.Manga{d.dexToMangoManga(manga)}
+	return nil
+}
+
+// search of mangas by query and populate the list
+func (d *dex) searchMangas(mangas *[]libmangal.Manga, params url.Values, limit int) error {
+	offset := 0
+	for {
+		params.Set("offset", strconv.Itoa(offset))
+		mangaList, err := d.client.Manga.List(params)
+		if err != nil {
+			return err
+		}
+		for _, manga := range mangaList {
+			*mangas = append(*mangas, d.dexToMangoManga(manga))
+		}
+		// If received less than the limit, we got them all
+		if len(mangaList) < limit {
+			break
+		}
+		offset += limit
+	}
+	return nil
+}
+
+func (d *dex) getSearchMangasParams(query string, limit int) url.Values {
 	params := url.Values{}
 	params.Set("title", query)
 	params.Set("limit", strconv.Itoa(limit))
@@ -31,75 +103,29 @@ func (d *dex) SearchMangas(ctx context.Context, store gokv.Store, query string) 
 		params.Add("contentRating[]", string(rating))
 	}
 
-	cacheID := fmt.Sprintf("%s-%s", params.Encode(), d.filter.String())
-
-	found, err := store.Get(cacheID, &mangas)
-	if err != nil {
-		return nil, err
-	}
-	if found {
-		mango.Log(fmt.Sprintf("Found mangas in cache with query %q", query))
-		return mangas, nil
-	}
-
-	offset := 0
-	for {
-		// The offset is set on each iteration, shouldn't be included in the cacheID.
-		params.Set("offset", strconv.Itoa(offset))
-		ended, err := d.populateMangas(&mangas, params)
-		if err != nil {
-			return nil, err
-		}
-		if ended {
-			break
-		}
-		offset += limit
-	}
-
-	err = store.Set(cacheID, mangas)
-	if err != nil {
-		return nil, err
-	}
-
-	return mangas, nil
+	return params
 }
 
-// Make the request and parse the responses, populating the manga list and extra info useful for filtering.
-func (d *dex) populateMangas(mangas *[]libmangal.Manga, params url.Values) (bool, error) {
-	mangaList, err := d.client.Manga.List(params)
-	if err != nil {
-		return false, err
+func (d *dex) dexToMangoManga(manga *mangodex.Manga) *mango.Manga {
+	var mangaCoverFileNames []string
+	for _, relationship := range manga.Relationships {
+		if relationship.Type == mangodex.RelationshipTypeCoverArt {
+			coverRel, _ := relationship.Attributes.(*mangodex.CoverAttributes)
+			mangaCoverFileNames = append(mangaCoverFileNames, coverRel.FileName)
+		}
 	}
 
-	for _, manga := range mangaList {
-		var mangaCoverFileNames []string
-		for _, relationship := range manga.Relationships {
-			if relationship.Type == mangodex.RelationshipTypeCoverArt {
-				coverRel, _ := relationship.Attributes.(*mangodex.CoverAttributes)
-				mangaCoverFileNames = append(mangaCoverFileNames, coverRel.FileName)
-			}
-		}
-
-		var cover string
-		if len(mangaCoverFileNames) != 0 {
-			cover = fmt.Sprintf("%scovers/%s/%s", website, manga.ID, mangaCoverFileNames[0])
-		}
-
-		mangaTitle := manga.GetTitle(d.filter.Language)
-		m := mango.Manga{
-			Title:         mangaTitle,
-			AnilistSearch: mangaTitle,
-			URL:           fmt.Sprintf("%stitle/%s", website, manga.ID),
-			ID:            manga.ID,
-			Cover:         cover,
-		}
-
-		*mangas = append(*mangas, &m)
-	}
-	// If received 100 entries means it probably has more.
-	if len(mangaList) == 100 {
-		return false, nil
+	var cover string
+	if len(mangaCoverFileNames) != 0 {
+		cover = fmt.Sprintf("%scovers/%s/%s", website, manga.ID, mangaCoverFileNames[0])
 	}
 
-	return true, nil
+	mangaTitle := manga.GetTitle(d.filter.Language)
+	return &mango.Manga{
+		Title:         mangaTitle,
+		AnilistSearch: mangaTitle,
+		URL:           fmt.Sprintf("%stitle/%s", website, manga.ID),
+		ID:            manga.ID,
+		Cover:         cover,
+	}
 }
