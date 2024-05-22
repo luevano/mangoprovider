@@ -27,6 +27,18 @@ func Mangabox(name, baseUrl, searchPath, dateLayout, dateSelector string) *scrap
 
 			return u.String(), nil
 		},
+		GenerateSearchByIDURL: func(baseUrl string, id string) (string, error) {
+			return fmt.Sprintf("%s%s", baseUrl, id), nil
+		},
+		MangaByIDExtractor: &scraper.MangaByIDExtractor{
+			Selector: "div.manga-info-top, div.panel-story-info",
+			Title: func(selection *goquery.Selection) string {
+				return selection.Find("h1, h2").First().Text()
+			},
+			Cover: func(selection *goquery.Selection) string {
+				return selection.Find("div.manga-info-pic img, span.info-image img").AttrOr("src", "")
+			},
+		},
 		MangaExtractor: &scraper.MangaExtractor{
 			Selector: ".panel-search-story .search-story-item",
 			Title: func(selection *goquery.Selection) string {

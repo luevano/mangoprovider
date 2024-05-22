@@ -1,6 +1,7 @@
 package mangathemesia
 
 import (
+	"fmt"
 	"net/url"
 	"strings"
 	"time"
@@ -14,7 +15,8 @@ import (
 // TODO: add extra option for extracting chapter number
 // (solo leveling is wrong, at least for flamecomics)
 
-func Mangathemesia(name, baseUrl string) *scraper.Configuration {
+// Mangathemesia is a generic type of website used by Asurascans, Flamecomics, etc.
+func Mangathemesia(name, baseUrl, mangaDir string) *scraper.Configuration {
 	// Looks like they don't need a headless browser (and thus no load wait), but will keep an eye
 	return &scraper.Configuration{
 		// LoadWait:        1 * time.Second,
@@ -32,6 +34,19 @@ func Mangathemesia(name, baseUrl string) *scraper.Configuration {
 			u.RawQuery = params.Encode()
 
 			return u.String(), nil
+		},
+		GenerateSearchByIDURL: func(baseUrl string, id string) (string, error) {
+			dir := strings.Trim(mangaDir, "/")
+			return fmt.Sprintf("%s%s/%s", baseUrl, dir, id), nil
+		},
+		MangaByIDExtractor: &scraper.MangaByIDExtractor{
+			Selector: "div.bigcontent, div.animefull, div.main-info, div.postbody",
+			Title: func(selection *goquery.Selection) string {
+				return selection.Find("h1.entry-title, .ts-breadcrumb li:last-child span").First().Text()
+			},
+			Cover: func(selection *goquery.Selection) string {
+				return selection.Find(".infomanga > div[itemprop=image] img, .thumb img").AttrOr("src", "")
+			},
 		},
 		MangaExtractor: &scraper.MangaExtractor{
 			Selector: ".utao .uta .imgu, .listupd .bs .bsx, .listo .bs .bsx",

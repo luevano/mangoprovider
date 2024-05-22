@@ -36,6 +36,20 @@ var Config = &scraper.Configuration{
 
 		return u.String(), nil
 	},
+	GenerateSearchByIDURL: func(baseUrl string, id string) (string, error) {
+		return fmt.Sprintf("%swebtoon/%s", baseUrl, id), nil
+	},
+	MangaByIDExtractor: &scraper.MangaByIDExtractor{
+		Selector: "div.tab-summary",
+		Title: func(selection *goquery.Selection) string {
+			titleSelection := selection.Find("div.post-content > div.post-title")
+			titleSelection.Children().Find("h1 > span.manga-title-badges").Remove()
+			return titleSelection.Find("h1").Text()
+		},
+		Cover: func(selection *goquery.Selection) string {
+			return selection.Find("div.summary_image > a > img").AttrOr("data-src", "")
+		},
+	},
 	MangaExtractor: &scraper.MangaExtractor{
 		Selector: ".page-item-detail.manga",
 		Title: func(selection *goquery.Selection) string {
