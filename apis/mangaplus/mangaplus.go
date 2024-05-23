@@ -23,10 +23,12 @@ type plus struct {
 }
 
 func Loader(options mango.Options) libmangal.ProviderLoader {
+	// TODO: decide if this should be moved into mangal,
+	// kind of a mess of "options" moving around
 	o := mangoplus.DefaultOptions()
 	o.UserAgent = options.UserAgent
 
-	mPO := options.MPlusOptions
+	mPO := options.MangaPlus
 	if mPO.OSVersion != "" {
 		o.OSVersion = mPO.OSVersion
 	}

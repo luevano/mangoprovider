@@ -37,7 +37,7 @@ func (f *Filter) String() string {
 	)
 }
 
-type MPlusOptions struct {
+type MangaPlusOptions struct {
 	OSVersion  string
 	AppVersion string
 	AndroidID  string
@@ -50,5 +50,5 @@ type Options struct {
 	Parallelism uint8
 	Headless
 	Filter
-	MPlusOptions MPlusOptions
+	MangaPlus MangaPlusOptions
 }
