@@ -70,7 +70,13 @@ func (p *plus) VolumeChapters(ctx context.Context, store gokv.Store, volume mang
 			matchGroups := mango.ReNamedGroups(mango.ChapterNameRegex, title)
 			titleTemp, found := matchGroups[mango.ChapterNameIDName]
 			if found {
-				title = titleTemp
+				// Check that the resulting title is not "Part 123",
+				// as it probably is part of the whole title and we'll like to keep
+				// the prefix
+				// This happens with Spy x Family: "Mission X Part 1" for example
+				if !mango.ChapterNameExcludeRegex.MatchString(titleTemp) {
+					title = titleTemp
+				}
 			}
 
 			timeStamp := time.Unix(int64(chapter.StartTimeStamp), 0)
