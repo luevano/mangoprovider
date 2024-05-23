@@ -4,17 +4,13 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
-	"github.com/lithammer/fuzzysearch/fuzzy"
 	"github.com/luevano/libmangal"
 	"github.com/luevano/mangoplus"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/philippgille/gokv"
 )
-
-// TODO: handle case with 0 chapters?
 
 func (p *plus) VolumeChapters(ctx context.Context, store gokv.Store, volume mango.Volume) ([]libmangal.Chapter, error) {
 	var chapters []libmangal.Chapter
@@ -35,11 +31,9 @@ func (p *plus) VolumeChapters(ctx context.Context, store gokv.Store, volume mang
 	}
 	chapterListGroup := mangaDetails.ChapterListGroup
 
-	// TODO: need to better handle extra chapters, in cases where
-	// it's not possible to determine the chapter number it might
-	// be needed to "peek" into the future (check the latest chapter numbers).
-	// Or peek into the "Middle" chapter lists (undownloadable chapters that could be parsed)
-	lastMainNumber := float32(0.0)
+	// All chapters are assumed to come in order, there is no other way to deal
+	// with extra/bonus chapters (if they don't come with a number)
+	lastNumber := float32(0.0)
 	for _, chapterGroup := range chapterListGroup {
 		var chapterLists []mangoplus.Chapter
 		chapterLists = append(chapterLists, chapterGroup.FirstChapterList...)
@@ -47,7 +41,6 @@ func (p *plus) VolumeChapters(ctx context.Context, store gokv.Store, volume mang
 		chapterLists = append(chapterLists, chapterGroup.LastChapterList...)
 
 		for _, chapter := range chapterLists {
-			// Initialize to -1.0 to keep track of failed to parse numbers
 			number := float32(-1.0)
 			title := chapter.Name
 			chNumMatch := mango.ChapterNumberRegex.FindString(title)
@@ -57,25 +50,27 @@ func (p *plus) VolumeChapters(ctx context.Context, store gokv.Store, volume mang
 					number = float32(number64)
 				}
 			}
+			// If either there was no match for the number or
+			// parsing the number failed for some reason
+			if number == float32(-1.0) {
+				// If it's the first extra, make it 0.5, else add 0.1
+				if mango.FloatIsInt(lastNumber) {
+					number = lastNumber + float32(0.5)
+				} else {
+					number = lastNumber + float32(0.1)
+				}
+			}
+			lastNumber = number
+
 			if chapter.SubTitle != nil {
 				title = *chapter.SubTitle
 			}
 
-			// TODO: enhance these checks, need to test it further
-			//
-			// When the title is explicitly a "Bonus" or "Extra",
-			// and if the current chapter number wasn't parsed
-			if (fuzzy.MatchNormalizedFold("bonus", title) ||
-				fuzzy.MatchNormalizedFold("ex", title)) &&
-				number == float32(-1.0) {
-				// What if there are 2 bonus chapters back to back?
-				// Need to add 0.1 instead I guess...
-				number = lastMainNumber + float32(0.5)
-			}
-
-			chNameMatch := mango.ChapterNameRegex.FindStringSubmatch(title)
-			if len(chNameMatch) > 2 {
-				title = strings.TrimSpace(chNameMatch[2])
+			// Try to get the name without prefix "Chapter 123:" or similar
+			matchGroups := mango.ReNamedGroups(mango.ChapterNameRegex, title)
+			titleTemp, found := matchGroups[mango.ChapterNameIDName]
+			if found {
+				title = titleTemp
 			}
 
 			timeStamp := time.Unix(int64(chapter.StartTimeStamp), 0)
@@ -95,13 +90,7 @@ func (p *plus) VolumeChapters(ctx context.Context, store gokv.Store, volume mang
 				Volume_:         &volume,
 			}
 			chapters = append(chapters, &c)
-
-			// Keep track of the latest "main" (integer) chapter number
-			if number == float32(int(number)) {
-				lastMainNumber = number
-			}
 		}
 	}
-
 	return chapters, nil
 }

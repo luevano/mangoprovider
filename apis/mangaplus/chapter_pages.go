@@ -3,15 +3,14 @@ package mangaplus
 import (
 	"context"
 	"fmt"
+	"net/url"
+	"path/filepath"
 
-	"github.com/google/uuid"
 	"github.com/luevano/libmangal"
 	"github.com/luevano/mangoplus"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/philippgille/gokv"
 )
-
-// TODO: handle case with 0 pages
 
 func (p *plus) ChapterPages(ctx context.Context, store gokv.Store, chapter mango.Chapter) ([]libmangal.Page, error) {
 	var pages []libmangal.Page
@@ -23,22 +22,20 @@ func (p *plus) ChapterPages(ctx context.Context, store gokv.Store, chapter mango
 		return nil, err
 	}
 
-	// TODO: handle page extension, currently assuming its .jpg
 	for _, page := range chapterPages {
-
-		// if !mango.ImageExtensionRegex.MatchString(pageExtension) {
-		// 	return nil, fmt.Errorf("invalid page extension: %s", pageExtension)
-		// }
-
-		randUUID, err := uuid.NewRandom()
+		u, err := url.Parse(page.ImageURL)
 		if err != nil {
 			return nil, err
 		}
+		ext := filepath.Ext(u.Path)
+		if !mango.ImageExtensionRegex.MatchString(ext) {
+			return nil, fmt.Errorf("invalid page extension: %s (from path %s)", ext, u.Path)
+		}
+
 		pageHeaders := map[string]string{
-			"Origin":        website,
-			"Referer":       chapter.URL,
-			"User-Agent":    p.userAgent,
-			"SESSION-TOKEN": randUUID.String(),
+			"Origin":     website,
+			"Referer":    chapter.URL,
+			"User-Agent": p.userAgent,
 		}
 
 		enc := ""
@@ -47,7 +44,7 @@ func (p *plus) ChapterPages(ctx context.Context, store gokv.Store, chapter mango
 		}
 
 		p := mango.Page{
-			Extension: ".jpg",
+			Extension: ext,
 			URL:       fmt.Sprintf("%s%s", page.ImageURL, enc),
 			Headers:   pageHeaders,
 			Chapter_:  &chapter,

@@ -1,12 +1,6 @@
 package mangoprovider
 
-import (
-	"regexp"
-
-	"github.com/luevano/libmangal"
-)
-
-var ImageExtensionRegex = regexp.MustCompile(`^\.[a-zA-Z0-9][a-zA-Z0-9.]*[a-zA-Z0-9]$`)
+import "github.com/luevano/libmangal"
 
 var _ libmangal.Page = (*Page)(nil)
 

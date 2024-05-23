@@ -5,13 +5,19 @@ import (
 	"strings"
 )
 
-const MangaQueryIDName = "id"
+const (
+	ChapterNameIDName = "title"
+	MangaQueryIDName  = "id"
+)
 
 var (
+	// Old
+	// ChapterNameRegex       = regexp.MustCompile(`(?mi)chapter\s*#?\s*\d+(\.\d+)?\s*:\s*(.*\S)\s*$`)
 	MangaQueryIDRegex      = regexp.MustCompile(`(?i)\s*(m((anga)?[-_]?)?id)\s*:\s*(?P<id>.*\S)\s*$`)
 	ChapterNumberRegex     = regexp.MustCompile(`(?m)(\d+\.\d+|\d+)`)
-	ChapterNameRegex       = regexp.MustCompile(`(?mi)chapter\s*#?\s*\d+(\.\d+)?\s*:\s*(.*\S)\s*$`)
+	ChapterNameRegex       = regexp.MustCompile(`(?mi)^([a-z]*\.?)\s*#?\s*\d+(\.\d+)?\s*:?\s+(?P<title>.*\S)\s*$`)
 	NewlineCharactersRegex = regexp.MustCompile(`\r?\n`)
+	ImageExtensionRegex    = regexp.MustCompile(`^\.[a-zA-Z0-9][a-zA-Z0-9.]*[a-zA-Z0-9]$`)
 )
 
 // Returns the string with single spaces. E.g. "    " -> " "
@@ -37,4 +43,9 @@ func ReNamedGroups(pattern *regexp.Regexp, str string) map[string]string {
 		}
 	}
 	return groups
+}
+
+// FloatIsInt is a helper function to see if the float value is actually an integer.
+func FloatIsInt(number float32) bool {
+	return number == float32(int(number))
 }
