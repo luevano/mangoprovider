@@ -57,10 +57,11 @@ func (p *plus) VolumeChapters(ctx context.Context, store gokv.Store, volume mang
 			// parsing the number failed for some reason
 			if number == float32(-1.0) {
 				// If it's the first extra, make it 0.5, else add 0.1
+				// Using a trick to avoid floating point precision issues https://stackoverflow.com/a/56300186
 				if mango.FloatIsInt(lastNumber) {
-					number = lastNumber + float32(0.5)
+					number = float32((float64(lastNumber*10.0) + float64(5.0))/10.0)
 				} else {
-					number = lastNumber + float32(0.1)
+					number = float32((float64(lastNumber*10.0) + float64(1.0))/10.0)
 				}
 			}
 			lastNumber = number
