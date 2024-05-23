@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/luevano/libmangal"
@@ -43,8 +44,10 @@ func (p *plus) VolumeChapters(ctx context.Context, store gokv.Store, volume mang
 		for _, chapter := range chapterLists {
 			number := float32(-1.0)
 			title := chapter.Name
-			chNumMatch := mango.ChapterNumberRegex.FindString(title)
+			// Special case fo MangaPlus as it's "decimal" numbers contain "-"
+			chNumMatch := mango.ChapterNumberMPRegex.FindString(title)
 			if chNumMatch != "" {
+				chNumMatch = strings.Replace(chNumMatch, "-", ".", 1)
 				number64, err := strconv.ParseFloat(chNumMatch, 32)
 				if err == nil {
 					number = float32(number64)
