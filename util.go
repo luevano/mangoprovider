@@ -15,7 +15,7 @@ var (
 	// ChapterNameRegex       = regexp.MustCompile(`(?mi)chapter\s*#?\s*\d+(\.\d+)?\s*:\s*(.*\S)\s*$`)
 	MangaQueryIDRegex      = regexp.MustCompile(`(?i)\s*(m((anga)?[-_]?)?id)\s*:\s*(?P<id>.*\S)\s*$`)
 	ChapterNumberRegex     = regexp.MustCompile(`(?m)(\d+\.\d+|\d+)`)
-	ChapterNameRegex       = regexp.MustCompile(`(?mi)^([a-z]*\.?)\s*#?\s*\d+(\.\d+)?\s*:?\s+(?P<title>.*\S)\s*$`)
+	ChapterNameRegex       = regexp.MustCompile(`(?mi)^([a-z]*\.?)\s*#?\s*\d+(\.\d+)?\s*[:\-_.]?\s+(?P<title>.*\S)\s*$`)
 	NewlineCharactersRegex = regexp.MustCompile(`\r?\n`)
 	ImageExtensionRegex    = regexp.MustCompile(`^\.[a-zA-Z0-9][a-zA-Z0-9.]*[a-zA-Z0-9]$`)
 )
