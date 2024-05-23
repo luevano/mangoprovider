@@ -43,6 +43,7 @@ func (p *plus) VolumeChapters(ctx context.Context, store gokv.Store, volume mang
 	for _, chapterGroup := range chapterListGroup {
 		var chapterLists []mangoplus.Chapter
 		chapterLists = append(chapterLists, chapterGroup.FirstChapterList...)
+		chapterLists = append(chapterLists, chapterGroup.MidChapterList...)
 		chapterLists = append(chapterLists, chapterGroup.LastChapterList...)
 
 		for _, chapter := range chapterLists {

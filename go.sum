@@ -81,8 +81,10 @@ github.com/luevano/libmangal v0.15.2 h1:aMhuxPVPLW1uTK5nHzwClF1TJoagCSREpVM1h4Ty
 github.com/luevano/libmangal v0.15.2/go.mod h1:nJUdEwVRubNf84wH2k7ZuCymYM0WuBqSQhxQqqJStgY=
 github.com/luevano/mangodex v0.3.4 h1:M6jJr5hCoUYz/H8iapsd3kTu/cg8SZQmgX4g/jmKirU=
 github.com/luevano/mangodex v0.3.4/go.mod h1:FdjJzUAr0Xo+gUMakiEMA2ogJKHPIXit+cVvJbroG6Y=
-github.com/luevano/mangoplus v0.2.1 h1:ekDV1Ngeu4W9IXCKWAbVIZz40dfB5Nw8hb5HvTJDayg=
-github.com/luevano/mangoplus v0.2.1/go.mod h1:COOFVXrEEEccRUp2be5YXkv9+lreiW/s4PYIpq4/RcE=
+github.com/luevano/mangoplus v0.3.0 h1:jhgaj7nzLrKG0OJgsbwN5FKrkMG5At2lSljEIsTPu2w=
+github.com/luevano/mangoplus v0.3.0/go.mod h1:COOFVXrEEEccRUp2be5YXkv9+lreiW/s4PYIpq4/RcE=
+github.com/luevano/mangoplus v0.3.1 h1:8Nr7tZYtdSa2zijssHf9F+ptlErl8qygUFT03oCjegY=
+github.com/luevano/mangoplus v0.3.1/go.mod h1:COOFVXrEEEccRUp2be5YXkv9+lreiW/s4PYIpq4/RcE=
 github.com/mattn/go-runewidth v0.0.15 h1:UNAjwbU9l54TA3KzvqLGxwWjHmMgBUVhBiTjelZgg3U=
 github.com/mattn/go-runewidth v0.0.15/go.mod h1:Jdepj2loyihRzMpdS35Xk/zdY8IAYHsh153qUoGf23w=
 github.com/pdfcpu/pdfcpu v0.8.0 h1:SuEB4uVsPFz1nb802r38YpFpj9TtZh/oB0bGG34IRZw=
