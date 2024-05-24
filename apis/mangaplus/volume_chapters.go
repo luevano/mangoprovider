@@ -97,16 +97,22 @@ func parseChapterTitle(s string, subTitle *string) string {
 	title := s
 	if subTitle != nil {
 		// Need to normalize the spaces, some weird unicode spaces are not matched with regex
-		title = strings.Join(strings.Fields(*subTitle), " ")
+		title = strings.TrimSpace(strings.Join(strings.Fields(strings.Replace(*subTitle, "\t", " ", -1)), " "))
 
 		// Try to get the name without prefix "Chapter 123:" or similar
 		matchGroups := mango.ReNamedGroups(mango.ChapterNameRegex, title)
 		titleTemp := strings.TrimSpace(matchGroups[mango.ChapterNameIDName])
 		if titleTemp != "" {
-			title = titleTemp
-			partNum := strings.TrimSpace(matchGroups[mango.ChapterPartNumberIDName])
-			if partNum != "" {
-				title = fmt.Sprintf("%s, Part %s", title, partNum)
+			// Check that the resulting title is not just "Part 123",
+			// as it probably is part of the whole title and we'll like to keep
+			// the prefix
+			// This happens with Spy x Family: "Mission X Part Y" for example
+			if !mango.ChapterNameExcludeRegex.MatchString(titleTemp) {
+				title = titleTemp
+				partNum := strings.TrimSpace(matchGroups[mango.ChapterPartNumberIDName])
+				if partNum != "" {
+					title = fmt.Sprintf("%s, Part %s", title, partNum)
+				}
 			}
 		}
 	}
