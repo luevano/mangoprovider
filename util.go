@@ -6,20 +6,23 @@ import (
 )
 
 const (
-	ChapterNameIDName = "title"
-	MangaQueryIDName  = "id"
+	ChapterNumberIDName     = "chap_num"
+	ChapterPartNumberIDName = "part_num"
+	ChapterNameIDName       = "title"
+	MangaQueryIDName        = "id"
 )
 
 var (
-	// Old
+	// Old, keeping them for quickly switching just in case
+	// https://regex101.com/r/ADDouB
 	// ChapterNameRegex       = regexp.MustCompile(`(?mi)chapter\s*#?\s*\d+(\.\d+)?\s*:\s*(.*\S)\s*$`)
-	MangaQueryIDRegex       = regexp.MustCompile(`(?i)\s*(m((anga)?[-_]?)?id)\s*:\s*(?P<id>.*\S)\s*$`)
-	ChapterNumberRegex      = regexp.MustCompile(`(?m)(\d+\.\d+|\d+)`)
-	ChapterNumberMPRegex    = regexp.MustCompile(`(?m)(\d+-\d+|\d+\.\d+|\d+)`)
-	ChapterNameRegex        = regexp.MustCompile(`(?mi)^([a-z]*\.?)\s*#?\s*\d+(\.\d+)?\s*[:\-_.]?\s+(?P<title>.*\S)\s*$`)
-	ChapterNameExcludeRegex = regexp.MustCompile(`(?mi)^part\s*\d+$`)
-	NewlineCharactersRegex  = regexp.MustCompile(`\r?\n`)
-	ImageExtensionRegex     = regexp.MustCompile(`^\.[a-zA-Z0-9][a-zA-Z0-9.]*[a-zA-Z0-9]$`)
+	// ChapterNameRegex       = regexp.MustCompile(`(?mi)^([a-z]*\.?)\s*#?\s*\d+(\.\d+)?\s*[:\-_.]?\s+(?P<title>.*\S)\s*$`)
+	MangaQueryIDRegex      = regexp.MustCompile(`(?i)\s*(m((anga)?[-_]?)?id)\s*:\s*(?P<id>.*\S)\s*$`)
+	ChapterNumberRegex     = regexp.MustCompile(`(?m)(\d+\.\d+|\d+)`)
+	ChapterNumberMPRegex   = regexp.MustCompile(`(?m)(\d+-\d+|\d+\.\d+|\d+)`)
+	ChapterNameRegex       = regexp.MustCompile(`(?mi)^([a-z]*\.?)\s*#?\s*(?<chap_num>\d+(\.\d+)?)\s*([:\-_.,]?\s*part\s*(?<part_num>\d+))?\s*[:\-_.,]?\s*(?P<title>.*\S)\s*$`)
+	NewlineCharactersRegex = regexp.MustCompile(`\r?\n`)
+	ImageExtensionRegex    = regexp.MustCompile(`^\.[a-zA-Z0-9][a-zA-Z0-9.]*[a-zA-Z0-9]$`)
 )
 
 // Returns the string with single spaces. E.g. "    " -> " "

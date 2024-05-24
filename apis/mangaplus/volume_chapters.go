@@ -42,46 +42,9 @@ func (p *plus) VolumeChapters(ctx context.Context, store gokv.Store, volume mang
 		chapterLists = append(chapterLists, chapterGroup.LastChapterList...)
 
 		for _, chapter := range chapterLists {
-			number := float32(-1.0)
-			title := chapter.Name
-			// Special case fo MangaPlus as it's "decimal" numbers contain "-"
-			chNumMatch := mango.ChapterNumberMPRegex.FindString(title)
-			if chNumMatch != "" {
-				chNumMatch = strings.Replace(chNumMatch, "-", ".", 1)
-				number64, err := strconv.ParseFloat(chNumMatch, 32)
-				if err == nil {
-					number = float32(number64)
-				}
-			}
-			// If either there was no match for the number or
-			// parsing the number failed for some reason
-			if number == float32(-1.0) {
-				// If it's the first extra, make it 0.5, else add 0.1
-				// Using a trick to avoid floating point precision issues https://stackoverflow.com/a/56300186
-				if mango.FloatIsInt(lastNumber) {
-					number = float32((float64(lastNumber*10.0) + float64(5.0))/10.0)
-				} else {
-					number = float32((float64(lastNumber*10.0) + float64(1.0))/10.0)
-				}
-			}
+			number := parseChapterNumber(chapter.Name, lastNumber)
 			lastNumber = number
-
-			if chapter.SubTitle != nil {
-				title = *chapter.SubTitle
-			}
-
-			// Try to get the name without prefix "Chapter 123:" or similar
-			matchGroups := mango.ReNamedGroups(mango.ChapterNameRegex, title)
-			titleTemp, found := matchGroups[mango.ChapterNameIDName]
-			if found {
-				// Check that the resulting title is not "Part 123",
-				// as it probably is part of the whole title and we'll like to keep
-				// the prefix
-				// This happens with Spy x Family: "Mission X Part 1" for example
-				if !mango.ChapterNameExcludeRegex.MatchString(titleTemp) {
-					title = titleTemp
-				}
-			}
+			title := parseChapterTitle(chapter.Name, chapter.SubTitle)
 
 			timeStamp := time.Unix(int64(chapter.StartTimeStamp), 0)
 			date := libmangal.Date{
@@ -103,4 +66,49 @@ func (p *plus) VolumeChapters(ctx context.Context, store gokv.Store, volume mang
 		}
 	}
 	return chapters, nil
+}
+
+func parseChapterNumber(s string, lastNumber float32) float32 {
+	number := float32(-1.0)
+	chNumMatch := mango.ChapterNumberMPRegex.FindString(s)
+	if chNumMatch != "" {
+		// Special case fo MangaPlus as it's "decimal" numbers contain "-"
+		chNumMatch = strings.Replace(chNumMatch, "-", ".", 1)
+		number64, err := strconv.ParseFloat(chNumMatch, 32)
+		if err == nil {
+			number = float32(number64)
+		}
+	}
+	// If either there was no match for the number or
+	// parsing the number failed for some reason, or if the number is the same as the last
+	if number == float32(-1.0) || number == lastNumber {
+		// If it's the first extra, make it 0.5, else add 0.1
+		// Using a trick to avoid floating point precision issues https://stackoverflow.com/a/56300186
+		if mango.FloatIsInt(lastNumber) {
+			number = float32((float64(lastNumber*10.0) + float64(5.0)) / 10.0)
+		} else {
+			number = float32((float64(lastNumber*10.0) + float64(1.0)) / 10.0)
+		}
+	}
+	return number
+}
+
+func parseChapterTitle(s string, subTitle *string) string {
+	title := s
+	if subTitle != nil {
+		// Need to normalize the spaces, some weird unicode spaces are not matched with regex
+		title = strings.Join(strings.Fields(*subTitle), " ")
+
+		// Try to get the name without prefix "Chapter 123:" or similar
+		matchGroups := mango.ReNamedGroups(mango.ChapterNameRegex, title)
+		titleTemp := strings.TrimSpace(matchGroups[mango.ChapterNameIDName])
+		if titleTemp != "" {
+			title = titleTemp
+			partNum := strings.TrimSpace(matchGroups[mango.ChapterPartNumberIDName])
+			if partNum != "" {
+				title = fmt.Sprintf("%s, Part %s", title, partNum)
+			}
+		}
+	}
+	return title
 }
