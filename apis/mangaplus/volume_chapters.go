@@ -16,8 +16,8 @@ import (
 func (p *plus) VolumeChapters(ctx context.Context, store gokv.Store, volume mango.Volume) ([]libmangal.Chapter, error) {
 	var chapters []libmangal.Chapter
 
-	cacheID := volume.Manga_.String()
-	found, err := store.Get(cacheID, &chapters)
+	mangaID := volume.Manga_.ID
+	found, err := store.Get(mangaID, &chapters)
 	if err != nil {
 		return nil, err
 	}
@@ -26,9 +26,23 @@ func (p *plus) VolumeChapters(ctx context.Context, store gokv.Store, volume mang
 		return chapters, nil
 	}
 
-	mangaDetails, err := p.client.Manga.Get(volume.Manga_.ID)
+	err = p.searchChapters(&chapters, volume, mangaID)
 	if err != nil {
 		return nil, err
+	}
+
+	err = store.Set(mangaID, chapters)
+	if err != nil {
+		return nil, err
+	}
+
+	return chapters, nil
+}
+
+func (p *plus) searchChapters(chapters *[]libmangal.Chapter, volume mango.Volume, id string) error {
+	mangaDetails, err := p.client.Manga.Get(id)
+	if err != nil {
+		return err
 	}
 	chapterListGroup := mangaDetails.ChapterListGroup
 
@@ -62,10 +76,10 @@ func (p *plus) VolumeChapters(ctx context.Context, store gokv.Store, volume mang
 				ScanlationGroup: "MangaPlus",
 				Volume_:         &volume,
 			}
-			chapters = append(chapters, &c)
+			*chapters = append(*chapters, &c)
 		}
 	}
-	return chapters, nil
+	return nil
 }
 
 func parseChapterNumber(s string, lastNumber float32) float32 {
