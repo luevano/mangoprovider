@@ -10,7 +10,7 @@ require (
 	github.com/lithammer/fuzzysearch v1.1.8
 	github.com/luevano/libmangal v0.15.2
 	github.com/luevano/mangodex v0.3.4
-	github.com/luevano/mangoplus v0.3.1
+	github.com/luevano/mangoplus v0.4.0
 	github.com/philippgille/gokv v0.7.0
 )
 
