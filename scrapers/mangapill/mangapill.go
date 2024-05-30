@@ -8,6 +8,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/luevano/libmangal"
+	"github.com/luevano/libmangal/metadata"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/scraper"
 )
@@ -86,11 +87,11 @@ var Config = &scraper.Configuration{
 		URL: func(selection *goquery.Selection) string {
 			return selection.AttrOr("href", "")
 		},
-		Date: func(_ *goquery.Selection) libmangal.Date {
+		Date: func(_ *goquery.Selection) metadata.Date {
 			// mangapill doesn't provide dates, just use scraping day
 			// else it will just use anilist publication day
 			today := time.Now()
-			return libmangal.Date{
+			return metadata.Date{
 				Year:  today.Year(),
 				Month: int(today.Month()),
 				Day:   today.Day(),

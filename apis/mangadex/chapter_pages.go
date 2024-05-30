@@ -6,13 +6,13 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/luevano/libmangal"
+	"github.com/luevano/libmangal/mangadata"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/philippgille/gokv"
 )
 
-func (d *dex) ChapterPages(ctx context.Context, store gokv.Store, chapter mango.Chapter) ([]libmangal.Page, error) {
-	var pages []libmangal.Page
+func (d *dex) ChapterPages(ctx context.Context, store gokv.Store, chapter mango.Chapter) ([]mangadata.Page, error) {
+	var pages []mangadata.Page
 
 	atHome, err := d.client.AtHome.Get(chapter.ID, url.Values{})
 	if err != nil {
@@ -26,13 +26,13 @@ func (d *dex) ChapterPages(ctx context.Context, store gokv.Store, chapter mango.
 		filenames = atHome.Chapter.DataSaver
 	}
 	if len(filenames) == 0 {
-		return nil, fmt.Errorf("no pages for chapter %q (%s); volume %s; manga %q", chapter.Title, chapter.ID, chapter.Volume_.String(), chapter.Volume_.Manga_.Title)
+		return nil, fmt.Errorf("no pages for chapter %q (%s); volume %s; manga %q", chapter.String(), chapter.ID, chapter.Volume_.String(), chapter.Volume_.Manga_.String())
 	}
 
 	for _, filename := range filenames {
 		filenameSplit := strings.Split(filename, ".")
 		if len(filenameSplit) != 2 {
-			return nil, fmt.Errorf("unexpected error when extracting page extension; chapter %q (%s)", chapter.Title, chapter.ID)
+			return nil, fmt.Errorf("unexpected error when extracting page extension; chapter %q (%s)", chapter.String(), chapter.ID)
 		}
 
 		extension := fmt.Sprintf(".%s", filenameSplit[1])
@@ -41,9 +41,9 @@ func (d *dex) ChapterPages(ctx context.Context, store gokv.Store, chapter mango.
 		}
 
 		p := mango.Page{
-			Extension: extension,
-			URL:       filename,
-			Chapter_:  &chapter,
+			Ext:      extension,
+			URL:      filename,
+			Chapter_: &chapter,
 		}
 		pages = append(pages, &p)
 	}

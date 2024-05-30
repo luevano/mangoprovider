@@ -2,6 +2,7 @@ package mangoprovider
 
 import (
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -35,6 +36,13 @@ func standardizeSpaces(s string) string {
 // Get the string with all whitespace standardized.
 func CleanString(s string) string {
 	return standardizeSpaces(NewlineCharactersRegex.ReplaceAllString(s, " "))
+}
+
+// Get the float number with all of the insignificant digits removed.
+//
+// For example, "001.500" becomes "1.5".
+func FormattedFloat(n float32) string {
+	return strconv.FormatFloat(float64(n), 'f', -1, 32)
 }
 
 // Translate regex named groups to a map.

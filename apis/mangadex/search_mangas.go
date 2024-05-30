@@ -6,14 +6,14 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/luevano/libmangal"
+	"github.com/luevano/libmangal/mangadata"
 	"github.com/luevano/mangodex"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/philippgille/gokv"
 )
 
-func (d *dex) SearchMangas(ctx context.Context, store gokv.Store, query string) ([]libmangal.Manga, error) {
-	var mangas []libmangal.Manga
+func (d *dex) SearchMangas(ctx context.Context, store gokv.Store, query string) ([]mangadata.Manga, error) {
+	var mangas []mangadata.Manga
 
 	matchGroups := mango.ReNamedGroups(mango.MangaQueryIDRegex, query)
 	mangaID, byID := matchGroups[mango.MangaQueryIDName]
@@ -33,7 +33,7 @@ func (d *dex) SearchMangas(ctx context.Context, store gokv.Store, query string) 
 		return nil, err
 	}
 	if found {
-		mango.Log(fmt.Sprintf("Found mangas in cache (%s)", query))
+		mango.Log("found mangas in cache for query %q", query)
 		return mangas, nil
 	}
 
@@ -55,19 +55,19 @@ func (d *dex) SearchMangas(ctx context.Context, store gokv.Store, query string) 
 }
 
 // find manga by id and populate the list
-func (d *dex) searchManga(mangas *[]libmangal.Manga, id string) error {
+func (d *dex) searchManga(mangas *[]mangadata.Manga, id string) error {
 	params := url.Values{}
 	params.Add("includes[]", string(mangodex.RelationshipTypeCoverArt))
 	manga, err := d.client.Manga.Get(id, params)
 	if err != nil {
 		return err
 	}
-	*mangas = []libmangal.Manga{d.dexToMangoManga(manga)}
+	*mangas = []mangadata.Manga{d.dexToMangoManga(manga)}
 	return nil
 }
 
 // search of mangas by query and populate the list
-func (d *dex) searchMangas(mangas *[]libmangal.Manga, params url.Values, limit int) error {
+func (d *dex) searchMangas(mangas *[]mangadata.Manga, params url.Values, limit int) error {
 	offset := 0
 	for {
 		params.Set("offset", strconv.Itoa(offset))

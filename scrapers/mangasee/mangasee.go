@@ -9,6 +9,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/go-rod/rod"
 	"github.com/luevano/libmangal"
+	"github.com/luevano/libmangal/metadata"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/scraper"
 )
@@ -87,7 +88,7 @@ var Config = &scraper.Configuration{
 		URL: func(selection *goquery.Selection) string {
 			return selection.AttrOr("href", "")
 		},
-		Date: func(selection *goquery.Selection) libmangal.Date {
+		Date: func(selection *goquery.Selection) metadata.Date {
 			layout := "01/02/2006"
 			publishedDate := selection.Find("span.float-right").Text()
 			date, err := time.Parse(layout, publishedDate)
@@ -95,7 +96,7 @@ var Config = &scraper.Configuration{
 				// if failed to parse date, use scraping day
 				date = time.Now()
 			}
-			return libmangal.Date{
+			return metadata.Date{
 				Year:  date.Year(),
 				Month: int(date.Month()),
 				Day:   date.Day(),
@@ -112,7 +113,7 @@ var Config = &scraper.Configuration{
 					return err
 				}
 				_ = element.MustClick()
-				mango.Log("clicked on Show All Chapters")
+				mango.Log(`clicked on "ShowAllChapters"`)
 			}
 			return nil
 		},

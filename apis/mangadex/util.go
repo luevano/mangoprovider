@@ -5,7 +5,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/luevano/libmangal"
+	"github.com/luevano/libmangal/mangadata"
+	"github.com/luevano/libmangal/metadata"
 	"github.com/luevano/mangodex"
 	mango "github.com/luevano/mangoprovider"
 )
@@ -13,17 +14,11 @@ import (
 // TODO: make this configurable?
 const chapterNumberFormat = "Chapter %s"
 
-// Get the float number with all of the insignificant digits removed.
-func getFormattedFloat(n float32) string {
-	return strconv.FormatFloat(float64(n), 'f', -1, 32)
-}
-
 // Get parsed chapter number as a float and string.
 func getChapterNum(chapter *mangodex.Chapter) (float32, string, error) {
-
 	chapterNumberStr := chapter.GetChapterNum()
 	if chapterNumberStr == "-" {
-		return 0.01, fmt.Sprintf(chapterNumberFormat, getFormattedFloat(0.01)), nil
+		return 0.01, fmt.Sprintf(chapterNumberFormat, mango.FormattedFloat(0.01)), nil
 	}
 
 	chapterNumber, err := strconv.ParseFloat(chapterNumberStr, 32)
@@ -31,24 +26,24 @@ func getChapterNum(chapter *mangodex.Chapter) (float32, string, error) {
 		return 0.0, "", err
 	}
 
-	chapterTitleNumber := fmt.Sprintf(chapterNumberFormat, getFormattedFloat(float32(chapterNumber)))
+	chapterTitleNumber := fmt.Sprintf(chapterNumberFormat, mango.FormattedFloat(float32(chapterNumber)))
 	return float32(chapterNumber), chapterTitleNumber, nil
 }
 
 // Get parsed published date or just today's date.
-func getDate(publishAt string) libmangal.Date {
+func getDate(publishAt string) metadata.Date {
 	publishedDate, err := time.Parse(time.RFC3339, publishAt)
 	if err != nil {
 		mango.Log("failed to parse chapter date, using today")
 		now := time.Now()
-		return libmangal.Date{
+		return metadata.Date{
 			Year:  now.Year(),
 			Month: int(now.Month()),
 			Day:   now.Day(),
 		}
 
 	}
-	return libmangal.Date{
+	return metadata.Date{
 		Year:  publishedDate.Year(),
 		Month: int(publishedDate.Month()),
 		Day:   publishedDate.Day(),
@@ -78,15 +73,15 @@ func getScanlator(relationships []*mangodex.Relationship) string {
 	}
 	// If even then the scanlator is not set, just use "mangadex".
 	if scanlator == "" {
-		mango.Log("no scanlator or username for chapter, defaulting to 'mangadex'")
 		scanlator = "MangaDex"
+		mango.Log("no scanlator or username for chapter, defaulting to %q", scanlator)
 	}
 	return scanlator
 }
 
 // Filters out duplicate chapters, the logic tries to get the chapter that's from a scanlator that appears the most in the volume.
-func getUniqueChapters(agg *aggregate) ([]libmangal.Chapter, error) {
-	var chaptersFiltered []libmangal.Chapter
+func getUniqueChapters(agg *aggregate) ([]mangadata.Chapter, error) {
+	var chaptersFiltered []mangadata.Chapter
 	for _, chapters := range agg.chaptersMap {
 		switch len(chapters) {
 		case 0:
@@ -94,7 +89,7 @@ func getUniqueChapters(agg *aggregate) ([]libmangal.Chapter, error) {
 		case 1:
 			chaptersFiltered = append(chaptersFiltered, chapters[0])
 		default:
-			var chapterTemp libmangal.Chapter
+			var chapterTemp mangadata.Chapter
 			maxUploads := 0
 			for _, chapter := range chapters {
 				scanlator := chapter.Info().ScanlationGroup

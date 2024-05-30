@@ -6,14 +6,14 @@ import (
 	"net/url"
 	"path/filepath"
 
-	"github.com/luevano/libmangal"
+	"github.com/luevano/libmangal/mangadata"
 	"github.com/luevano/mangoplus"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/philippgille/gokv"
 )
 
-func (p *plus) ChapterPages(ctx context.Context, store gokv.Store, chapter mango.Chapter) ([]libmangal.Page, error) {
-	var pages []libmangal.Page
+func (p *plus) ChapterPages(ctx context.Context, store gokv.Store, chapter mango.Chapter) ([]mangadata.Page, error) {
+	var pages []mangadata.Page
 
 	// Will default to "super_high"
 	imgQuality := mangoplus.StringToImageQuality(p.filter.MangaPlusQuality)
@@ -44,10 +44,10 @@ func (p *plus) ChapterPages(ctx context.Context, store gokv.Store, chapter mango
 		}
 
 		p := mango.Page{
-			Extension: ext,
-			URL:       fmt.Sprintf("%s%s", page.ImageURL, enc),
-			Headers:   pageHeaders,
-			Chapter_:  &chapter,
+			Ext:      ext,
+			URL:      fmt.Sprintf("%s%s", page.ImageURL, enc),
+			Headers:  pageHeaders,
+			Chapter_: &chapter,
 		}
 
 		pages = append(pages, &p)

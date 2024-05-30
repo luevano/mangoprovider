@@ -6,13 +6,13 @@ import (
 	"net/url"
 	"path/filepath"
 
-	"github.com/luevano/libmangal"
+	"github.com/luevano/libmangal/mangadata"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/philippgille/gokv"
 )
 
-func (c *mpc) ChapterPages(ctx context.Context, store gokv.Store, chapter mango.Chapter) ([]libmangal.Page, error) {
-	var pages []libmangal.Page
+func (c *mpc) ChapterPages(ctx context.Context, store gokv.Store, chapter mango.Chapter) ([]mangadata.Page, error) {
+	var pages []mangadata.Page
 
 	chapterPages, err := c.client.Page.Get(chapter.ID)
 	if err != nil {
@@ -36,10 +36,10 @@ func (c *mpc) ChapterPages(ctx context.Context, store gokv.Store, chapter mango.
 		}
 
 		p := mango.Page{
-			Extension: ext,
-			URL:       u.String(),
-			Headers:   pageHeaders,
-			Chapter_:  &chapter,
+			Ext:      ext,
+			URL:      u.String(),
+			Headers:  pageHeaders,
+			Chapter_: &chapter,
 		}
 
 		pages = append(pages, &p)

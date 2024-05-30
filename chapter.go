@@ -3,19 +3,20 @@ package mangoprovider
 import (
 	"encoding/json"
 
-	"github.com/luevano/libmangal"
+	"github.com/luevano/libmangal/mangadata"
+	"github.com/luevano/libmangal/metadata"
 	"github.com/luevano/mangodex"
 )
 
-var _ libmangal.Chapter = (*Chapter)(nil)
+var _ mangadata.Chapter = (*Chapter)(nil)
 
 type Chapter struct {
-	Title           string         `json:"title"`
-	ID              string         `json:"id"`
-	URL             string         `json:"url"`
-	Number          float32        `json:"number"`
-	Date            libmangal.Date `json:"date"`
-	ScanlationGroup string         `json:"scanlation_group"`
+	Title           string        `json:"title"`
+	ID              string        `json:"id"`
+	URL             string        `json:"url"`
+	Number          float32       `json:"number"`
+	Date            metadata.Date `json:"date"`
+	ScanlationGroup string        `json:"scanlation_group"`
 
 	// AtHome is only required for mangadex
 	AtHome  *mangodex.AtHomeServer `json:"-"`
@@ -26,8 +27,8 @@ func (c *Chapter) String() string {
 	return c.Title
 }
 
-func (c *Chapter) Info() libmangal.ChapterInfo {
-	return libmangal.ChapterInfo{
+func (c *Chapter) Info() mangadata.ChapterInfo {
+	return mangadata.ChapterInfo{
 		Title:           c.Title,
 		URL:             c.URL,
 		Number:          c.Number,
@@ -36,7 +37,7 @@ func (c *Chapter) Info() libmangal.ChapterInfo {
 	}
 }
 
-func (c *Chapter) Volume() libmangal.Volume {
+func (c *Chapter) Volume() mangadata.Volume {
 	return c.Volume_
 }
 

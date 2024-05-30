@@ -1,14 +1,14 @@
 package mangoprovider
 
-import "github.com/luevano/libmangal"
+import "github.com/luevano/libmangal/mangadata"
 
-var _ libmangal.Page = (*Page)(nil)
+var _ mangadata.Page = (*Page)(nil)
 
 type Page struct {
-	Extension string            `json:"-"`
-	URL       string            `json:"url"`
-	Headers   map[string]string `json:"-"`
-	Cookies   map[string]string `json:"-"`
+	Ext     string            `json:"-"`
+	URL     string            `json:"url"`
+	Headers map[string]string `json:"-"`
+	Cookies map[string]string `json:"-"`
 
 	Chapter_ *Chapter `json:"-"`
 }
@@ -17,10 +17,10 @@ func (p *Page) String() string {
 	return p.URL
 }
 
-func (p *Page) GetExtension() string {
-	return p.Extension
+func (p *Page) Extension() string {
+	return p.Ext
 }
 
-func (p *Page) Chapter() libmangal.Chapter {
+func (p *Page) Chapter() mangadata.Chapter {
 	return p.Chapter_
 }

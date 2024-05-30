@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/luevano/libmangal"
+	"github.com/luevano/libmangal/metadata"
 	"github.com/luevano/mangoprovider/scraper"
 )
 
@@ -78,14 +78,14 @@ func Mangabox(name, baseUrl, searchPath, dateLayout, dateSelector string) *scrap
 			URL: func(selection *goquery.Selection) string {
 				return selection.Find("a").AttrOr("href", "")
 			},
-			Date: func(selection *goquery.Selection) libmangal.Date {
+			Date: func(selection *goquery.Selection) metadata.Date {
 				publishedDate := strings.TrimSpace(selection.Find(dateSelector).Text())
 				date, err := time.Parse(dateLayout, publishedDate)
 				if err != nil {
 					// if failed to parse date, use scraping day
 					date = time.Now()
 				}
-				return libmangal.Date{
+				return metadata.Date{
 					Year:  date.Year(),
 					Month: int(date.Month()),
 					Day:   date.Day(),

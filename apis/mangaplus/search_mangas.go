@@ -6,14 +6,14 @@ import (
 	"strconv"
 
 	"github.com/lithammer/fuzzysearch/fuzzy"
-	"github.com/luevano/libmangal"
+	"github.com/luevano/libmangal/mangadata"
 	"github.com/luevano/mangoplus"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/philippgille/gokv"
 )
 
-func (p *plus) SearchMangas(ctx context.Context, store gokv.Store, query string) ([]libmangal.Manga, error) {
-	var mangas []libmangal.Manga
+func (p *plus) SearchMangas(ctx context.Context, store gokv.Store, query string) ([]mangadata.Manga, error) {
+	var mangas []mangadata.Manga
 
 	matchGroups := mango.ReNamedGroups(mango.MangaQueryIDRegex, query)
 	mangaID, byID := matchGroups[mango.MangaQueryIDName]
@@ -30,7 +30,7 @@ func (p *plus) SearchMangas(ctx context.Context, store gokv.Store, query string)
 		return nil, err
 	}
 	if found {
-		mango.Log(fmt.Sprintf("Found mangas in cache (%s)", query))
+		mango.Log("found mangas in cache for query %q", query)
 		return mangas, nil
 	}
 
@@ -51,16 +51,16 @@ func (p *plus) SearchMangas(ctx context.Context, store gokv.Store, query string)
 	return mangas, nil
 }
 
-func (p *plus) searchManga(mangas *[]libmangal.Manga, id string) error {
+func (p *plus) searchManga(mangas *[]mangadata.Manga, id string) error {
 	titleDetail, err := p.client.Manga.Get(id)
 	if err != nil {
 		return err
 	}
-	*mangas = []libmangal.Manga{p.plusToMangoManga(titleDetail.Title)}
+	*mangas = []mangadata.Manga{p.plusToMangoManga(titleDetail.Title)}
 	return nil
 }
 
-func (p *plus) searchMangas(mangas *[]libmangal.Manga, query string) error {
+func (p *plus) searchMangas(mangas *[]mangadata.Manga, query string) error {
 	mangaList, err := p.client.Manga.All()
 	if err != nil {
 		return err

@@ -10,14 +10,15 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gocolly/colly/v2"
-	"github.com/luevano/libmangal"
+	"github.com/luevano/libmangal/mangadata"
+	"github.com/luevano/libmangal/metadata"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/scraper/headless/rod"
 	"github.com/philippgille/gokv"
 )
 
-func (s *Scraper) VolumeChapters(_ctx context.Context, store gokv.Store, volume mango.Volume) ([]libmangal.Chapter, error) {
-	var chapters []libmangal.Chapter
+func (s *Scraper) VolumeChapters(_ctx context.Context, store gokv.Store, volume mango.Volume) ([]mangadata.Chapter, error) {
+	var chapters []mangadata.Chapter
 
 	// need an identifiable string for the cache
 	cacheID := fmt.Sprintf("%s-chapters", volume.Manga_.URL)
@@ -27,7 +28,7 @@ func (s *Scraper) VolumeChapters(_ctx context.Context, store gokv.Store, volume 
 		return nil, err
 	}
 	if found {
-		mango.Log(fmt.Sprintf("found chapters in cache for manga %q with id %q", volume.Manga_.Title, volume.Manga_.ID))
+		mango.Log("found chapters in cache for manga %q with id %q", volume.Manga_.String(), volume.Manga_.ID)
 		return chapters, nil
 	}
 
@@ -67,7 +68,7 @@ func (s *Scraper) getChaptersCollector() *colly.Collector {
 	collector.OnHTML("html", func(e *colly.HTMLElement) {
 		elements := e.DOM.Find(s.config.ChapterExtractor.Selector)
 		volume := e.Request.Ctx.GetAny("volume").(mango.Volume)
-		chapters := e.Request.Ctx.GetAny("chapters").(*[]libmangal.Chapter)
+		chapters := e.Request.Ctx.GetAny("chapters").(*[]mangadata.Chapter)
 
 		elements.Each(func(_ int, selection *goquery.Selection) {
 			link := s.config.ChapterExtractor.URL(selection)
@@ -83,7 +84,7 @@ func (s *Scraper) getChaptersCollector() *colly.Collector {
 				}
 			}
 
-			var chapterDate libmangal.Date
+			var chapterDate metadata.Date
 			if s.config.ChapterExtractor.Date != nil {
 				chapterDate = s.config.ChapterExtractor.Date(selection)
 			}

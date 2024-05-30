@@ -24,20 +24,24 @@ func (p *plus) GetPageImage(ctx context.Context, client *http.Client, page mango
 	if key == "" {
 		return image, nil
 	}
-	decodeXorCipher(&image, key)
+	err = decodeXorCipher(&image, key)
+	if err != nil {
+		return nil, err
+	}
 	return image, nil
 }
 
 // Only catch here is that the key is encoded in hex
-func decodeXorCipher(data *[]byte, key string) {
+func decodeXorCipher(data *[]byte, key string) error {
 	keyBytes, err := hex.DecodeString(key)
 	if err != nil {
-		mango.Log("Error while decoding encryption key for image.")
-		return
+		mango.Log("error while decoding image with encryption key: %s", err.Error())
+		return err
 	}
 	keyLen := len(keyBytes)
 
 	for i, byte := range *data {
 		(*data)[i] = byte ^ keyBytes[i%keyLen]
 	}
+	return nil
 }

@@ -7,14 +7,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/luevano/libmangal"
+	"github.com/luevano/libmangal/mangadata"
+	"github.com/luevano/libmangal/metadata"
 	"github.com/luevano/mangoplus"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/philippgille/gokv"
 )
 
-func (p *plus) VolumeChapters(ctx context.Context, store gokv.Store, volume mango.Volume) ([]libmangal.Chapter, error) {
-	var chapters []libmangal.Chapter
+func (p *plus) VolumeChapters(ctx context.Context, store gokv.Store, volume mango.Volume) ([]mangadata.Chapter, error) {
+	var chapters []mangadata.Chapter
 
 	mangaID := volume.Manga_.ID
 	found, err := store.Get(mangaID, &chapters)
@@ -22,7 +23,7 @@ func (p *plus) VolumeChapters(ctx context.Context, store gokv.Store, volume mang
 		return nil, err
 	}
 	if found {
-		mango.Log(fmt.Sprintf("Found chapters in cache for volume %s", volume.String()))
+		mango.Log("found chapters in cache for volume %s", volume.String())
 		return chapters, nil
 	}
 
@@ -39,7 +40,7 @@ func (p *plus) VolumeChapters(ctx context.Context, store gokv.Store, volume mang
 	return chapters, nil
 }
 
-func (p *plus) searchChapters(chapters *[]libmangal.Chapter, volume mango.Volume, id string) error {
+func (p *plus) searchChapters(chapters *[]mangadata.Chapter, volume mango.Volume, id string) error {
 	mangaDetails, err := p.client.Manga.Get(id)
 	if err != nil {
 		return err
@@ -61,7 +62,7 @@ func (p *plus) searchChapters(chapters *[]libmangal.Chapter, volume mango.Volume
 			title := parseChapterTitle(chapter.Name, chapter.SubTitle)
 
 			timeStamp := time.Unix(int64(chapter.StartTimeStamp), 0)
-			date := libmangal.Date{
+			date := metadata.Date{
 				Year:  timeStamp.Year(),
 				Month: int(timeStamp.Month()),
 				Day:   timeStamp.Day(),

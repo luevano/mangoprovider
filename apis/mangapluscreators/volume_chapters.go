@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luevano/libmangal"
+	"github.com/luevano/libmangal/mangadata"
+	"github.com/luevano/libmangal/metadata"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/philippgille/gokv"
 )
 
-func (c *mpc) VolumeChapters(ctx context.Context, store gokv.Store, volume mango.Volume) ([]libmangal.Chapter, error) {
-	var chapters []libmangal.Chapter
+func (c *mpc) VolumeChapters(ctx context.Context, store gokv.Store, volume mango.Volume) ([]mangadata.Chapter, error) {
+	var chapters []mangadata.Chapter
 
 	mangaID := volume.Manga_.ID
 	found, err := store.Get(mangaID, &chapters)
@@ -19,7 +20,7 @@ func (c *mpc) VolumeChapters(ctx context.Context, store gokv.Store, volume mango
 		return nil, err
 	}
 	if found {
-		mango.Log(fmt.Sprintf("Found chapters in cache for volume %s", volume.String()))
+		mango.Log("found chapters in cache for volume %s", volume.String())
 		return chapters, nil
 	}
 
@@ -36,7 +37,7 @@ func (c *mpc) VolumeChapters(ctx context.Context, store gokv.Store, volume mango
 	return chapters, nil
 }
 
-func (c *mpc) searchChapters(chapters *[]libmangal.Chapter, volume mango.Volume, id string) error {
+func (c *mpc) searchChapters(chapters *[]mangadata.Chapter, volume mango.Volume, id string) error {
 	page := 1
 	for {
 		chaptersDTO, err := c.client.Chapter.List(volume.Manga_.ID, page)
@@ -53,7 +54,7 @@ func (c *mpc) searchChapters(chapters *[]libmangal.Chapter, volume mango.Volume,
 		// with extra/bonus chapters (if they don't come with a number)
 		for _, chapter := range *chaptersDTO.EpisodeList {
 			timeStamp := time.UnixMilli(chapter.PublishDate)
-			date := libmangal.Date{
+			date := metadata.Date{
 				Year:  timeStamp.Year(),
 				Month: int(timeStamp.Month()),
 				Day:   timeStamp.Day(),

@@ -2,12 +2,11 @@ package mangoprovider
 
 import (
 	"encoding/json"
-	"strconv"
 
-	"github.com/luevano/libmangal"
+	"github.com/luevano/libmangal/mangadata"
 )
 
-var _ libmangal.Volume = (*Volume)(nil)
+var _ mangadata.Volume = (*Volume)(nil)
 
 type Volume struct {
 	Number float32 `json:"number"`
@@ -17,16 +16,16 @@ type Volume struct {
 }
 
 func (v *Volume) String() string {
-	return strconv.FormatFloat(float64(v.Number), 'f', -1, 32)
+	return FormattedFloat(v.Number)
 }
 
-func (v *Volume) Info() libmangal.VolumeInfo {
-	return libmangal.VolumeInfo{
+func (v *Volume) Info() mangadata.VolumeInfo {
+	return mangadata.VolumeInfo{
 		Number: v.Number,
 	}
 }
 
-func (v *Volume) Manga() libmangal.Manga {
+func (v *Volume) Manga() mangadata.Manga {
 	return v.Manga_
 }
 

@@ -2,7 +2,7 @@ package scraper
 
 import (
 	"github.com/PuerkitoBio/goquery"
-	"github.com/luevano/libmangal"
+	"github.com/luevano/libmangal/metadata"
 	"github.com/luevano/mangoprovider/scraper/headless/rod"
 )
 
@@ -56,7 +56,7 @@ type ChapterExtractor struct {
 	// URL: Get URL from element found by selector.
 	URL func(*goquery.Selection) string
 	// Date: Get the published date of the chapter if available.
-	Date func(*goquery.Selection) libmangal.Date
+	Date func(*goquery.Selection) metadata.Date
 	// ScanlationGroup: Get the scanlation group if available.
 	ScanlationGroup func(*goquery.Selection) string
 	// Action: Something to execute on a headless browser after page is loaded.

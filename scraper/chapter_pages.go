@@ -2,49 +2,31 @@ package scraper
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"path/filepath"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gocolly/colly/v2"
-	"github.com/luevano/libmangal"
+	"github.com/luevano/libmangal/mangadata"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/scraper/headless/rod"
 	"github.com/philippgille/gokv"
 )
 
-func (s *Scraper) ChapterPages(_ctx context.Context, store gokv.Store, chapter mango.Chapter) ([]libmangal.Page, error) {
-	var pages []libmangal.Page
-
-	// need an identifiable string for the cache
-	cacheID := fmt.Sprintf("%s-pages", chapter.URL)
-
-	found, err := store.Get(cacheID, &pages)
-	if err != nil {
-		return nil, err
-	}
-	if found {
-		mango.Log(fmt.Sprintf("found pages in cache for manga %q with id %q", chapter.Volume_.Manga_.Title, chapter.Volume_.Manga_.ID))
-		return pages, nil
-	}
+func (s *Scraper) ChapterPages(_ctx context.Context, store gokv.Store, chapter mango.Chapter) ([]mangadata.Page, error) {
+	var pages []mangadata.Page
 
 	ctx := colly.NewContext()
 	ctx.Put("chapter", chapter)
 	ctx.Put("pages", &pages)
 
 	collector := s.getPagesCollector()
-	err = collector.Request(http.MethodGet, chapter.URL, nil, ctx, nil)
+	err := collector.Request(http.MethodGet, chapter.URL, nil, ctx, nil)
 	if err != nil {
 		return nil, err
 	}
 	collector.Wait()
-
-	err = store.Set(cacheID, pages)
-	if err != nil {
-		return nil, err
-	}
 
 	return pages, nil
 }
@@ -56,7 +38,7 @@ func (s *Scraper) getPagesCollector() *colly.Collector {
 	collector.OnHTML("html", func(e *colly.HTMLElement) {
 		elements := e.DOM.Find(s.config.PageExtractor.Selector)
 		chapter := e.Request.Ctx.GetAny("chapter").(mango.Chapter)
-		pages := e.Request.Ctx.GetAny("pages").(*[]libmangal.Page)
+		pages := e.Request.Ctx.GetAny("pages").(*[]mangadata.Page)
 
 		elements.Each(func(_ int, selection *goquery.Selection) {
 			link := s.config.PageExtractor.URL(selection)
@@ -71,10 +53,10 @@ func (s *Scraper) getPagesCollector() *colly.Collector {
 			}
 
 			p := mango.Page{
-				Extension: ext,
-				URL:       link,
-				Headers:   headers,
-				Chapter_:  &chapter,
+				Ext:      ext,
+				URL:      link,
+				Headers:  headers,
+				Chapter_: &chapter,
 			}
 			*pages = append(*pages, &p)
 		})

@@ -7,13 +7,13 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/luevano/libmangal"
+	"github.com/luevano/libmangal/mangadata"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/philippgille/gokv"
 )
 
-func (d *dex) MangaVolumes(ctx context.Context, store gokv.Store, manga mango.Manga) ([]libmangal.Volume, error) {
-	var volumes []libmangal.Volume
+func (d *dex) MangaVolumes(ctx context.Context, store gokv.Store, manga mango.Manga) ([]mangadata.Volume, error) {
+	var volumes []mangadata.Volume
 
 	params := url.Values{}
 	params.Add("translatedLanguage[]", d.filter.Language)
@@ -25,7 +25,7 @@ func (d *dex) MangaVolumes(ctx context.Context, store gokv.Store, manga mango.Ma
 		return nil, err
 	}
 	if found {
-		mango.Log(fmt.Sprintf("Found volumes in cache for manga %q", manga.Title))
+		mango.Log("found volumes in cache for manga %q", manga.String())
 		return volumes, nil
 	}
 

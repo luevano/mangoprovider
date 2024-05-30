@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/luevano/libmangal"
+	"github.com/luevano/libmangal/mangadata"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/philippgille/gokv"
 )
 
-func (c *mpc) SearchMangas(ctx context.Context, store gokv.Store, query string) ([]libmangal.Manga, error) {
-	var mangas []libmangal.Manga
+func (c *mpc) SearchMangas(ctx context.Context, store gokv.Store, query string) ([]mangadata.Manga, error) {
+	var mangas []mangadata.Manga
 
 	matchGroups := mango.ReNamedGroups(mango.MangaQueryIDRegex, query)
 	_, byID := matchGroups[mango.MangaQueryIDName]
@@ -24,7 +24,7 @@ func (c *mpc) SearchMangas(ctx context.Context, store gokv.Store, query string) 
 		return nil, err
 	}
 	if found {
-		mango.Log(fmt.Sprintf("Found mangas in cache (%s)", query))
+		mango.Log("found mangas in cache for query %q", query)
 		return mangas, nil
 	}
 
@@ -41,7 +41,7 @@ func (c *mpc) SearchMangas(ctx context.Context, store gokv.Store, query string) 
 	return mangas, nil
 }
 
-func (c *mpc) searchMangas(mangas *[]libmangal.Manga, query string) error {
+func (c *mpc) searchMangas(mangas *[]mangadata.Manga, query string) error {
 	page := 1
 	for {
 		// Will default to english or the only available language

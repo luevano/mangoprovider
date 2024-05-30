@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/luevano/libmangal"
+	"github.com/luevano/libmangal/mangadata"
 	"github.com/luevano/mangodex"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/philippgille/gokv"
@@ -16,16 +16,16 @@ import (
 
 // Contains the actual chapter list as well as helper values for filtering.
 type aggregate struct {
-	chapters    []libmangal.Chapter
-	chaptersMap map[string][]libmangal.Chapter
+	chapters    []mangadata.Chapter
+	chaptersMap map[string][]mangadata.Chapter
 	groupsCount map[string]int
 }
 
-func (d *dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango.Volume) ([]libmangal.Chapter, error) {
+func (d *dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango.Volume) ([]mangadata.Chapter, error) {
 	limit := 100
 	agg := aggregate{
-		chapters:    []libmangal.Chapter{},
-		chaptersMap: map[string][]libmangal.Chapter{},
+		chapters:    []mangadata.Chapter{},
+		chaptersMap: map[string][]mangadata.Chapter{},
 		groupsCount: map[string]int{},
 	}
 
@@ -61,7 +61,7 @@ func (d *dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango
 		return nil, err
 	}
 	if found {
-		mango.Log(fmt.Sprintf("Found chapters in cache for volume %s", volume.String()))
+		mango.Log("found chapters in cache for volume %s", volume.String())
 		return agg.chapters, nil
 	}
 
@@ -80,7 +80,7 @@ func (d *dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango
 	}
 
 	// TODO: add option to exclude list of scanlators/prefer list of scanlators
-	var chaptersFiltered []libmangal.Chapter
+	var chaptersFiltered []mangadata.Chapter
 
 	if d.filter.AvoidDuplicateChapters {
 		chaptersFiltered, err = getUniqueChapters(&agg)
