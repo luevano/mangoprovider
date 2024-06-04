@@ -207,7 +207,8 @@ func (d *dex) dexToMetadata(manga *mangodex.Manga) *metadata.Metadata {
 	idMal, _ := strconv.Atoi(manga.Attributes.Links.GetLocalString("mal", false))
 
 	// Mangadex doesn't provide any kind of ID that could be used,
-	// so IDProvider and IDProviderName are not set
+	// so IDProvider is not set but the name is to be able to differentiate
+	// when metadata comes from the provider
 	return &metadata.Metadata{
 		EnglishTitle:    manga.GetTitle("en", false),
 		RomajiTitle:     manga.GetTitle("ja-ro", false),
@@ -222,6 +223,7 @@ func (d *dex) dexToMetadata(manga *mangodex.Manga) *metadata.Metadata {
 		StartDate:       date,
 		Status:          status,
 		URL:             fmt.Sprintf("%stitle/%s", website, manga.ID),
+		IDProviderName:  "dex",
 		IDAl:            idAl,
 		IDMal:           idMal,
 	}
