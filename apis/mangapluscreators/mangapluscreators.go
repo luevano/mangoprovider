@@ -11,28 +11,25 @@ const website = "https://medibang.com/mpc/"
 var providerInfo = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-mangapluscreators",
 	Name:        "MangaPlusCreators",
-	Version:     "0.1.0",
+	Version:     "0.1.1",
 	Description: "MangaPlusCreators (MPC) scraper using mangoplus",
 	Website:     website,
 }
 
 type mpc struct {
-	client    *creators.CreatorsClient
-	userAgent string
-	filter    mango.Filter
+	client  *creators.CreatorsClient
+	filter  mango.FilterOptions
+	options mango.MangaPlusCreatorsOptions
 }
 
 func Loader(options mango.Options) libmangal.ProviderLoader {
-	// TODO: decide if this should be moved into mangal,
-	// kind of a mess of "options" moving around
-	o := creators.DefaultOptions()
+	// Update the user agent with the actual one from the options
+	o := options.MangaPlusCreators
 	o.UserAgent = options.UserAgent
-
-	plusClient := creators.NewCreatorsClient(o)
 	c := mpc{
-		client:    plusClient,
-		userAgent: options.UserAgent,
-		filter:    options.Filter,
+		client:  creators.NewCreatorsClient(o.Options),
+		filter:  options.Filter,
+		options: o,
 	}
 
 	return &mango.Loader{

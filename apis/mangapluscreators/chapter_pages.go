@@ -32,7 +32,7 @@ func (c *mpc) ChapterPages(ctx context.Context, store gokv.Store, chapter mango.
 		pageHeaders := map[string]string{
 			"Origin":     website,
 			"Referer":    chapter.URL,
-			"User-Agent": c.userAgent,
+			"User-Agent": c.options.UserAgent,
 		}
 
 		p := mango.Page{

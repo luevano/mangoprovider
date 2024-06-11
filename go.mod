@@ -9,9 +9,10 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/lithammer/fuzzysearch v1.1.8
 	github.com/luevano/libmangal v0.16.3
-	github.com/luevano/mangodex v0.3.5
-	github.com/luevano/mangoplus v0.4.1
+	github.com/luevano/mangodex v0.3.7
+	github.com/luevano/mangoplus v0.4.4
 	github.com/philippgille/gokv v0.7.0
+	github.com/philippgille/gokv/syncmap v0.7.0
 )
 
 require (
@@ -29,7 +30,6 @@ require (
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/pdfcpu/pdfcpu v0.8.0 // indirect
 	github.com/philippgille/gokv/encoding v0.7.0 // indirect
-	github.com/philippgille/gokv/syncmap v0.7.0 // indirect
 	github.com/philippgille/gokv/util v0.7.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
@@ -43,11 +43,11 @@ require (
 	github.com/ysmood/got v0.39.4 // indirect
 	github.com/ysmood/gson v0.7.3 // indirect
 	github.com/ysmood/leakless v0.8.0 // indirect
-	golang.org/x/image v0.16.0 // indirect
-	golang.org/x/mod v0.17.0 // indirect
+	golang.org/x/image v0.17.0 // indirect
+	golang.org/x/mod v0.18.0 // indirect
 	golang.org/x/net v0.20.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect
-	golang.org/x/text v0.15.0 // indirect
+	golang.org/x/text v0.16.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/protobuf v1.32.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

@@ -30,7 +30,7 @@ func IsLoaded() bool {
 
 // GetTransport returns the singleton rod or flaresolverr transport.
 func GetTransport(
-	options mango.Headless,
+	options mango.HeadlessOptions,
 	loadWait time.Duration,
 	localStorage map[string]string,
 	actions map[rod.ActionType]rod.Action,

@@ -15,7 +15,7 @@ func (d *dex) GetPageImage(ctx context.Context, client *http.Client, page mango.
 	}
 
 	data := "data"
-	if d.filter.MangaDexDataSaver {
+	if d.options.DataSaver {
 		data = "data-saver"
 	}
 	// TODO: make reporting configurable

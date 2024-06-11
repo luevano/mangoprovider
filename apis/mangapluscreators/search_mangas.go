@@ -18,7 +18,7 @@ func (c *mpc) SearchMangas(ctx context.Context, store gokv.Store, query string) 
 		return nil, fmt.Errorf("MangaPlusCreators doesn't support search manga by id")
 	}
 
-	cacheID := fmt.Sprintf("%s-%s-%s", query, c.filter.Language, c.filter.MangaPlusQuality)
+	cacheID := fmt.Sprintf("%s-%s", query, c.filter.Language)
 	found, err := store.Get(cacheID, &mangas)
 	if err != nil {
 		return nil, err

@@ -22,7 +22,7 @@ func (p *plus) SearchMangas(ctx context.Context, store gokv.Store, query string)
 	if byID {
 		cacheID = fmt.Sprintf("mid:%s", mangaID)
 	} else {
-		cacheID = fmt.Sprintf("%s-%s-%s", query, p.filter.Language, p.filter.MangaPlusQuality)
+		cacheID = fmt.Sprintf("%s-%s-%s", query, p.filter.Language, p.options.Quality)
 	}
 
 	found, err := store.Get(cacheID, &mangas)

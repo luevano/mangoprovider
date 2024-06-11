@@ -22,7 +22,7 @@ func (d *dex) ChapterPages(ctx context.Context, store gokv.Store, chapter mango.
 	chapter.AtHome = atHome
 
 	filenames := atHome.Chapter.Data
-	if d.filter.MangaDexDataSaver {
+	if d.options.DataSaver {
 		filenames = atHome.Chapter.DataSaver
 	}
 	if len(filenames) == 0 {

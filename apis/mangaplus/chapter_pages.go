@@ -16,7 +16,7 @@ func (p *plus) ChapterPages(ctx context.Context, store gokv.Store, chapter mango
 	var pages []mangadata.Page
 
 	// Will default to "super_high"
-	imgQuality := mangoplus.StringToImageQuality(p.filter.MangaPlusQuality)
+	imgQuality := mangoplus.StringToImageQuality(p.options.Quality)
 	chapterPages, err := p.client.Page.Get(chapter.ID, false, imgQuality)
 	if err != nil {
 		return nil, err
@@ -35,7 +35,7 @@ func (p *plus) ChapterPages(ctx context.Context, store gokv.Store, chapter mango
 		pageHeaders := map[string]string{
 			"Origin":     website,
 			"Referer":    chapter.URL,
-			"User-Agent": p.userAgent,
+			"User-Agent": p.options.UserAgent,
 		}
 
 		enc := ""
