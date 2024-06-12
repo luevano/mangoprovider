@@ -57,21 +57,17 @@ func (p *plus) searchChapters(chapters *[]mangadata.Chapter, volume mango.Volume
 		chapterLists = append(chapterLists, chapterGroup.LastChapterList...)
 
 		for _, chapter := range chapterLists {
-			number := parseChapterNumber(chapter.Name, lastNumber)
-			lastNumber = number
-			title := parseChapterTitle(chapter.Name, chapter.SubTitle)
-			date := parseTimestamp(chapter.StartTimeStamp)
-
 			c := mango.Chapter{
-				Title:           title,
+				Title:           parseChapterTitle(chapter.Name, chapter.SubTitle),
 				ID:              strconv.Itoa(chapter.ChapterId),
 				URL:             fmt.Sprintf("%sviewer/%d", website, chapter.ChapterId),
-				Number:          number,
-				Date:            date,
+				Number:          parseChapterNumber(chapter.Name, lastNumber),
+				Date:            parseTSSecs(chapter.StartTimeStamp),
 				ScanlationGroup: "MangaPlus",
 				Volume_:         &volume,
 			}
 			*chapters = append(*chapters, &c)
+			lastNumber = c.Number
 		}
 	}
 	return nil
@@ -128,7 +124,7 @@ func parseChapterTitle(s string, subTitle *string) string {
 	return title
 }
 
-func parseTimestamp(timestamp int) metadata.Date {
+func parseTSSecs(timestamp int) metadata.Date {
 	ts := time.Unix(int64(timestamp), 0)
 	return metadata.Date{
 		Year:  ts.Year(),

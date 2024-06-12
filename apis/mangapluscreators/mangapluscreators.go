@@ -11,7 +11,7 @@ const website = "https://medibang.com/mpc/"
 var providerInfo = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-mangapluscreators",
 	Name:        "MangaPlusCreators",
-	Version:     "0.1.1",
+	Version:     "0.2.0",
 	Description: "MangaPlusCreators (MPC) scraper using mangoplus",
 	Website:     website,
 }

@@ -53,19 +53,12 @@ func (c *mpc) searchChapters(chapters *[]mangadata.Chapter, volume mango.Volume,
 		// All chapters are assumed to come in order, there is no other way to deal
 		// with extra/bonus chapters (if they don't come with a number)
 		for _, chapter := range *chaptersDTO.EpisodeList {
-			timeStamp := time.UnixMilli(chapter.PublishDate)
-			date := metadata.Date{
-				Year:  timeStamp.Year(),
-				Month: int(timeStamp.Month()),
-				Day:   timeStamp.Day(),
-			}
-
 			c := mango.Chapter{
 				Title:           chapter.EpisodeTitle,
 				ID:              chapter.EpisodeID,
 				URL:             fmt.Sprintf("%sepisodes/%s/", website, chapter.EpisodeID),
 				Number:          float32(chapter.Numbering),
-				Date:            date,
+				Date:            parseTSMilli(chapter.FirstPublishDate),
 				ScanlationGroup: "MangaPlusCreators",
 				Volume_:         &volume,
 			}
@@ -78,4 +71,13 @@ func (c *mpc) searchChapters(chapters *[]mangadata.Chapter, volume mango.Volume,
 		page += 1
 	}
 	return nil
+}
+
+func parseTSMilli(timestamp int64) metadata.Date {
+	ts := time.UnixMilli(timestamp)
+	return metadata.Date{
+		Year:  ts.Year(),
+		Month: int(ts.Month()),
+		Day:   ts.Day(),
+	}
 }

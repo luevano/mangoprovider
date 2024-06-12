@@ -123,7 +123,7 @@ func (p *plus) plusToMetadata(titleDetail mangoplus.TitleDetailView) *metadata.M
 	var date metadata.Date
 	for _, chapterListGroup := range titleDetail.ChapterListGroup {
 		for _, chapter := range chapterListGroup.FirstChapterList {
-			date = parseTimestamp(chapter.StartTimeStamp)
+			date = parseTSSecs(chapter.StartTimeStamp)
 			break
 		}
 		break
