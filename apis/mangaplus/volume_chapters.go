@@ -60,13 +60,7 @@ func (p *plus) searchChapters(chapters *[]mangadata.Chapter, volume mango.Volume
 			number := parseChapterNumber(chapter.Name, lastNumber)
 			lastNumber = number
 			title := parseChapterTitle(chapter.Name, chapter.SubTitle)
-
-			timeStamp := time.Unix(int64(chapter.StartTimeStamp), 0)
-			date := metadata.Date{
-				Year:  timeStamp.Year(),
-				Month: int(timeStamp.Month()),
-				Day:   timeStamp.Day(),
-			}
+			date := parseTimestamp(chapter.StartTimeStamp)
 
 			c := mango.Chapter{
 				Title:           title,
@@ -132,4 +126,13 @@ func parseChapterTitle(s string, subTitle *string) string {
 		}
 	}
 	return title
+}
+
+func parseTimestamp(timestamp int) metadata.Date {
+	ts := time.Unix(int64(timestamp), 0)
+	return metadata.Date{
+		Year:  ts.Year(),
+		Month: int(ts.Month()),
+		Day:   ts.Day(),
+	}
 }
