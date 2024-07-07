@@ -7,6 +7,7 @@ import (
 	"slices"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gocolly/colly/v2"
@@ -78,6 +79,7 @@ func (s *Scraper) getChaptersCollector() *colly.Collector {
 			match := mango.ChapterNumberRegex.FindString(title)
 			chapterNumber := float32(e.Index)
 			if match != "" {
+				match = strings.Replace(match, "-", ".", 1)
 				number, err := strconv.ParseFloat(match, 32)
 				if err == nil {
 					chapterNumber = float32(number)

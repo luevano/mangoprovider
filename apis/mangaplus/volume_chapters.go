@@ -75,7 +75,7 @@ func (p *plus) searchChapters(chapters *[]mangadata.Chapter, volume mango.Volume
 
 func parseChapterNumber(s string, lastNumber float32) float32 {
 	number := float32(-1.0)
-	chNumMatch := mango.ChapterNumberMPRegex.FindString(s)
+	chNumMatch := mango.ChapterNumberRegex.FindString(s)
 	if chNumMatch != "" {
 		// Special case fo MangaPlus as it's "decimal" numbers contain "-"
 		chNumMatch = strings.Replace(chNumMatch, "-", ".", 1)
