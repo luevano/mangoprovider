@@ -13,11 +13,13 @@ const (
 	MangaQueryIDName        = "id"
 )
 
+const chNumRe = `\d+([\.-]\d+)?`
+
 var (
 	MangaQueryIDRegex       = regexp.MustCompile(`(?mi)\s*(m((anga)?[-_]?)?id)\s*:\s*(?P<id>.*\S)\s*$`)
-	ChapterNumberRegex      = regexp.MustCompile(`(?m)(\d+-\d+|\d+\.\d+|\d+)`)
-	ChapterNameRegex        = regexp.MustCompile(`(?mi)^([a-z]*\.?)\s*#?\s*(?P<chap_num>\d+(\.\d+)?)\s*([:\-_.,]?\s*part\s*(?P<part_num>\d+))?\s*[:\-_.,]?\s+(?P<title>\S.*\S)\s*$`) // https://regex101.com/r/ADDouB
-	ChapterNameExcludeRegex = regexp.MustCompile(`(?mi)^part\s*#?\s*\d+(\.\d+)?$`)
+	ChapterNumberRegex      = regexp.MustCompile(chNumRe)
+	ChapterNameRegex        = regexp.MustCompile(`(?mi)^([a-z]*\.?)\s*#?\s*(?P<chap_num>` + chNumRe + `)\s*([:\-_.,]?\s*part\s*(?P<part_num>` + chNumRe + `))?\s*[:\-_.,]?\s+(?P<title>\S.*\S)\s*$`) // https://regex101.com/r/ADDouB
+	ChapterNameExcludeRegex = regexp.MustCompile(`(?mi)^part\s*#?\s*` + chNumRe + `$`)
 	NewlineCharactersRegex  = regexp.MustCompile(`\r?\n`)
 	ImageExtensionRegex     = regexp.MustCompile(`^\.[a-zA-Z0-9][a-zA-Z0-9.]*[a-zA-Z0-9]$`)
 )

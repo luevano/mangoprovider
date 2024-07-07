@@ -24,10 +24,15 @@ func TestChapterNameRegexMatch(t *testing.T) {
 		{"10: test", "test"},
 		{"#14.1 hello", "hello"},
 		{"#14.5: test", "test"},
+		{"65-2: dashed chapter", "dashed chapter"},
 		{"Chapter 5, Part 1: test", "test"},
 		{"Chapter 5: Part 1: test", "test"},
 		{"Mission 5 Part 2 : test", "test"},
+		{"Mission 5 Part 2-2 : test", "test"},
+		{"Mission 5-2 Part 2-2 : test", "test"},
 		{"Chapter 133, Part 2: Of One Cloth-Flutter", "Of One Cloth-Flutter"},
+		{"Chapter 262: Inhuman Makyo Shinjuku Showdown, Part 34", "Inhuman Makyo Shinjuku Showdown, Part 34"},
+		{"Chapter 262-2: Inhuman Makyo Shinjuku Showdown, Part 34-2", "Inhuman Makyo Shinjuku Showdown, Part 34-2"},
 	}
 	for _, tt := range tests {
 		matchGroups := ReNamedGroups(ChapterNameRegex, tt.original)
@@ -49,9 +54,12 @@ func TestChapterNameRegexNoMatch(t *testing.T) {
 		{"Chapter 10"},
 		{"MISSION 100"},
 		{"chapter 123.5"},
+		{"Chapter 123-5"},
 		{"mission 5 part 2"},
 		{"Mission 6, Part 6.5"},
 		{"MISSION 10: Part 2"},
+		{"MISSION 10: Part 2-2"},
+		{"MISSION 10-2: Part 2-2"},
 	}
 	for _, tt := range tests {
 		matchGroups := ReNamedGroups(ChapterNameRegex, tt.original)
