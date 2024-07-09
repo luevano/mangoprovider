@@ -11,7 +11,6 @@ import (
 	"github.com/luevano/libmangal/mangadata"
 	"github.com/luevano/mangodex"
 	mango "github.com/luevano/mangoprovider"
-	"github.com/philippgille/gokv"
 )
 
 // Contains the actual chapter list as well as helper values for filtering.
@@ -21,7 +20,7 @@ type aggregate struct {
 	groupsCount map[string]int
 }
 
-func (d *dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango.Volume) ([]mangadata.Chapter, error) {
+func (d *dex) VolumeChapters(ctx context.Context, store mango.Store, volume mango.Volume) ([]mangadata.Chapter, error) {
 	limit := 100
 	agg := aggregate{
 		chapters:    []mangadata.Chapter{},
@@ -56,13 +55,13 @@ func (d *dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango
 
 	// This doesn't include the offset so that it retrieves and saves all the chapters.
 	cacheID := fmt.Sprintf("%s-%s", params.Encode(), d.filter.String())
-	found, err := store.Get(cacheID, &agg.chapters)
+	var chapters []mangadata.Chapter
+	found, err := store.GetChapters(cacheID, volume, &chapters)
 	if err != nil {
 		return nil, err
 	}
 	if found {
-		mango.Log("found chapters in cache for volume %s", volume.String())
-		return agg.chapters, nil
+		return chapters, nil
 	}
 
 	offset := 0
@@ -95,7 +94,7 @@ func (d *dex) VolumeChapters(ctx context.Context, store gokv.Store, volume mango
 		return chaptersFiltered[i].Info().Number < chaptersFiltered[j].Info().Number
 	})
 
-	err = store.Set(cacheID, chaptersFiltered)
+	err = store.SetChapters(cacheID, chaptersFiltered)
 	if err != nil {
 		return nil, err
 	}

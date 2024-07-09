@@ -9,10 +9,9 @@ import (
 
 	"github.com/luevano/libmangal/mangadata"
 	mango "github.com/luevano/mangoprovider"
-	"github.com/philippgille/gokv"
 )
 
-func (d *dex) MangaVolumes(ctx context.Context, store gokv.Store, manga mango.Manga) ([]mangadata.Volume, error) {
+func (d *dex) MangaVolumes(ctx context.Context, store mango.Store, manga mango.Manga) ([]mangadata.Volume, error) {
 	var volumes []mangadata.Volume
 
 	params := url.Values{}
@@ -20,12 +19,11 @@ func (d *dex) MangaVolumes(ctx context.Context, store gokv.Store, manga mango.Ma
 
 	cacheID := fmt.Sprintf("%s?%s-%s", manga.ID, params.Encode(), d.filter.String())
 
-	found, err := store.Get(cacheID, &volumes)
+	found, err := store.GetVolumes(cacheID, manga, &volumes)
 	if err != nil {
 		return nil, err
 	}
 	if found {
-		mango.Log("found volumes in cache for manga %q", manga.String())
 		return volumes, nil
 	}
 
@@ -71,7 +69,7 @@ func (d *dex) MangaVolumes(ctx context.Context, store gokv.Store, manga mango.Ma
 		return volumes[i].Info().Number < volumes[j].Info().Number
 	})
 
-	err = store.Set(cacheID, volumes)
+	err = store.SetVolumes(cacheID, volumes)
 	if err != nil {
 		return nil, err
 	}

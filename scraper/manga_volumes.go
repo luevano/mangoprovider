@@ -10,21 +10,19 @@ import (
 	"github.com/luevano/libmangal/mangadata"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/scraper/headless/rod"
-	"github.com/philippgille/gokv"
 )
 
-func (s *Scraper) MangaVolumes(_ctx context.Context, store gokv.Store, manga mango.Manga) ([]mangadata.Volume, error) {
+func (s *Scraper) MangaVolumes(_ctx context.Context, store mango.Store, manga mango.Manga) ([]mangadata.Volume, error) {
 	var volumes []mangadata.Volume
 
 	// need an identifiable string for the cache
 	cacheID := fmt.Sprintf("%s-volumes", manga.URL)
 
-	found, err := store.Get(cacheID, &volumes)
+	found, err := store.GetVolumes(cacheID, manga, &volumes)
 	if err != nil {
 		return nil, err
 	}
 	if found {
-		mango.Log("found volumes in cache for manga %q", manga.String())
 		return volumes, nil
 	}
 
@@ -43,7 +41,7 @@ func (s *Scraper) MangaVolumes(_ctx context.Context, store gokv.Store, manga man
 		return volumes[i].Info().Number < volumes[j].Info().Number
 	})
 
-	err = store.Set(cacheID, volumes)
+	err = store.SetVolumes(cacheID, volumes)
 	if err != nil {
 		return nil, err
 	}

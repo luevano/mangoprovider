@@ -8,10 +8,9 @@ import (
 	"github.com/luevano/libmangal/metadata"
 	"github.com/luevano/mangoplus/creators"
 	mango "github.com/luevano/mangoprovider"
-	"github.com/philippgille/gokv"
 )
 
-func (c *mpc) SearchMangas(ctx context.Context, store gokv.Store, query string) ([]mangadata.Manga, error) {
+func (c *mpc) SearchMangas(ctx context.Context, store mango.Store, query string) ([]mangadata.Manga, error) {
 	var mangas []mangadata.Manga
 
 	matchGroups := mango.ReNamedGroups(mango.MangaQueryIDRegex, query)
@@ -21,12 +20,11 @@ func (c *mpc) SearchMangas(ctx context.Context, store gokv.Store, query string) 
 	}
 
 	cacheID := fmt.Sprintf("%s-%s", query, c.filter.Language)
-	found, err := store.Get(cacheID, &mangas)
+	found, err := store.GetMangas(cacheID, query, &mangas)
 	if err != nil {
 		return nil, err
 	}
 	if found {
-		mango.Log("found mangas in cache for query %q", query)
 		return mangas, nil
 	}
 
@@ -35,7 +33,7 @@ func (c *mpc) SearchMangas(ctx context.Context, store gokv.Store, query string) 
 		return nil, err
 	}
 
-	err = store.Set(cacheID, mangas)
+	err = store.SetMangas(cacheID, mangas)
 	if err != nil {
 		return nil, err
 	}

@@ -44,5 +44,5 @@ func (m *Manga) Metadata() *metadata.Metadata {
 }
 
 func (m *Manga) SetMetadata(metadata *metadata.Metadata) {
-	m.Metadata_ = metadata
+	*m.Metadata_ = *metadata
 }

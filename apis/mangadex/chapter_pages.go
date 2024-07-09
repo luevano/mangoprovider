@@ -8,10 +8,9 @@ import (
 
 	"github.com/luevano/libmangal/mangadata"
 	mango "github.com/luevano/mangoprovider"
-	"github.com/philippgille/gokv"
 )
 
-func (d *dex) ChapterPages(ctx context.Context, store gokv.Store, chapter mango.Chapter) ([]mangadata.Page, error) {
+func (d *dex) ChapterPages(ctx context.Context, store mango.Store, chapter mango.Chapter) ([]mangadata.Page, error) {
 	var pages []mangadata.Page
 
 	atHome, err := d.client.AtHome.Get(chapter.ID, url.Values{})

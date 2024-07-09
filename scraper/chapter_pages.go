@@ -11,10 +11,9 @@ import (
 	"github.com/luevano/libmangal/mangadata"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/scraper/headless/rod"
-	"github.com/philippgille/gokv"
 )
 
-func (s *Scraper) ChapterPages(_ctx context.Context, store gokv.Store, chapter mango.Chapter) ([]mangadata.Page, error) {
+func (s *Scraper) ChapterPages(_ctx context.Context, store mango.Store, chapter mango.Chapter) ([]mangadata.Page, error) {
 	var pages []mangadata.Page
 
 	ctx := colly.NewContext()

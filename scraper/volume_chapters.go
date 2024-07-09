@@ -15,16 +15,15 @@ import (
 	"github.com/luevano/libmangal/metadata"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/scraper/headless/rod"
-	"github.com/philippgille/gokv"
 )
 
-func (s *Scraper) VolumeChapters(_ctx context.Context, store gokv.Store, volume mango.Volume) ([]mangadata.Chapter, error) {
+func (s *Scraper) VolumeChapters(_ctx context.Context, store mango.Store, volume mango.Volume) ([]mangadata.Chapter, error) {
 	var chapters []mangadata.Chapter
 
 	// need an identifiable string for the cache
 	cacheID := fmt.Sprintf("%s-chapters", volume.Manga_.URL)
 
-	found, err := store.Get(cacheID, &chapters)
+	found, err := store.GetChapters(cacheID, volume, &chapters)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +54,7 @@ func (s *Scraper) VolumeChapters(_ctx context.Context, store gokv.Store, volume 
 	})
 
 	// TODO: only cache if there are chapters (len > 0)?
-	err = store.Set(cacheID, chapters)
+	err = store.SetChapters(cacheID, chapters)
 	if err != nil {
 		return nil, err
 	}

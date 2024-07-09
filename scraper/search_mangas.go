@@ -10,10 +10,9 @@ import (
 	"github.com/luevano/libmangal/mangadata"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/scraper/headless/rod"
-	"github.com/philippgille/gokv"
 )
 
-func (s *Scraper) SearchMangas(_ctx context.Context, store gokv.Store, query string) ([]mangadata.Manga, error) {
+func (s *Scraper) SearchMangas(_ctx context.Context, store mango.Store, query string) ([]mangadata.Manga, error) {
 	var mangas []mangadata.Manga
 
 	matchGroups := mango.ReNamedGroups(mango.MangaQueryIDRegex, query)
@@ -37,12 +36,11 @@ func (s *Scraper) SearchMangas(_ctx context.Context, store gokv.Store, query str
 		return nil, err
 	}
 
-	found, err := store.Get(cacheID, &mangas)
+	found, err := store.GetMangas(cacheID, query, &mangas)
 	if err != nil {
 		return nil, err
 	}
 	if found {
-		mango.Log("found mangas in cache for query %q", query)
 		return mangas, nil
 	}
 
@@ -65,7 +63,7 @@ func (s *Scraper) SearchMangas(_ctx context.Context, store gokv.Store, query str
 	}
 	collector.Wait()
 
-	err = store.Set(cacheID, mangas)
+	err = store.SetMangas(cacheID, mangas)
 	if err != nil {
 		return nil, err
 	}

@@ -8,19 +8,17 @@ import (
 	"github.com/luevano/libmangal/mangadata"
 	"github.com/luevano/libmangal/metadata"
 	mango "github.com/luevano/mangoprovider"
-	"github.com/philippgille/gokv"
 )
 
-func (c *mpc) VolumeChapters(ctx context.Context, store gokv.Store, volume mango.Volume) ([]mangadata.Chapter, error) {
+func (c *mpc) VolumeChapters(ctx context.Context, store mango.Store, volume mango.Volume) ([]mangadata.Chapter, error) {
 	var chapters []mangadata.Chapter
 
 	mangaID := volume.Manga_.ID
-	found, err := store.Get(mangaID, &chapters)
+	found, err := store.GetChapters(mangaID, volume, &chapters)
 	if err != nil {
 		return nil, err
 	}
 	if found {
-		mango.Log("found chapters in cache for volume %s", volume.String())
 		return chapters, nil
 	}
 
@@ -29,7 +27,7 @@ func (c *mpc) VolumeChapters(ctx context.Context, store gokv.Store, volume mango
 		return nil, err
 	}
 
-	err = store.Set(mangaID, chapters)
+	err = store.SetChapters(mangaID, chapters)
 	if err != nil {
 		return nil, err
 	}

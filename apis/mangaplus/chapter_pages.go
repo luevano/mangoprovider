@@ -9,10 +9,9 @@ import (
 	"github.com/luevano/libmangal/mangadata"
 	"github.com/luevano/mangoplus"
 	mango "github.com/luevano/mangoprovider"
-	"github.com/philippgille/gokv"
 )
 
-func (p *plus) ChapterPages(ctx context.Context, store gokv.Store, chapter mango.Chapter) ([]mangadata.Page, error) {
+func (p *plus) ChapterPages(ctx context.Context, store mango.Store, chapter mango.Chapter) ([]mangadata.Page, error) {
 	var pages []mangadata.Page
 
 	// Will default to "super_high"

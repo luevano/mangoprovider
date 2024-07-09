@@ -23,9 +23,14 @@ func (l *Loader) Info() libmangal.ProviderInfo {
 }
 
 func (l *Loader) Load(ctx context.Context) (libmangal.Provider, error) {
-	store, err := l.Options.HTTPStore(l.ProviderInfo.ID)
+	s, err := l.Options.HTTPStore(l.ProviderInfo.ID)
 	if err != nil {
 		return nil, err
+	}
+
+	// gokv.Store wrapper
+	store := Store{
+		store: s,
 	}
 
 	return &Provider{

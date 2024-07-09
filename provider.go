@@ -9,16 +9,15 @@ import (
 	"github.com/luevano/libmangal"
 	"github.com/luevano/libmangal/logger"
 	"github.com/luevano/libmangal/mangadata"
-	"github.com/philippgille/gokv"
 )
 
 var _ libmangal.Provider = (*Provider)(nil)
 
 type Functions struct {
-	SearchMangas   func(context.Context, gokv.Store, string) ([]mangadata.Manga, error)
-	MangaVolumes   func(context.Context, gokv.Store, Manga) ([]mangadata.Volume, error)
-	VolumeChapters func(context.Context, gokv.Store, Volume) ([]mangadata.Chapter, error)
-	ChapterPages   func(context.Context, gokv.Store, Chapter) ([]mangadata.Page, error)
+	SearchMangas   func(context.Context, Store, string) ([]mangadata.Manga, error)
+	MangaVolumes   func(context.Context, Store, Manga) ([]mangadata.Volume, error)
+	VolumeChapters func(context.Context, Store, Volume) ([]mangadata.Chapter, error)
+	ChapterPages   func(context.Context, Store, Chapter) ([]mangadata.Page, error)
 	GetPageImage   func(context.Context, *http.Client, Page) ([]byte, error)
 }
 
@@ -28,7 +27,7 @@ type Provider struct {
 	F       Functions
 
 	client *http.Client
-	store  gokv.Store
+	store  Store
 }
 
 func (p *Provider) String() string {
