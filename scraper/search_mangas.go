@@ -8,6 +8,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gocolly/colly/v2"
 	"github.com/luevano/libmangal/mangadata"
+	"github.com/luevano/libmangal/metadata"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/scraper/headless/rod"
 )
@@ -71,6 +72,7 @@ func (s *Scraper) SearchMangas(_ctx context.Context, store mango.Store, query st
 	return mangas, nil
 }
 
+// TODO: define metadata scraping logic
 // Get the manga collector, the actual scraping logic is defined here.
 func (s *Scraper) getMangaCollector(id string) *colly.Collector {
 	collector := s.collector.Clone()
@@ -86,12 +88,14 @@ func (s *Scraper) getMangaCollector(id string) *colly.Collector {
 			URL:           e.Request.URL.String(),
 			ID:            id,
 			Cover:         s.config.MangaByIDExtractor.Cover(selection),
+			Metadata_:     &metadata.Metadata{},
 		}
 		*mangas = append(*mangas, &m)
 	})
 	return collector
 }
 
+// TODO: define metadata scraping logic
 // Get the mangas collector, the actual scraping logic is defined here.
 func (s *Scraper) getMangasCollector() *colly.Collector {
 	collector := s.collector.Clone()
@@ -110,6 +114,7 @@ func (s *Scraper) getMangasCollector() *colly.Collector {
 				URL:           url,
 				ID:            s.config.MangaExtractor.ID(url),
 				Cover:         s.config.MangaExtractor.Cover(selection),
+				Metadata_:     &metadata.Metadata{},
 			}
 			*mangas = append(*mangas, &m)
 		})
