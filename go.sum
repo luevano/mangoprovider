@@ -79,8 +79,8 @@ github.com/lithammer/fuzzysearch v1.1.8 h1:/HIuJnjHuXS8bKaiTMeeDlW2/AyIWk2brx1V8
 github.com/lithammer/fuzzysearch v1.1.8/go.mod h1:IdqeyBClc3FFqSzYq/MXESsS4S0FsZ5ajtkr5xPLts4=
 github.com/luevano/libmangal v0.16.5 h1:huAEjFDJ73TvwS6FBLq4S21brp48QMd1/MB9kI+grSY=
 github.com/luevano/libmangal v0.16.5/go.mod h1:FDTp59MYjUSso8PQkhrqQYJbJra5gOCOp7FvHPuh7zk=
-github.com/luevano/mangodex v0.3.7 h1:V5c9uBFv5xrDaJkBiA+McNDjgszqWVbcHNWIq6R5rY0=
-github.com/luevano/mangodex v0.3.7/go.mod h1:FdjJzUAr0Xo+gUMakiEMA2ogJKHPIXit+cVvJbroG6Y=
+github.com/luevano/mangodex v0.3.8 h1:Mle3+GayExT7vHKr2Dot8KS1auhEY8TgWz/x31CULmw=
+github.com/luevano/mangodex v0.3.8/go.mod h1:FdjJzUAr0Xo+gUMakiEMA2ogJKHPIXit+cVvJbroG6Y=
 github.com/luevano/mangoplus v0.4.4 h1:ST2d+/AcGSYzBDNtssSn+0Sqtmk+2Jw/POvve9mtXmE=
 github.com/luevano/mangoplus v0.4.4/go.mod h1:uNC7/xkz/lN8xBiwBzIJ6YHOIqLHak+7XrHWJgGkosE=
 github.com/mattn/go-runewidth v0.0.15 h1:UNAjwbU9l54TA3KzvqLGxwWjHmMgBUVhBiTjelZgg3U=
