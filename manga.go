@@ -39,10 +39,10 @@ func (m *Manga) MarshalJSON() ([]byte, error) {
 	return json.Marshal(m.Info())
 }
 
-func (m *Manga) Metadata() *metadata.Metadata {
-	return m.Metadata_
+func (m *Manga) Metadata() metadata.Metadata {
+	return *m.Metadata_
 }
 
-func (m *Manga) SetMetadata(metadata *metadata.Metadata) {
-	*m.Metadata_ = *metadata
+func (m *Manga) SetMetadata(metadata metadata.Metadata) {
+	*m.Metadata_ = metadata
 }

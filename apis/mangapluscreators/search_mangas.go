@@ -67,32 +67,33 @@ func (c *mpc) searchMangas(mangas *[]mangadata.Manga, query string) error {
 }
 
 func (c *mpc) mpcToMangoManga(title creators.Title) *mango.Manga {
-	metadata := c.mpcToMetadata(title)
+	meta := c.mpcToMetadata(title)
+	var m metadata.Metadata = meta
 	return &mango.Manga{
-		Title:         metadata.Title(),
-		AnilistSearch: metadata.Title(),
-		URL:           metadata.URL,
+		Title:         meta.Title(),
+		AnilistSearch: meta.Title(),
+		URL:           meta.URL(),
 		ID:            title.TitleID,
-		Cover:         metadata.CoverImage,
-		Metadata_:     metadata,
+		Cover:         meta.Cover(),
+		Metadata_:     &m,
 	}
 }
 
-func (c *mpc) mpcToMetadata(title creators.Title) *metadata.Metadata {
+func (c *mpc) mpcToMetadata(title creators.Title) metadata.Metadata {
 	// TODO: decide if an id should be parsed from the provided string,
 	// usually coming with "fm" in front
 	//
 	// Assume it is in english, there are no alternate titles
 	// There is really not much info...
-	return &metadata.Metadata{
-		EnglishTitle:   title.Title,
-		Description:    title.Description,
-		CoverImage:     title.ThumbnailURL,
-		Authors:        []string{title.HandleName},
-		Artists:        []string{title.HandleName},
-		StartDate:      parseTSMilli(title.FirstPublishDate),
-		Status:         metadata.Status("UNKNOWN"), // mpc doesn't provide a status
-		URL:            fmt.Sprintf("%stitles/%s", website, title.TitleID),
-		IDProviderName: "mpc",
+	return &mangadata.Metadata{
+		EnglishTitle:      title.Title,
+		Summary:           title.Description,
+		CoverImage:        title.ThumbnailURL,
+		AuthorList:        []string{title.HandleName},
+		ArtistList:        []string{title.HandleName},
+		DateStart:         parseTSMilli(title.FirstPublishDate),
+		PublicationStatus: metadata.Status("UNKNOWN"), // mpc doesn't provide a status
+		SourceURL:         fmt.Sprintf("%stitles/%s", website, title.TitleID),
+		ProviderIDCode:    "mpc",
 	}
 }

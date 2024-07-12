@@ -110,26 +110,27 @@ func (d *dex) getSearchMangasParams(query string, limit int) url.Values {
 }
 
 func (d *dex) dexToMangoManga(manga *mangodex.Manga) *mango.Manga {
-	metadata := d.dexToMetadata(manga)
+	meta := d.dexToMetadata(manga)
 
 	// If requested language is not found, fallbacks to the first found
-	mangaTitle := metadata.Title()
+	mangaTitle := meta.Title()
 	if mangaTitle == "" {
 		mangaTitle = manga.GetTitle(d.filter.Language, true)
 	}
 
+	var m metadata.Metadata = meta
 	return &mango.Manga{
 		Title:         mangaTitle,
 		AnilistSearch: mangaTitle,
 		URL:           fmt.Sprintf("%stitle/%s", website, manga.ID),
 		ID:            manga.ID,
-		Cover:         metadata.CoverImage,
-		Metadata_:     metadata,
+		Cover:         meta.CoverImage,
+		Metadata_:     &m,
 	}
 }
 
 // TODO: remove fallback (for filtered language) for tags/genres/descriptions?
-func (d *dex) dexToMetadata(manga *mangodex.Manga) *metadata.Metadata {
+func (d *dex) dexToMetadata(manga *mangodex.Manga) *mangadata.Metadata {
 	var altTitles []string
 	for k, v := range manga.Attributes.AltTitles.Values {
 		if !(k == "en" || k == "ja-ro" || k == "ja") {
@@ -201,28 +202,44 @@ func (d *dex) dexToMetadata(manga *mangodex.Manga) *metadata.Metadata {
 		}
 	}
 
-	idAl, _ := strconv.Atoi(manga.Attributes.Links.GetLocalString("al", false))
-	idMal, _ := strconv.Atoi(manga.Attributes.Links.GetLocalString("mal", false))
+	var externalIDs []metadata.ID
+	for _, c := range []struct {
+		code   string
+		source metadata.IDSource
+	}{
+		{metadata.IDCodeAnilist, metadata.IDSourceAnilist},
+		{metadata.IDCodeMyAnimeList, metadata.IDSourceMyAnimeList},
+		{metadata.IDCodeKitsu, metadata.IDSourceKitsu},
+		{metadata.IDCodeMangaUpdates, metadata.IDSourceMangaUpdates},
+		{metadata.IDCodeAnimePlanet, metadata.IDSourceAnimePlanet},
+	} {
+		if id := manga.Attributes.Links.GetLocalString(c.code, false); id != "" {
+			externalIDs = append(externalIDs, metadata.ID{
+				IDRaw:    id,
+				IDCode:   c.code,
+				IDSource: c.source,
+			})
+		}
+	}
 
 	// Mangadex doesn't provide any kind of ID that could be used,
 	// so IDProvider is not set but the name is to be able to differentiate
 	// when metadata comes from the provider
-	return &metadata.Metadata{
-		EnglishTitle:    manga.GetTitle("en", false),
-		RomajiTitle:     manga.GetTitle("ja-ro", false),
-		NativeTitle:     manga.GetTitle("ja", false), // assumes the native is japanese
-		AlternateTitles: altTitles,
-		Description:     manga.GetDescription(d.filter.Language, true),
-		CoverImage:      cover,
-		Tags:            tags,
-		Genres:          genres,
-		Authors:         authors,
-		Artists:         artists,
-		StartDate:       date,
-		Status:          status,
-		URL:             fmt.Sprintf("%stitle/%s", website, manga.ID),
-		IDProviderName:  "dex",
-		IDAl:            idAl,
-		IDMal:           idMal,
+	return &mangadata.Metadata{
+		EnglishTitle:      manga.GetTitle("en", false),
+		RomajiTitle:       manga.GetTitle("ja-ro", false),
+		NativeTitle:       manga.GetTitle("ja", false), // assumes the native is japanese
+		Synonyms:          altTitles,
+		Summary:           manga.GetDescription(d.filter.Language, true),
+		CoverImage:        cover,
+		TagList:           tags,
+		GenreList:         genres,
+		AuthorList:        authors,
+		ArtistList:        artists,
+		DateStart:         date,
+		PublicationStatus: status,
+		SourceURL:         fmt.Sprintf("%stitle/%s", website, manga.ID),
+		ProviderIDCode:    "dex",
+		OtherIDs:          externalIDs,
 	}
 }

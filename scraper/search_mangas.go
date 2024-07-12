@@ -82,13 +82,14 @@ func (s *Scraper) getMangaCollector(id string) *colly.Collector {
 		mangas := e.Request.Ctx.GetAny("mangas").(*[]mangadata.Manga)
 
 		title := mango.CleanString(s.config.MangaByIDExtractor.Title(selection))
+		var meta metadata.Metadata = &mangadata.Metadata{}
 		m := mango.Manga{
 			Title:         title,
 			AnilistSearch: title,
 			URL:           e.Request.URL.String(),
 			ID:            id,
 			Cover:         s.config.MangaByIDExtractor.Cover(selection),
-			Metadata_:     &metadata.Metadata{},
+			Metadata_:     &meta,
 		}
 		*mangas = append(*mangas, &m)
 	})
@@ -108,13 +109,14 @@ func (s *Scraper) getMangasCollector() *colly.Collector {
 			link := s.config.MangaExtractor.URL(selection)
 			url := e.Request.AbsoluteURL(link)
 			title := mango.CleanString(s.config.MangaExtractor.Title(selection))
+			var meta metadata.Metadata = &mangadata.Metadata{}
 			m := mango.Manga{
 				Title:         title,
 				AnilistSearch: title,
 				URL:           url,
 				ID:            s.config.MangaExtractor.ID(url),
 				Cover:         s.config.MangaExtractor.Cover(selection),
-				Metadata_:     &metadata.Metadata{},
+				Metadata_:     &meta,
 			}
 			*mangas = append(*mangas, &m)
 		})

@@ -88,19 +88,20 @@ func (p *plus) searchMangas(mangas *[]mangadata.Manga, query string) error {
 }
 
 func (p *plus) plusToMangoManga(titleDetail mangoplus.TitleDetailView) *mango.Manga {
-	metadata := p.plusToMetadata(titleDetail)
+	meta := p.plusToMetadata(titleDetail)
+	var m metadata.Metadata = meta
 	return &mango.Manga{
-		Title:         metadata.Title(),
-		AnilistSearch: metadata.Title(),
-		URL:           metadata.URL,
+		Title:         meta.Title(),
+		AnilistSearch: meta.Title(),
+		URL:           meta.URL(),
 		ID:            strconv.Itoa(titleDetail.Title.TitleID),
-		Cover:         metadata.CoverImage,
-		Banner:        metadata.BannerImage,
-		Metadata_:     metadata,
+		Cover:         meta.Cover(),
+		Banner:        meta.Banner(),
+		Metadata_:     &m,
 	}
 }
 
-func (p *plus) plusToMetadata(titleDetail mangoplus.TitleDetailView) *metadata.Metadata {
+func (p *plus) plusToMetadata(titleDetail mangoplus.TitleDetailView) *mangadata.Metadata {
 	title := titleDetail.Title
 
 	var status metadata.Status
@@ -129,17 +130,17 @@ func (p *plus) plusToMetadata(titleDetail mangoplus.TitleDetailView) *metadata.M
 
 	// Assume it is in english, there are no alternate titles (unless many other requests where to be performed).
 	// Also using author as aritsts too, not much data provided, and there is no tag/genre data
-	return &metadata.Metadata{
-		EnglishTitle:   title.Name,
-		Description:    titleDetail.Overview,
-		CoverImage:     title.PortraitImageURL,
-		BannerImage:    titleDetail.TitleImageUrl,
-		Authors:        []string{title.Author},
-		Artists:        []string{title.Author},
-		StartDate:      date,
-		Status:         status,
-		URL:            fmt.Sprintf("%stitles/%d", website, title.TitleID),
-		IDProvider:     title.TitleID,
-		IDProviderName: "mp",
+	return &mangadata.Metadata{
+		EnglishTitle:      title.Name,
+		Summary:           titleDetail.Overview,
+		CoverImage:        title.PortraitImageURL,
+		BannerImage:       titleDetail.TitleImageUrl,
+		AuthorList:        []string{title.Author},
+		ArtistList:        []string{title.Author},
+		DateStart:         date,
+		PublicationStatus: status,
+		SourceURL:         fmt.Sprintf("%stitles/%d", website, title.TitleID),
+		ProviderID:        strconv.Itoa(title.TitleID),
+		ProviderIDCode:    "mp",
 	}
 }
