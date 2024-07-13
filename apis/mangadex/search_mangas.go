@@ -215,9 +215,9 @@ func (d *dex) dexToMetadata(manga *mangodex.Manga) *mangadata.Metadata {
 	} {
 		if id := manga.Attributes.Links.GetLocalString(c.code, false); id != "" {
 			externalIDs = append(externalIDs, metadata.ID{
-				IDRaw:    id,
-				IDCode:   c.code,
-				IDSource: c.source,
+				Raw:    id,
+				Code:   c.code,
+				Source: c.source,
 			})
 		}
 	}
