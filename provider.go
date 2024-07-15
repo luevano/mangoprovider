@@ -43,7 +43,12 @@ func (p *Provider) Info() libmangal.ProviderInfo {
 }
 
 func (p *Provider) SetLogger(newLogger *logger.Logger) {
-	logger_ = newLogger
+	prefix_ = p.ProviderInfo.ID + ": "
+	if logger_ == nil || newLogger == nil {
+		logger_ = newLogger
+	} else {
+		*logger_ = *newLogger
+	}
 }
 
 func (p *Provider) SearchMangas(
@@ -116,7 +121,6 @@ func GenericGetPageImage(
 	client *http.Client,
 	page Page,
 ) ([]byte, error) {
-	// Log("Making request using generic getter.")
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, page.URL, nil)
 	if err != nil {
 		return nil, err
