@@ -5,28 +5,52 @@ import (
 	"github.com/philippgille/gokv"
 )
 
+const (
+	CacheBucketNameMangas   = "mangas"
+	CacheBucketNameVolumes  = "volumes"
+	CacheBucketNameChapters = "chapters"
+)
+
 // Store is a gokv.Store wrapper with special handling
 // of search volumes/chapters as the manga needs to be
 // re-setted when loading from the store, as the pointer
 // of the manga will be different for all chapters and
 // thus the SetMetadata method will not work.
 type Store struct {
-	store gokv.Store
+	openStore func(bucketName string) (gokv.Store, error)
+	store     gokv.Store
 }
 
-func (s Store) Close() error {
+func (s *Store) open(bucketName string) error {
+	store, err := s.openStore(bucketName)
+	s.store = store
+	return err
+}
+
+func (s *Store) Close() error {
+	if s.store == nil {
+		return nil
+	}
 	return s.store.Close()
 }
 
-func (s Store) SetMangas(cacheID string, mangas []mangadata.Manga) error {
-	err := s.store.Set(cacheID, mangas)
+func (s *Store) SetMangas(cacheID string, mangas []mangadata.Manga) error {
+	err := s.open(CacheBucketNameMangas)
 	if err != nil {
 		return err
 	}
-	return nil
+	defer s.Close()
+
+	return s.store.Set(cacheID, mangas)
 }
 
-func (s Store) GetMangas(cacheID string, query string, mangas *[]mangadata.Manga) (bool, error) {
+func (s *Store) GetMangas(cacheID string, query string, mangas *[]mangadata.Manga) (bool, error) {
+	err := s.open(CacheBucketNameMangas)
+	if err != nil {
+		return false, err
+	}
+	defer s.Close()
+
 	found, err := s.store.Get(cacheID, mangas)
 	if err != nil {
 		return false, err
@@ -38,15 +62,23 @@ func (s Store) GetMangas(cacheID string, query string, mangas *[]mangadata.Manga
 	return false, nil
 }
 
-func (s Store) SetVolumes(cacheID string, volumes []mangadata.Volume) error {
-	err := s.store.Set(cacheID, volumes)
+func (s *Store) SetVolumes(cacheID string, volumes []mangadata.Volume) error {
+	err := s.open(CacheBucketNameVolumes)
 	if err != nil {
 		return err
 	}
-	return nil
+	defer s.Close()
+
+	return s.store.Set(cacheID, volumes)
 }
 
-func (s Store) GetVolumes(cacheID string, manga Manga, volumes *[]mangadata.Volume) (bool, error) {
+func (s *Store) GetVolumes(cacheID string, manga Manga, volumes *[]mangadata.Volume) (bool, error) {
+	err := s.open(CacheBucketNameVolumes)
+	if err != nil {
+		return false, err
+	}
+	defer s.Close()
+
 	var foundVolumes []mangadata.Volume
 	found, err := s.store.Get(cacheID, &foundVolumes)
 	if err != nil {
@@ -67,15 +99,23 @@ func (s Store) GetVolumes(cacheID string, manga Manga, volumes *[]mangadata.Volu
 	return false, nil
 }
 
-func (s Store) SetChapters(cacheID string, chapters []mangadata.Chapter) error {
-	err := s.store.Set(cacheID, chapters)
+func (s *Store) SetChapters(cacheID string, chapters []mangadata.Chapter) error {
+	err := s.open(CacheBucketNameChapters)
 	if err != nil {
 		return err
 	}
-	return nil
+	defer s.Close()
+
+	return s.store.Set(cacheID, chapters)
 }
 
-func (s Store) GetChapters(cacheID string, volume Volume, chapters *[]mangadata.Chapter) (bool, error) {
+func (s *Store) GetChapters(cacheID string, volume Volume, chapters *[]mangadata.Chapter) (bool, error) {
+	err := s.open(CacheBucketNameChapters)
+	if err != nil {
+		return false, err
+	}
+	defer s.Close()
+
 	var foundChapters []mangadata.Chapter
 	found, err := s.store.Get(cacheID, &foundChapters)
 	if err != nil {
@@ -93,6 +133,5 @@ func (s Store) GetChapters(cacheID string, volume Volume, chapters *[]mangadata.
 		*chapters = updatedChapters
 		return true, nil
 	}
-
 	return false, nil
 }

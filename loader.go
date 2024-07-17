@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/luevano/libmangal"
+	"github.com/philippgille/gokv"
 )
 
 var _ libmangal.ProviderLoader = (*Loader)(nil)
@@ -23,14 +24,11 @@ func (l *Loader) Info() libmangal.ProviderInfo {
 }
 
 func (l *Loader) Load(ctx context.Context) (libmangal.Provider, error) {
-	s, err := l.Options.HTTPStore(l.ProviderInfo.ID)
-	if err != nil {
-		return nil, err
-	}
-
 	// gokv.Store wrapper
 	store := Store{
-		store: s,
+		openStore: func(bucketName string) (gokv.Store, error) {
+			return l.Options.CacheStore(l.ProviderInfo.ID, bucketName)
+		},
 	}
 
 	return &Provider{
