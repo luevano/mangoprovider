@@ -42,13 +42,9 @@ func (p *Provider) Info() libmangal.ProviderInfo {
 	return p.ProviderInfo
 }
 
-func (p *Provider) SetLogger(newLogger *logger.Logger) {
+func (p *Provider) SetLogger(logger *logger.Logger) {
 	prefix_ = p.ProviderInfo.ID + ": "
-	if logger_ == nil || newLogger == nil {
-		logger_ = newLogger
-	} else {
-		*logger_ = *newLogger
-	}
+	logger_ = logger
 }
 
 func (p *Provider) SearchMangas(
