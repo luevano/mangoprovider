@@ -91,13 +91,12 @@ func (p *plus) plusToMangoManga(titleDetail mangoplus.TitleDetailView) *mango.Ma
 	meta := p.plusToMetadata(titleDetail)
 	var m metadata.Metadata = meta
 	return &mango.Manga{
-		Title:         meta.Title(),
-		AnilistSearch: meta.Title(),
-		URL:           meta.URL(),
-		ID:            strconv.Itoa(titleDetail.Title.TitleID),
-		Cover:         meta.Cover(),
-		Banner:        meta.Banner(),
-		Metadata_:     &m,
+		Title:     meta.Title(),
+		URL:       meta.URL(),
+		ID:        strconv.Itoa(titleDetail.Title.TitleID),
+		Cover:     meta.Cover(),
+		Banner:    meta.Banner(),
+		Metadata_: &m,
 	}
 }
 

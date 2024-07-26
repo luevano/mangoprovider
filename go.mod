@@ -8,7 +8,7 @@ require (
 	github.com/gocolly/colly/v2 v2.1.0
 	github.com/google/uuid v1.6.0
 	github.com/lithammer/fuzzysearch v1.1.8
-	github.com/luevano/libmangal v0.19.1
+	github.com/luevano/libmangal v0.20.0
 	github.com/luevano/mangodex v0.3.8
 	github.com/luevano/mangoplus v0.4.4
 	github.com/philippgille/gokv v0.7.0
@@ -27,7 +27,7 @@ require (
 	github.com/hhrutter/tiff v1.0.1 // indirect
 	github.com/kennygrant/sanitize v1.2.4 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/mattn/go-runewidth v0.0.15 // indirect
+	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/pdfcpu/pdfcpu v0.8.0 // indirect
 	github.com/philippgille/gokv/encoding v0.7.0 // indirect
 	github.com/philippgille/gokv/util v0.7.0 // indirect

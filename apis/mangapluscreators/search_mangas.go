@@ -70,12 +70,11 @@ func (c *mpc) mpcToMangoManga(title creators.Title) *mango.Manga {
 	meta := c.mpcToMetadata(title)
 	var m metadata.Metadata = meta
 	return &mango.Manga{
-		Title:         meta.Title(),
-		AnilistSearch: meta.Title(),
-		URL:           meta.URL(),
-		ID:            title.TitleID,
-		Cover:         meta.Cover(),
-		Metadata_:     &m,
+		Title:     meta.Title(),
+		URL:       meta.URL(),
+		ID:        title.TitleID,
+		Cover:     meta.Cover(),
+		Metadata_: &m,
 	}
 }
 

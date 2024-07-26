@@ -120,12 +120,11 @@ func (d *dex) dexToMangoManga(manga *mangodex.Manga) *mango.Manga {
 
 	var m metadata.Metadata = meta
 	return &mango.Manga{
-		Title:         mangaTitle,
-		AnilistSearch: mangaTitle,
-		URL:           fmt.Sprintf("%stitle/%s", website, manga.ID),
-		ID:            manga.ID,
-		Cover:         meta.CoverImage,
-		Metadata_:     &m,
+		Title:     mangaTitle,
+		URL:       fmt.Sprintf("%stitle/%s", website, manga.ID),
+		ID:        manga.ID,
+		Cover:     meta.CoverImage,
+		Metadata_: &m,
 	}
 }
 
@@ -204,7 +203,7 @@ func (d *dex) dexToMetadata(manga *mangodex.Manga) *mangadata.Metadata {
 
 	var externalIDs []metadata.ID
 	for _, c := range []struct {
-		code   string
+		code   metadata.IDCode
 		source metadata.IDSource
 	}{
 		{metadata.IDCodeAnilist, metadata.IDSourceAnilist},
@@ -213,7 +212,7 @@ func (d *dex) dexToMetadata(manga *mangodex.Manga) *mangadata.Metadata {
 		{metadata.IDCodeMangaUpdates, metadata.IDSourceMangaUpdates},
 		{metadata.IDCodeAnimePlanet, metadata.IDSourceAnimePlanet},
 	} {
-		if id := manga.Attributes.Links.GetLocalString(c.code, false); id != "" {
+		if id := manga.Attributes.Links.GetLocalString(string(c.code), false); id != "" {
 			externalIDs = append(externalIDs, metadata.ID{
 				Raw:    id,
 				Code:   c.code,

@@ -10,12 +10,11 @@ import (
 var _ mangadata.Manga = (*Manga)(nil)
 
 type Manga struct {
-	Title         string `json:"title"`
-	AnilistSearch string `json:"anilist_search"`
-	URL           string `json:"url"`
-	ID            string `json:"id"`
-	Cover         string `json:"cover"`
-	Banner        string `json:"banner"`
+	Title  string `json:"title"`
+	URL    string `json:"url"`
+	ID     string `json:"id"`
+	Cover  string `json:"cover"`
+	Banner string `json:"banner"`
 
 	Metadata_ *metadata.Metadata `json:"-"`
 }
@@ -26,12 +25,11 @@ func (m *Manga) String() string {
 
 func (m *Manga) Info() mangadata.MangaInfo {
 	return mangadata.MangaInfo{
-		Title:         m.Title,
-		AnilistSearch: m.AnilistSearch,
-		URL:           m.URL,
-		ID:            m.ID,
-		Cover:         m.Cover,
-		Banner:        m.Banner,
+		Title:  m.Title,
+		URL:    m.URL,
+		ID:     m.ID,
+		Cover:  m.Cover,
+		Banner: m.Banner,
 	}
 }
 
