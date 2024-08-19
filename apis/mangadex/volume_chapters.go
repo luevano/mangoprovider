@@ -128,13 +128,10 @@ func (d *dex) populateChapters(agg *aggregate, params url.Values, volume mango.V
 		if err != nil {
 			return false, err
 		}
-		// Add "Chapter #" when no title for the chapter is found.
+
+		// Use "Chapter #" when no title for the chapter is found
 		if chapterTitle == "" {
-			if chapterTitle == "" {
-				chapterTitle = chapterTitleNumber
-			} else {
-				chapterTitle = fmt.Sprintf("%s - %s", chapterTitleNumber, chapterTitle)
-			}
+			chapterTitle = chapterTitleNumber
 		}
 
 		chapterID := chapter.ID
