@@ -11,7 +11,7 @@ import (
 var ManganatoInfo = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-manganato",
 	Name:        "Manganato",
-	Version:     "0.3.0",
+	Version:     "0.3.1",
 	Description: "Manganato scraper",
 	Website:     "https://manganato.com/",
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/luevano/libmangal/metadata"
+	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/scraper"
 )
 
@@ -64,13 +65,7 @@ func Mangabox(name, baseUrl, searchPath, dateLayout, dateSelector string) *scrap
 		ChapterExtractor: &scraper.ChapterExtractor{
 			Selector: "div.chapter-list div.row, ul.row-content-chapter li",
 			Title: func(selection *goquery.Selection) string {
-				title := selection.Find("a").Text()
-				// ignore "Vol. N" from title
-				if strings.HasPrefix(title, "Vol.") {
-					splitted := strings.Split(title, " ")
-					title = strings.Join(splitted[1:], " ")
-				}
-				return title
+				return mango.ParseChapterTitle(selection.Find("a").Text())
 			},
 			ID: func(_url string) string {
 				return strings.Join(strings.Split(_url, "/")[3:], "/")
