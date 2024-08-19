@@ -1,6 +1,7 @@
 package mangoprovider
 
 import (
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -46,6 +47,30 @@ func ReNamedGroups(pattern *regexp.Regexp, str string) map[string]string {
 		}
 	}
 	return groups
+}
+
+func ParseChapterTitle(s string) string {
+	// Need to normalize the spaces, some weird unicode spaces are not matched with regex
+	title := strings.TrimSpace(strings.Join(strings.Fields(strings.Replace(s, "\t", " ", -1)), " "))
+
+	// Try to get the name without prefix "Chapter 123:" or similar
+	matchGroups := ReNamedGroups(ChapterNameRegex, title)
+	titleTemp := strings.TrimSpace(matchGroups[ChapterTitleID])
+	if titleTemp != "" {
+		// Check that the resulting title is not just "Part 123",
+		// as it probably is part of the whole title and we'll like to keep
+		// the prefix
+		// This happens with Spy x Family: "Mission X Part Y" for example
+		if !ChapterNameExcludeRegex.MatchString(titleTemp) {
+			title = titleTemp
+			// Add the "part number" at the end of the title if existent
+			partNum := strings.TrimSpace(matchGroups[PartNumberID])
+			if partNum != "" {
+				title = fmt.Sprintf("%s, Part %s", title, partNum)
+			}
+		}
+	}
+	return title
 }
 
 // Returns the string with single spaces. E.g. "    " -> " "
