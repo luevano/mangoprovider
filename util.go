@@ -19,7 +19,7 @@ const (
 	numRe      = `\d+([\.-]\d+)?`
 	sepRe      = `[:\-_.,]?`
 	numSepRe   = `\s*#?\s*`
-	volNumRe   = `([a-z]*\.?)` + numSepRe + `(?P<` + VolumeNumberID + `>` + numRe + `)`
+	volNumRe   = `(v[a-z]*\.?)` + numSepRe + `(?P<` + VolumeNumberID + `>` + numRe + `)`
 	chapNumRe  = `([a-z]*\.?)` + numSepRe + `(?P<` + ChapterNumberID + `>` + numRe + `)`
 	partNumRe  = `(part)` + numSepRe + `(?P<` + PartNumberID + `>` + numRe + `)`
 	chapNameRe = `(?P<` + ChapterTitleID + `>\S.*\S)`

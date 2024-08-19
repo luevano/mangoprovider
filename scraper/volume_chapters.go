@@ -73,7 +73,7 @@ func (s *Scraper) getChaptersCollector() *colly.Collector {
 		elements.Each(func(_ int, selection *goquery.Selection) {
 			link := s.config.ChapterExtractor.URL(selection)
 			url := e.Request.AbsoluteURL(link)
-			title := mango.CleanString(s.config.ChapterExtractor.Title(selection))
+			title := strings.TrimSpace(mango.CleanString(s.config.ChapterExtractor.Title(selection)))
 
 			// default temp number
 			chapterNumber := float32(e.Index)
