@@ -51,7 +51,7 @@ func ReNamedGroups(pattern *regexp.Regexp, str string) map[string]string {
 
 func ParseChapterTitle(s string) string {
 	// Need to normalize the spaces, some weird unicode spaces are not matched with regex
-	title := strings.TrimSpace(strings.Join(strings.Fields(strings.Replace(s, "\t", " ", -1)), " "))
+	title := strings.TrimSpace(CleanString(s))
 
 	// Try to get the name without prefix "Chapter 123:" or similar
 	matchGroups := ReNamedGroups(ChapterNameRegex, title)
@@ -80,7 +80,7 @@ func standardizeSpaces(s string) string {
 
 // Get the string with all whitespace standardized.
 func CleanString(s string) string {
-	return standardizeSpaces(NewlineCharactersRegex.ReplaceAllString(s, " "))
+	return standardizeSpaces(NewlineCharactersRegex.ReplaceAllString(strings.Replace(s, "\t", " ", -1), " "))
 }
 
 // Get the float number with all of the insignificant digits removed.

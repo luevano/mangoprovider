@@ -75,8 +75,17 @@ func (s *Scraper) getChaptersCollector() *colly.Collector {
 			url := e.Request.AbsoluteURL(link)
 			title := mango.CleanString(s.config.ChapterExtractor.Title(selection))
 
-			match := mango.ChapterNumberRegex.FindString(title)
+			// default temp number
 			chapterNumber := float32(e.Index)
+
+			// check for matched groups, to extract the chapter number safely
+			matchGroups := mango.ReNamedGroups(mango.ChapterNameRegex, title)
+			match := strings.TrimSpace(matchGroups[mango.ChapterNumberID])
+
+			// if the groups matching fail, it means it probably only contains the chapter number
+			if match == "" {
+				match = mango.ChapterNumberRegex.FindString(title)
+			}
 			if match != "" {
 				match = strings.Replace(match, "-", ".", 1)
 				number, err := strconv.ParseFloat(match, 32)
@@ -96,7 +105,7 @@ func (s *Scraper) getChaptersCollector() *colly.Collector {
 			}
 
 			c := mango.Chapter{
-				Title:           title,
+				Title:           mango.ParseChapterTitle(title),
 				ID:              s.config.ChapterExtractor.ID(url),
 				URL:             url,
 				Number:          chapterNumber,
