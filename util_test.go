@@ -8,8 +8,11 @@ func TestChapterNameRegexMatch(t *testing.T) {
 		want     string
 	}{
 		{"chapter 1.5: name", "name"},
+		{"vol. 1 chapter 1.5: name", "name"},
 		{"chapter 1.5 name", "name"},
+		{"vol.22 chapter 1.5 name", "name"},
 		{"CHAPTER 2 - NAME", "NAME"},
+		{"V.1.5 CHAPTER 2 - NAME", "NAME"},
 		{"CHAPTER #2 NAME", "NAME"},
 		{"chapter 6: CHAPTER name", "CHAPTER name"},
 		{"flavor 21.6 something something", "something something"},
@@ -33,10 +36,11 @@ func TestChapterNameRegexMatch(t *testing.T) {
 		{"Chapter 133, Part 2: Of One Cloth-Flutter", "Of One Cloth-Flutter"},
 		{"Chapter 262: Inhuman Makyo Shinjuku Showdown, Part 34", "Inhuman Makyo Shinjuku Showdown, Part 34"},
 		{"Chapter 262-2: Inhuman Makyo Shinjuku Showdown, Part 34-2", "Inhuman Makyo Shinjuku Showdown, Part 34-2"},
+		{"Vol.3 Chapter 12 : Teresa Of The Faint Smile, Part 1", "Teresa Of The Faint Smile, Part 1"},
 	}
 	for _, tt := range tests {
 		matchGroups := ReNamedGroups(ChapterNameRegex, tt.original)
-		title, ok := matchGroups[ChapterNameIDName]
+		title, ok := matchGroups[ChapterTitleID]
 		if !ok {
 			t.Errorf("No match (should match); for title %q", tt.original)
 		} else if title != tt.want {
@@ -63,7 +67,7 @@ func TestChapterNameRegexNoMatch(t *testing.T) {
 	}
 	for _, tt := range tests {
 		matchGroups := ReNamedGroups(ChapterNameRegex, tt.original)
-		title, ok := matchGroups[ChapterNameIDName]
+		title, ok := matchGroups[ChapterTitleID]
 		if ok {
 			// When matching "Part X" it's fine, as there are no negative lookaheads
 			// in golang regex, this is a separate check if its found

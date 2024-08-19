@@ -17,7 +17,7 @@ func (s *Scraper) SearchMangas(_ctx context.Context, store mango.Store, query st
 	var mangas []mangadata.Manga
 
 	matchGroups := mango.ReNamedGroups(mango.MangaQueryIDRegex, query)
-	mangaID, byID := matchGroups[mango.MangaQueryIDName]
+	mangaID, byID := matchGroups[mango.MangaQueryID]
 	mangaID = strings.Trim(mangaID, "/")
 
 	var err error

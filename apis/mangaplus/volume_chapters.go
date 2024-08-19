@@ -104,7 +104,7 @@ func parseChapterTitle(s string, subTitle *string) string {
 
 		// Try to get the name without prefix "Chapter 123:" or similar
 		matchGroups := mango.ReNamedGroups(mango.ChapterNameRegex, title)
-		titleTemp := strings.TrimSpace(matchGroups[mango.ChapterNameIDName])
+		titleTemp := strings.TrimSpace(matchGroups[mango.ChapterTitleID])
 		if titleTemp != "" {
 			// Check that the resulting title is not just "Part 123",
 			// as it probably is part of the whole title and we'll like to keep
@@ -112,7 +112,7 @@ func parseChapterTitle(s string, subTitle *string) string {
 			// This happens with Spy x Family: "Mission X Part Y" for example
 			if !mango.ChapterNameExcludeRegex.MatchString(titleTemp) {
 				title = titleTemp
-				partNum := strings.TrimSpace(matchGroups[mango.ChapterPartNumberIDName])
+				partNum := strings.TrimSpace(matchGroups[mango.PartNumberID])
 				if partNum != "" {
 					title = fmt.Sprintf("%s, Part %s", title, partNum)
 				}

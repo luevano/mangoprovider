@@ -7,22 +7,46 @@ import (
 )
 
 const (
-	ChapterNumberIDName     = "chap_num"
-	ChapterPartNumberIDName = "part_num"
-	ChapterNameIDName       = "title"
-	MangaQueryIDName        = "id"
+	VolumeNumberID  = "vol_num"
+	ChapterNumberID = "chap_num"
+	PartNumberID    = "part_num"
+	ChapterTitleID  = "title"
+	MangaQueryID    = "id"
 )
 
-const chNumRe = `\d+([\.-]\d+)?`
+const (
+	numRe      = `\d+([\.-]\d+)?`
+	sepRe      = `[:\-_.,]?`
+	numSepRe   = `\s*#?\s*`
+	volNumRe   = `([a-z]*\.?)` + numSepRe + `(?P<` + VolumeNumberID + `>` + numRe + `)`
+	chapNumRe  = `([a-z]*\.?)` + numSepRe + `(?P<` + ChapterNumberID + `>` + numRe + `)`
+	partNumRe  = `(part)` + numSepRe + `(?P<` + PartNumberID + `>` + numRe + `)`
+	chapNameRe = `(?P<` + ChapterTitleID + `>\S.*\S)`
+)
 
 var (
-	MangaQueryIDRegex       = regexp.MustCompile(`(?mi)\s*(m((anga)?[-_]?)?id)\s*:\s*(?P<id>.*\S)\s*$`)
-	ChapterNumberRegex      = regexp.MustCompile(chNumRe)
-	ChapterNameRegex        = regexp.MustCompile(`(?mi)^([a-z]*\.?)\s*#?\s*(?P<chap_num>` + chNumRe + `)\s*([:\-_.,]?\s*part\s*(?P<part_num>` + chNumRe + `))?\s*[:\-_.,]?\s+(?P<title>\S.*\S)\s*$`) // https://regex101.com/r/ADDouB
-	ChapterNameExcludeRegex = regexp.MustCompile(`(?mi)^part\s*#?\s*` + chNumRe + `$`)
+	MangaQueryIDRegex       = regexp.MustCompile(`(?mi)\s*(m((anga)?[-_]?)?id)\s*:\s*(?P<` + MangaQueryID + `>.*\S)\s*$`)
+	ChapterNumberRegex      = regexp.MustCompile(numRe)
+	ChapterNameRegex        = regexp.MustCompile(`(?mi)^(` + volNumRe + `)?\s*` + chapNumRe + `\s*(` + sepRe + `\s*` + partNumRe + `)?\s*` + sepRe + `\s+` + chapNameRe + `\s*$`) // https://regex101.com/r/ADDouB
+	ChapterNameExcludeRegex = regexp.MustCompile(`(?mi)^` + partNumRe + `$`)
 	NewlineCharactersRegex  = regexp.MustCompile(`\r?\n`)
 	ImageExtensionRegex     = regexp.MustCompile(`^\.[a-zA-Z0-9][a-zA-Z0-9.]*[a-zA-Z0-9]$`)
 )
+
+// Translate regex named groups to a map.
+//
+// https://stackoverflow.com/a/53587770
+func ReNamedGroups(pattern *regexp.Regexp, str string) map[string]string {
+	groups := make(map[string]string)
+	match := pattern.FindStringSubmatch(str)
+	for i, value := range match {
+		name := pattern.SubexpNames()[i]
+		if name != "" {
+			groups[name] = value
+		}
+	}
+	return groups
+}
 
 // Returns the string with single spaces. E.g. "    " -> " "
 func standardizeSpaces(s string) string {
@@ -39,21 +63,6 @@ func CleanString(s string) string {
 // For example, "001.500" becomes "1.5".
 func FormattedFloat(n float32) string {
 	return strconv.FormatFloat(float64(n), 'f', -1, 32)
-}
-
-// Translate regex named groups to a map.
-//
-// https://stackoverflow.com/a/53587770
-func ReNamedGroups(pattern *regexp.Regexp, str string) map[string]string {
-	groups := make(map[string]string)
-	match := pattern.FindStringSubmatch(str)
-	for i, value := range match {
-		name := pattern.SubexpNames()[i]
-		if name != "" {
-			groups[name] = value
-		}
-	}
-	return groups
 }
 
 // FloatIsInt is a helper function to see if the float value is actually an integer.

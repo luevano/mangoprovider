@@ -14,7 +14,7 @@ func (c *mpc) SearchMangas(ctx context.Context, store mango.Store, query string)
 	var mangas []mangadata.Manga
 
 	matchGroups := mango.ReNamedGroups(mango.MangaQueryIDRegex, query)
-	_, byID := matchGroups[mango.MangaQueryIDName]
+	_, byID := matchGroups[mango.MangaQueryID]
 	if byID {
 		return nil, fmt.Errorf("MangaPlusCreators doesn't support search manga by id")
 	}

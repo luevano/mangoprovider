@@ -16,7 +16,7 @@ func (d *dex) SearchMangas(ctx context.Context, store mango.Store, query string)
 	var mangas []mangadata.Manga
 
 	matchGroups := mango.ReNamedGroups(mango.MangaQueryIDRegex, query)
-	mangaID, byID := matchGroups[mango.MangaQueryIDName]
+	mangaID, byID := matchGroups[mango.MangaQueryID]
 
 	limit := 100
 	var params url.Values
