@@ -66,11 +66,11 @@ func Mangabox(name, baseUrl, searchPath, dateLayout, dateSelector string) *scrap
 			Title: func(selection *goquery.Selection) string {
 				return selection.Find("a").Text()
 			},
-			ID: func(_url string) string {
-				return strings.Join(strings.Split(_url, "/")[3:], "/")
-			},
 			URL: func(selection *goquery.Selection) string {
 				return selection.Find("a").AttrOr("href", "")
+			},
+			ID: func(_url string) string {
+				return strings.Join(strings.Split(_url, "/")[3:], "/")
 			},
 			Date: func(selection *goquery.Selection) metadata.Date {
 				publishedDate := strings.TrimSpace(selection.Find(dateSelector).Text())

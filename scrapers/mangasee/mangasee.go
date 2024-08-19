@@ -82,11 +82,11 @@ var Config = &scraper.Configuration{
 			name := selection.Find("span").First().Text()
 			return name
 		},
-		ID: func(_url string) string {
-			return strings.Split(_url, "/")[4]
-		},
 		URL: func(selection *goquery.Selection) string {
 			return selection.AttrOr("href", "")
+		},
+		ID: func(_url string) string {
+			return strings.Split(_url, "/")[4]
 		},
 		Date: func(selection *goquery.Selection) metadata.Date {
 			layout := "01/02/2006"

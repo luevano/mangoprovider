@@ -74,11 +74,11 @@ func Mangathemesia(name, baseUrl, mangaDir string) *scraper.Configuration {
 			Title: func(selection *goquery.Selection) string {
 				return selection.Find(".lch a, .chapternum").Text()
 			},
-			ID: func(_url string) string {
-				return strings.Split(_url, "/")[3]
-			},
 			URL: func(selection *goquery.Selection) string {
 				return selection.Find("a").AttrOr("href", "")
+			},
+			ID: func(_url string) string {
+				return strings.Split(_url, "/")[3]
 			},
 			Date: func(selection *goquery.Selection) metadata.Date {
 				publishedDate := selection.Find(".chapterdate").Text()

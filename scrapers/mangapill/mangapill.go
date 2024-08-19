@@ -80,12 +80,12 @@ var Config = &scraper.Configuration{
 		Title: func(selection *goquery.Selection) string {
 			return selection.Text()
 		},
+		URL: func(selection *goquery.Selection) string {
+			return selection.AttrOr("href", "")
+		},
 		// id is constructed similar to manga id above, <number>/<chapter-name>
 		ID: func(_url string) string {
 			return strings.Join(strings.Split(_url, "/")[4:], "/")
-		},
-		URL: func(selection *goquery.Selection) string {
-			return selection.AttrOr("href", "")
 		},
 		Date: func(_ *goquery.Selection) metadata.Date {
 			// mangapill doesn't provide dates, just use scraping day

@@ -51,10 +51,10 @@ type ChapterExtractor struct {
 	Selector string
 	// Title: Get title from element found by selector.
 	Title func(*goquery.Selection) string
-	// ID: Get id from parsed url string.
-	ID func(string) string
 	// URL: Get URL from element found by selector.
 	URL func(*goquery.Selection) string
+	// ID: Get id from parsed url string.
+	ID func(string) string
 	// Date: Get the published date of the chapter if available.
 	Date func(*goquery.Selection) metadata.Date
 	// ScanlationGroup: Get the scanlation group if available.
