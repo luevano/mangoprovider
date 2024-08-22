@@ -3,6 +3,7 @@ module github.com/luevano/mangoprovider
 go 1.22
 
 require (
+	github.com/Luzifer/go-openssl/v4 v4.2.2
 	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/go-rod/rod v0.114.6
 	github.com/gocolly/colly/v2 v2.1.0
@@ -13,6 +14,8 @@ require (
 	github.com/luevano/mangoplus v0.4.4
 	github.com/philippgille/gokv v0.7.0
 	github.com/philippgille/gokv/syncmap v0.7.0
+	github.com/tj/go-naturaldate v1.3.0
+	github.com/vineesh12344/gojsfuck v0.2.0
 )
 
 require (
@@ -43,9 +46,10 @@ require (
 	github.com/ysmood/got v0.39.4 // indirect
 	github.com/ysmood/gson v0.7.3 // indirect
 	github.com/ysmood/leakless v0.8.0 // indirect
+	golang.org/x/crypto v0.26.0 // indirect
 	golang.org/x/image v0.19.0 // indirect
 	golang.org/x/mod v0.20.0 // indirect
-	golang.org/x/net v0.20.0 // indirect
+	golang.org/x/net v0.28.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/text v0.17.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect

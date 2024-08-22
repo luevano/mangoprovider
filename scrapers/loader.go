@@ -4,6 +4,7 @@ import (
 	"github.com/luevano/libmangal"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/scraper"
+	"github.com/luevano/mangoprovider/scrapers/batoto"
 	"github.com/luevano/mangoprovider/scrapers/mangabox"
 	"github.com/luevano/mangoprovider/scrapers/mangapill"
 	"github.com/luevano/mangoprovider/scrapers/mangasee"
@@ -15,6 +16,7 @@ func Loaders(options mango.Options) []libmangal.ProviderLoader {
 	loaders := []libmangal.ProviderLoader{
 		Loader(mangapill.Info, mangapill.Config, options),
 		Loader(mangasee.Info, mangasee.Config, options),
+		Loader(batoto.Info, batoto.Config, options),
 		// Mangathemesia
 		Loader(mangathemesia.AsurascansInfo, mangathemesia.AsurascansConfig, options),
 		Loader(mangathemesia.FlamecomicsInfo, mangathemesia.FlamecomicsConfig, options),
