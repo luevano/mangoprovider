@@ -69,6 +69,8 @@ type PageExtractor struct {
 	Selector string
 	// URL: Get URL from element found by selector.
 	URL func(*goquery.Selection) string
+	// URLs: Get all URLs from element found by selector.
+	URLs func(*goquery.Selection) []string
 	// Action: Something to execute on a headless browser after page is loaded.
 	Action rod.Action
 }

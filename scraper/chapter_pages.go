@@ -39,26 +39,36 @@ func (s *Scraper) getPagesCollector() *colly.Collector {
 		chapter := e.Request.Ctx.GetAny("chapter").(mango.Chapter)
 		pages := e.Request.Ctx.GetAny("pages").(*[]mangadata.Page)
 
+		if s.config.PageExtractor.URLs != nil {
+			urls := s.config.PageExtractor.URLs(elements)
+			for _, u := range urls {
+				*pages = append(*pages, s.urlToPage(chapter, u))
+			}
+			return
+		}
+
 		elements.Each(func(_ int, selection *goquery.Selection) {
-			link := s.config.PageExtractor.URL(selection)
-			ext := filepath.Ext(link)
-			// remove some query params from the extension
-			ext = strings.Split(ext, "?")[0]
-
-			headers := map[string]string{
-				"Referer":    chapter.URL,
-				"Accept":     "image/webp,image/apng,image/*,*/*;q=0.8",
-				"User-Agent": s.options.UserAgent,
-			}
-
-			p := mango.Page{
-				Ext:      ext,
-				URL:      link,
-				Headers:  headers,
-				Chapter_: &chapter,
-			}
-			*pages = append(*pages, &p)
+			url := s.config.PageExtractor.URL(selection)
+			*pages = append(*pages, s.urlToPage(chapter, url))
 		})
 	})
 	return collector
+}
+
+func (s *Scraper) urlToPage(chapter mango.Chapter, url string) *mango.Page {
+	ext := filepath.Ext(url)
+	// remove some query params from the extension
+	ext = strings.Split(ext, "?")[0]
+
+	headers := map[string]string{
+		"Referer":    chapter.URL,
+		"Accept":     "image/webp,image/apng,image/*,*/*;q=0.8",
+		"User-Agent": s.options.UserAgent,
+	}
+	return &mango.Page{
+		Ext:      ext,
+		URL:      url,
+		Headers:  headers,
+		Chapter_: &chapter,
+	}
 }
