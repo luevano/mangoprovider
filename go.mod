@@ -10,7 +10,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/lithammer/fuzzysearch v1.1.8
 	github.com/luevano/libmangal v0.20.1
-	github.com/luevano/mangodex v0.3.8
+	github.com/luevano/mangodex v0.3.9
 	github.com/luevano/mangoplus v0.4.4
 	github.com/philippgille/gokv v0.7.0
 	github.com/philippgille/gokv/syncmap v0.7.0
