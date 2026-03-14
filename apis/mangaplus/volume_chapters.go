@@ -38,7 +38,8 @@ func (p *plus) VolumeChapters(ctx context.Context, store mango.Store, volume man
 	return chapters, nil
 }
 
-func (p *plus) searchChapters(chapters *[]mangadata.Chapter, volume mango.Volume, id string) error {
+// DEPRECATED: old way of getting chapterlist, mangaplus changed the structure of this
+func (p *plus) searchChaptersOld(chapters *[]mangadata.Chapter, volume mango.Volume, id string) error {
 	mangaDetails, err := p.client.Manga.Get(id)
 	if err != nil {
 		return err
@@ -71,6 +72,36 @@ func (p *plus) searchChapters(chapters *[]mangadata.Chapter, volume mango.Volume
 			*chapters = append(*chapters, &c)
 			lastNumber = c.Number
 		}
+	}
+	return nil
+}
+
+func (p *plus) searchChapters(chapters *[]mangadata.Chapter, volume mango.Volume, id string) error {
+	mangaDetails, err := p.client.Manga.Get(id)
+	if err != nil {
+		return err
+	}
+	chapterList := mangaDetails.ChapterListV2
+
+	// All chapters are assumed to come in order, there is no other way to deal
+	// with extra/bonus chapters (if they don't come with a number)
+	lastNumber := float32(0.0)
+	for _, chapter := range chapterList {
+		title := chapter.Name
+		if chapter.SubTitle != nil {
+			title = mango.ParseChapterTitle(*chapter.SubTitle)
+		}
+		c := mango.Chapter{
+			Title:           title,
+			ID:              strconv.Itoa(chapter.ChapterId),
+			URL:             fmt.Sprintf("%sviewer/%d", website, chapter.ChapterId),
+			Number:          parseChapterNumber(chapter.Name, lastNumber),
+			Date:            parseTSSecs(chapter.StartTimeStamp),
+			ScanlationGroup: "MangaPlus",
+			Volume_:         &volume,
+		}
+		*chapters = append(*chapters, &c)
+		lastNumber = c.Number
 	}
 	return nil
 }
