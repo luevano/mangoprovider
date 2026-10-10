@@ -12,7 +12,7 @@ const website = "https://mangaplus.shueisha.co.jp/"
 var providerInfo = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-mangaplus",
 	Name:        "MangaPlus",
-	Version:     "0.5.1",
+	Version:     "0.6.0",
 	Description: "MangaPlus scraper using mangoplus",
 	Website:     website,
 }

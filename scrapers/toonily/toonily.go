@@ -16,7 +16,7 @@ import (
 var Info = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-toonily",
 	Name:        "Toonily",
-	Version:     "0.1.0",
+	Version:     "0.1.1",
 	Description: "Toonily scraper",
 	Website:     "https://toonily.com/",
 }

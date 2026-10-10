@@ -18,7 +18,7 @@ import (
 var Info = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-mangasee",
 	Name:        "MangaSee",
-	Version:     "0.2.0",
+	Version:     "0.2.1",
 	Description: "MangaSee scraper",
 	Website:     "https://mangasee123.com/",
 }

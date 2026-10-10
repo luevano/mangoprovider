@@ -13,7 +13,7 @@ import (
 var AsurascansInfo = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-asurascans",
 	Name:        "AsuraScans",
-	Version:     "0.3.0",
+	Version:     "0.3.1",
 	Description: "AsuraScans scraper",
 	Website:     "https://asuracomic.net/",
 }

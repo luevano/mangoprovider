@@ -13,7 +13,7 @@ import (
 var FlamecomicsInfo = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-flamecomics",
 	Name:        "FlameComics",
-	Version:     "0.3.0",
+	Version:     "0.3.1",
 	Description: "FlameComics scraper",
 	Website:     "https://flamecomics.com/",
 }

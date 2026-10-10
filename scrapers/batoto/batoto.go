@@ -20,7 +20,7 @@ import (
 var Info = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-batoto",
 	Name:        "Batoto",
-	Version:     "0.1.0",
+	Version:     "0.1.1",
 	Description: "Batoto scraper",
 	Website:     "https://bato.to/",
 }
