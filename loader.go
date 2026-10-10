@@ -13,7 +13,7 @@ var _ libmangal.ProviderLoader = (*Loader)(nil)
 type Loader struct {
 	libmangal.ProviderInfo
 	Options Options
-	F       func() (Functions, error) // So that the providers are only built on ProviderLoader.Load(ctx)
+	F       func(ctx context.Context) (Functions, error) // So that the providers are only built on ProviderLoader.Load(ctx)
 }
 
 func (l *Loader) String() string {
@@ -32,7 +32,7 @@ func (l *Loader) Load(ctx context.Context) (libmangal.Provider, error) {
 		},
 	}
 
-	f, err := l.F()
+	f, err := l.F(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("load %s: %w", l.ProviderInfo.Name, err)
 	}

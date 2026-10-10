@@ -42,19 +42,22 @@ func (s *Scraper) setCollectorOnRequest(collector *colly.Collector, config *Conf
 }
 
 // Checks redirections and sets the new BaseURL if needed.
-func setBaseURLOnRedirect(config *Configuration) error {
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
+func setBaseURLOnRedirect(ctx context.Context, config *Configuration, httpClient *http.Client) error {
+	// same client (timeout, transport), just without following redirects
+	client := *httpClient
+	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		return http.ErrUseLastResponse
 	}
 
-	resp, err := client.Get(config.BaseURL)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, config.BaseURL, nil)
 	if err != nil {
 		return err
 	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("check %s for redirects: %w", config.BaseURL, err)
+	}
 	defer resp.Body.Close()
-	defer client.CloseIdleConnections()
 
 	if resp.StatusCode == http.StatusMovedPermanently || resp.StatusCode == http.StatusFound {
 		loc, err := resp.Location()

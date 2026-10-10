@@ -1,6 +1,7 @@
 package mangapluscreators
 
 import (
+	"context"
 	"github.com/luevano/libmangal"
 	"github.com/luevano/mangoplus/creators"
 	mango "github.com/luevano/mangoprovider"
@@ -34,7 +35,7 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 	return &mango.Loader{
 		ProviderInfo: providerInfo,
 		Options:      options,
-		F: func() (mango.Functions, error) {
+		F: func(_ context.Context) (mango.Functions, error) {
 			client, err := creators.NewCreatorsClient(o.Options)
 			if err != nil {
 				return mango.Functions{}, err

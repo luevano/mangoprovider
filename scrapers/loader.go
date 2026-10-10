@@ -1,6 +1,7 @@
 package scrapers
 
 import (
+	"context"
 	"github.com/luevano/libmangal"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/scraper"
@@ -36,8 +37,8 @@ func Loader(info libmangal.ProviderInfo, config *scraper.Configuration, options 
 	return &mango.Loader{
 		ProviderInfo: info,
 		Options:      options,
-		F: func() (mango.Functions, error) {
-			s, err := scraper.NewScraper(config, options)
+		F: func(ctx context.Context) (mango.Functions, error) {
+			s, err := scraper.NewScraper(ctx, config, options)
 			if err != nil {
 				return mango.Functions{}, err
 			}

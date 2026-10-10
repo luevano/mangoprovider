@@ -1,6 +1,7 @@
 package scraper
 
 import (
+	"context"
 	"time"
 
 	"github.com/gocolly/colly/v2"
@@ -16,14 +17,14 @@ type Scraper struct {
 }
 
 // NewScraper: generates a new scraper with given configuration and options.
-func NewScraper(config *Configuration, options mango.Options) (scraper *Scraper, err error) {
+func NewScraper(ctx context.Context, config *Configuration, options mango.Options) (scraper *Scraper, err error) {
 	// Set the parallelism if not set by the scraper, use the provided parallelism option
 	if config.Parallelism == 0 {
 		mango.Log("setting parallelism to %d", options.Parallelism)
 		config.Parallelism = options.Parallelism
 	}
 	// Set the new BaseURL if there are redirects.
-	err = setBaseURLOnRedirect(config)
+	err = setBaseURLOnRedirect(ctx, config, options.HTTPClient)
 	if err != nil {
 		return nil, err
 	}
