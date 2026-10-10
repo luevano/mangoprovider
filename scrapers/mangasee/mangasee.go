@@ -8,6 +8,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/go-rod/rod"
+	"github.com/go-rod/rod/lib/proto"
 	"github.com/luevano/libmangal"
 	"github.com/luevano/libmangal/metadata"
 	mango "github.com/luevano/mangoprovider"
@@ -106,15 +107,14 @@ var Config = &scraper.Configuration{
 			return Info.Name
 		},
 		Action: func(p *rod.Page) error {
-			selector := ".ShowAllChapters"
-			if p.MustHas(selector) {
-				element, err := p.Element(selector)
-				if err != nil {
-					return err
-				}
-				_ = element.MustClick()
-				mango.Log(`clicked on "ShowAllChapters"`)
+			found, element, err := p.Has(".ShowAllChapters")
+			if err != nil || !found {
+				return err
 			}
+			if err := element.Click(proto.InputMouseButtonLeft, 1); err != nil {
+				return fmt.Errorf("show all chapters: %w", err)
+			}
+			mango.Log(`clicked on "ShowAllChapters"`)
 			return nil
 		},
 	},

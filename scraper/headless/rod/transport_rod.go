@@ -2,9 +2,12 @@ package rod
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"runtime"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-rod/rod"
@@ -17,7 +20,11 @@ var _ http.RoundTripper = (*TransportRod)(nil)
 
 // TransportRod implementation of Transport used for colly.
 type TransportRod struct {
-	browser      *rod.Browser
+	// launched on the first request, so errors can be returned instead of panicking
+	browser    *rod.Browser
+	launchErr  error
+	launchOnce sync.Once
+
 	loadWait     time.Duration
 	localStorage map[string]string
 	actions      map[ActionType]Action
@@ -36,44 +43,60 @@ func NewTransport(
 	localStorage map[string]string,
 	actions map[ActionType]Action,
 ) *TransportRod {
-	u := launcher.New().Leakless(runtime.GOOS == "linux").MustLaunch()
 	return &TransportRod{
-		browser:      rod.New().ControlURL(u).MustConnect(),
 		loadWait:     loadWait,
 		localStorage: localStorage,
 		actions:      actions,
 	}
 }
 
+// launch: Starts the browser once, on the first request.
+func (t *TransportRod) launch() (*rod.Browser, error) {
+	t.launchOnce.Do(func() {
+		u, err := launcher.New().Leakless(runtime.GOOS == "linux").Launch()
+		if err != nil {
+			t.launchErr = fmt.Errorf("launch browser: %w", err)
+			return
+		}
+		browser := rod.New().ControlURL(u)
+		if err := browser.Connect(); err != nil {
+			t.launchErr = fmt.Errorf("connect to browser: %w", err)
+			return
+		}
+		t.browser = browser
+	})
+	return t.browser, t.launchErr
+}
+
 // RoundTrip gets called on each colly request.
 func (t *TransportRod) RoundTrip(r *http.Request) (*http.Response, error) {
-	var page *rod.Page
-	var err error
+	browser, err := t.launch()
+	if err != nil {
+		return nil, err
+	}
+
 	// Only use the base URL when there are local storage values to set
-	if len(t.localStorage) == 0 {
-		page, err = t.browser.Context(r.Context()).Page(proto.TargetCreateTarget{URL: ""})
-		if err != nil {
-			return nil, err
-		}
-	} else {
+	pageURL := ""
+	if len(t.localStorage) != 0 {
 		baseURL, err := url.Parse(r.URL.String())
 		if err != nil {
 			return nil, err
 		}
 		baseURL.Path = ""
-		page, err = t.browser.Context(r.Context()).Page(proto.TargetCreateTarget{URL: baseURL.String()})
+		pageURL = baseURL.String()
+	}
+	page, err := browser.Context(r.Context()).Page(proto.TargetCreateTarget{URL: pageURL})
+	if err != nil {
+		return nil, err
+	}
+	defer page.Close()
+
+	for k, v := range t.localStorage {
+		_, err = page.Eval("(k, v) => localStorage[k] = v", k, v)
 		if err != nil {
 			return nil, err
 		}
-
-		for k, v := range t.localStorage {
-			_, err = page.Eval("(k, v) => localStorage[k] = v", k, v)
-			if err != nil {
-				return nil, err
-			}
-		}
 	}
-	defer page.Close()
 
 	if r.Header.Get("Cookie") != "" {
 		cookies := getHeaderCookies(r)
@@ -100,7 +123,11 @@ func (t *TransportRod) RoundTrip(r *http.Request) (*http.Response, error) {
 	// Some scrapers don't work with page.WaitLoad directly,
 	// better to use some time as per their config
 	if t.loadWait > 0.0 {
-		time.Sleep(t.loadWait)
+		select {
+		case <-r.Context().Done():
+			return nil, r.Context().Err()
+		case <-time.After(t.loadWait):
+		}
 	} else {
 		err = page.WaitLoad()
 		if err != nil {
@@ -112,15 +139,19 @@ func (t *TransportRod) RoundTrip(r *http.Request) (*http.Response, error) {
 	actionType := ActionType(r.Header.Get(ActionTypeHeader))
 	action, ok := t.actions[actionType]
 	if ok && action != nil {
-		mango.Log(fmt.Sprintf("found action for %s", actionType))
+		mango.Log("found action for %s", actionType)
 		err := action(page)
 		if err != nil {
 			return nil, err
 		}
 	}
 
+	html, err := page.HTML()
+	if err != nil {
+		return nil, err
+	}
 	return &http.Response{
-		Body:       newPageReader(page),
+		Body:       io.NopCloser(strings.NewReader(html)),
 		StatusCode: 200,
 		Header:     map[string][]string{"Content-Type": {"text/html"}},
 	}, nil

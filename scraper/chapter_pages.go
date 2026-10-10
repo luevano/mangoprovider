@@ -2,7 +2,7 @@ package scraper
 
 import (
 	"context"
-	"net/http"
+	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -13,19 +13,21 @@ import (
 	"github.com/luevano/mangoprovider/scraper/headless/rod"
 )
 
-func (s *Scraper) ChapterPages(_ctx context.Context, store mango.Store, chapter mango.Chapter) ([]mangadata.Page, error) {
+func (s *Scraper) ChapterPages(ctx context.Context, store mango.Store, chapter mango.Chapter) ([]mangadata.Page, error) {
 	var pages []mangadata.Page
 
-	ctx := colly.NewContext()
-	ctx.Put("chapter", chapter)
-	ctx.Put("pages", &pages)
+	// data shared with the collector callbacks
+	data := colly.NewContext()
+	data.Put("chapter", chapter)
+	data.Put("pages", &pages)
 
 	collector := s.getPagesCollector()
-	err := collector.Request(http.MethodGet, chapter.URL, nil, ctx, nil)
-	if err != nil {
+	if err := scrape(ctx, collector, chapter.URL, data); err != nil {
 		return nil, err
 	}
-	collector.Wait()
+	if len(pages) == 0 {
+		return nil, fmt.Errorf("no pages found: %w", mango.ErrNotFound)
+	}
 
 	return pages, nil
 }
@@ -35,6 +37,7 @@ func (s *Scraper) getPagesCollector() *colly.Collector {
 	collector := s.collector.Clone()
 	s.setCollectorOnRequest(collector, s.config, rod.ActionPage)
 	collector.OnHTML("html", func(e *colly.HTMLElement) {
+		defer recoverScrape(e)
 		elements := e.DOM.Find(s.config.PageExtractor.Selector)
 		chapter := e.Request.Ctx.GetAny("chapter").(mango.Chapter)
 		pages := e.Request.Ctx.GetAny("pages").(*[]mangadata.Page)

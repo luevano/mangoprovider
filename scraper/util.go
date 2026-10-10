@@ -1,7 +1,10 @@
 package scraper
 
 import (
+	"context"
+	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gocolly/colly/v2"
 	mango "github.com/luevano/mangoprovider"
@@ -61,4 +64,48 @@ func setBaseURLOnRedirect(config *Configuration) error {
 		config.BaseURL = loc.String()
 	}
 	return nil
+}
+
+const scrapeErrorKey = "scrape_error"
+
+// scrape: Requests the url with the collector and waits for its callbacks to finish.
+//
+// The collector is async, so colly only passes request errors (including 4xx/5xx) to OnError,
+// they're collected here and returned along with panics in the callbacks (see recoverScrape).
+func scrape(ctx context.Context, collector *colly.Collector, url string, data *colly.Context) error {
+	collector.Context = ctx
+	collector.OnError(func(r *colly.Response, err error) {
+		if r.StatusCode != 0 {
+			err = fmt.Errorf("%d %s", r.StatusCode, strings.ToLower(http.StatusText(r.StatusCode)))
+		}
+		setScrapeError(r.Ctx, fmt.Errorf("GET %s: %w", r.Request.URL, err))
+	})
+
+	if err := collector.Request(http.MethodGet, url, nil, data, nil); err != nil {
+		return fmt.Errorf("GET %s: %w", url, err)
+	}
+	collector.Wait()
+
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if err, ok := data.GetAny(scrapeErrorKey).(error); ok {
+		return err
+	}
+	return nil
+}
+
+// recoverScrape: Turns a panic in a collector callback (e.g. the site changed its markup) into
+// an error returned by scrape, instead of crashing the whole program. Use it deferred.
+func recoverScrape(e *colly.HTMLElement) {
+	if r := recover(); r != nil {
+		setScrapeError(e.Request.Ctx, fmt.Errorf("parse %s: %v", e.Request.URL, r))
+	}
+}
+
+// setScrapeError: Keeps the first error only.
+func setScrapeError(data *colly.Context, err error) {
+	if data.GetAny(scrapeErrorKey) == nil {
+		data.Put(scrapeErrorKey, err)
+	}
 }

@@ -13,7 +13,7 @@ import (
 	"github.com/luevano/mangoprovider/scraper/headless/rod"
 )
 
-func (s *Scraper) SearchMangas(_ctx context.Context, store mango.Store, query string) ([]mangadata.Manga, error) {
+func (s *Scraper) SearchMangas(ctx context.Context, store mango.Store, query string) ([]mangadata.Manga, error) {
 	var mangas []mangadata.Manga
 
 	matchGroups := mango.ReNamedGroups(mango.MangaQueryIDRegex, query)
@@ -25,7 +25,7 @@ func (s *Scraper) SearchMangas(_ctx context.Context, store mango.Store, query st
 	var searchURL string
 	if byID {
 		if s.config.GenerateSearchByIDURL == nil {
-			return nil, fmt.Errorf("can't search manga by ID, %q doesn't implement GenerateSearchByIDURL", s.config.Name)
+			return nil, fmt.Errorf("search by id: %w (no GenerateSearchByIDURL)", mango.ErrNotSupported)
 		}
 		searchURL, err = s.config.GenerateSearchByIDURL(s.config.BaseURL, mangaID)
 		cacheID = fmt.Sprintf("mid:%s", mangaID)
@@ -45,25 +45,28 @@ func (s *Scraper) SearchMangas(_ctx context.Context, store mango.Store, query st
 		return mangas, nil
 	}
 
-	ctx := colly.NewContext()
-	ctx.Put("mangas", &mangas)
+	// data shared with the collector callbacks
+	data := colly.NewContext()
+	data.Put("mangas", &mangas)
 
 	var collector *colly.Collector
 	if byID {
 		if s.config.MangaByIDExtractor == nil {
-			return nil, fmt.Errorf("can't search manga by ID, %q doesn't implement MangaByIDExtractor", s.config.Name)
+			return nil, fmt.Errorf("search by id: %w (no MangaByIDExtractor)", mango.ErrNotSupported)
 		}
 		collector = s.getMangaCollector(mangaID)
 	} else {
 		collector = s.getMangasCollector()
 	}
 
-	err = collector.Request("GET", searchURL, nil, ctx, nil)
-	if err != nil {
+	if err := scrape(ctx, collector, searchURL, data); err != nil {
 		return nil, err
 	}
-	collector.Wait()
 
+	// could be a markup change on the site, try again next time
+	if len(mangas) == 0 {
+		return mangas, nil
+	}
 	err = store.SetMangas(cacheID, mangas)
 	if err != nil {
 		return nil, err
@@ -78,6 +81,7 @@ func (s *Scraper) getMangaCollector(id string) *colly.Collector {
 	collector := s.collector.Clone()
 	s.setCollectorOnRequest(collector, s.config, rod.ActionManga)
 	collector.OnHTML("html", func(e *colly.HTMLElement) {
+		defer recoverScrape(e)
 		selection := e.DOM.Find(s.config.MangaByIDExtractor.Selector).First()
 		mangas := e.Request.Ctx.GetAny("mangas").(*[]mangadata.Manga)
 
@@ -100,6 +104,7 @@ func (s *Scraper) getMangasCollector() *colly.Collector {
 	collector := s.collector.Clone()
 	s.setCollectorOnRequest(collector, s.config, rod.ActionManga)
 	collector.OnHTML("html", func(e *colly.HTMLElement) {
+		defer recoverScrape(e)
 		elements := e.DOM.Find(s.config.MangaExtractor.Selector)
 		mangas := e.Request.Ctx.GetAny("mangas").(*[]mangadata.Manga)
 

@@ -12,7 +12,7 @@ import (
 	"github.com/luevano/mangoprovider/scraper/headless/rod"
 )
 
-func (s *Scraper) MangaVolumes(_ctx context.Context, store mango.Store, manga mango.Manga) ([]mangadata.Volume, error) {
+func (s *Scraper) MangaVolumes(ctx context.Context, store mango.Store, manga mango.Manga) ([]mangadata.Volume, error) {
 	var volumes []mangadata.Volume
 
 	// need an identifiable string for the cache
@@ -26,21 +26,24 @@ func (s *Scraper) MangaVolumes(_ctx context.Context, store mango.Store, manga ma
 		return volumes, nil
 	}
 
-	ctx := colly.NewContext()
-	ctx.Put("manga", manga)
-	ctx.Put("volumes", &volumes)
+	// data shared with the collector callbacks
+	data := colly.NewContext()
+	data.Put("manga", manga)
+	data.Put("volumes", &volumes)
 
 	collector := s.getVolumesCollector()
-	err = collector.Request("GET", manga.URL, nil, ctx, nil)
-	if err != nil {
+	if err := scrape(ctx, collector, manga.URL, data); err != nil {
 		return nil, err
 	}
-	collector.Wait()
 
 	sort.SliceStable(volumes, func(i, j int) bool {
 		return volumes[i].Info().Number < volumes[j].Info().Number
 	})
 
+	// could be a markup change on the site, try again next time
+	if len(volumes) == 0 {
+		return volumes, nil
+	}
 	err = store.SetVolumes(cacheID, volumes)
 	if err != nil {
 		return nil, err
@@ -54,6 +57,7 @@ func (s *Scraper) getVolumesCollector() *colly.Collector {
 	collector := s.collector.Clone()
 	s.setCollectorOnRequest(collector, s.config, rod.ActionVolume)
 	collector.OnHTML("html", func(e *colly.HTMLElement) {
+		defer recoverScrape(e)
 		elements := e.DOM.Find(s.config.VolumeExtractor.Selector)
 		manga := e.Request.Ctx.GetAny("manga").(mango.Manga)
 		volumes := e.Request.Ctx.GetAny("volumes").(*[]mangadata.Volume)

@@ -3,7 +3,6 @@ package scraper
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"slices"
 	"sort"
 	"strconv"
@@ -17,7 +16,7 @@ import (
 	"github.com/luevano/mangoprovider/scraper/headless/rod"
 )
 
-func (s *Scraper) VolumeChapters(_ctx context.Context, store mango.Store, volume mango.Volume) ([]mangadata.Chapter, error) {
+func (s *Scraper) VolumeChapters(ctx context.Context, store mango.Store, volume mango.Volume) ([]mangadata.Chapter, error) {
 	var chapters []mangadata.Chapter
 
 	// need an identifiable string for the cache
@@ -32,18 +31,17 @@ func (s *Scraper) VolumeChapters(_ctx context.Context, store mango.Store, volume
 		return chapters, nil
 	}
 
-	ctx := colly.NewContext()
-	ctx.Put("volume", volume)
-	ctx.Put("chapters", &chapters)
+	// data shared with the collector callbacks
+	data := colly.NewContext()
+	data.Put("volume", volume)
+	data.Put("chapters", &chapters)
 
 	// TODO: check if using this URL is good enough, only works for sources that
 	// don't provide volumes and thus everything is in the manga url
 	collector := s.getChaptersCollector()
-	err = collector.Request(http.MethodGet, volume.Manga_.URL, nil, ctx, nil)
-	if err != nil {
+	if err := scrape(ctx, collector, volume.Manga_.URL, data); err != nil {
 		return nil, err
 	}
-	collector.Wait()
 
 	if s.config.ReverseChapters {
 		slices.Reverse(chapters)
@@ -53,7 +51,10 @@ func (s *Scraper) VolumeChapters(_ctx context.Context, store mango.Store, volume
 		return chapters[i].Info().Number < chapters[j].Info().Number
 	})
 
-	// TODO: only cache if there are chapters (len > 0)?
+	// could be a markup change on the site, try again next time
+	if len(chapters) == 0 {
+		return chapters, nil
+	}
 	err = store.SetChapters(cacheID, chapters)
 	if err != nil {
 		return nil, err
@@ -66,6 +67,7 @@ func (s *Scraper) getChaptersCollector() *colly.Collector {
 	collector := s.collector.Clone()
 	s.setCollectorOnRequest(collector, s.config, rod.ActionChapter)
 	collector.OnHTML("html", func(e *colly.HTMLElement) {
+		defer recoverScrape(e)
 		elements := e.DOM.Find(s.config.ChapterExtractor.Selector)
 		volume := e.Request.Ctx.GetAny("volume").(mango.Volume)
 		chapters := e.Request.Ctx.GetAny("chapters").(*[]mangadata.Chapter)
