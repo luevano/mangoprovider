@@ -89,7 +89,11 @@ func (s *Store) GetVolumes(cacheID string, manga Manga, volumes *[]mangadata.Vol
 		// Need to re-set the manga, as the read data will point to a different address
 		var updatedVolumes []mangadata.Volume
 		for _, v := range foundVolumes {
-			v := v.(*Volume)
+			v, ok := v.(*Volume)
+			if !ok {
+				// e.g. written by an older version, fetch it again
+				return false, nil
+			}
 			v.Manga_ = &manga
 			updatedVolumes = append(updatedVolumes, v)
 		}
@@ -126,7 +130,11 @@ func (s *Store) GetChapters(cacheID string, volume Volume, chapters *[]mangadata
 		// Need to re-set the volume, as the read data will point to a different address
 		var updatedChapters []mangadata.Chapter
 		for _, c := range foundChapters {
-			c := c.(*Chapter)
+			c, ok := c.(*Chapter)
+			if !ok {
+				// e.g. written by an older version, fetch it again
+				return false, nil
+			}
 			c.Volume_ = &volume
 			updatedChapters = append(updatedChapters, c)
 		}

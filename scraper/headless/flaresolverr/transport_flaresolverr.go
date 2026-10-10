@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -102,18 +103,23 @@ func (t *TransportFlaresolverr) RoundTrip(r *http.Request) (*http.Response, erro
 		return nil, fmt.Errorf("flaresolverr: %s", flareResponse.Message)
 	}
 
-	response := &http.Response{
-		StatusCode: flareResponse.Solution.Status,
-		Header:     flareResponse.Solution.Headers,
-		Body:       newContainer(&flareResponse),
-		Request:    r,
+	html := flareResponse.Solution.Response
+	header := http.Header{}
+	for k, v := range flareResponse.Solution.Headers {
+		header.Set(k, v)
 	}
-	if response.Header.Get("Content-Type") == "" {
-		response.Header.Set("Content-Type", "text/html")
-		response.Header.Set("Content-Length", strconv.Itoa(len(body)))
+	if header.Get("Content-Type") == "" {
+		header.Set("Content-Type", "text/html")
 	}
+	header.Set("Content-Length", strconv.Itoa(len(html)))
 
-	return response, nil
+	return &http.Response{
+		StatusCode:    flareResponse.Solution.Status,
+		Header:        header,
+		Body:          io.NopCloser(strings.NewReader(html)),
+		ContentLength: int64(len(html)),
+		Request:       r,
+	}, nil
 }
 
 func (t *TransportFlaresolverr) Close() error {
@@ -131,10 +137,10 @@ func (t *TransportFlaresolverr) Close() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	request, err := http.NewRequestWithContext(ctx, "POST", t.url, bytes.NewBuffer(req))
-	request.Header.Set("Content-Type", "application/json")
 	if err != nil {
 		return err
 	}
+	request.Header.Set("Content-Type", "application/json")
 	resp, err := t.client.Do(request)
 	if err != nil {
 		return err

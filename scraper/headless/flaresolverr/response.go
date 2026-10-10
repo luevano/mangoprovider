@@ -1,10 +1,5 @@
 package flaresolverr
 
-import (
-	"io"
-	"strings"
-)
-
 type response struct {
 	Solution       solution `json:"solution"`
 	Status         string   `json:"status"`
@@ -15,15 +10,15 @@ type response struct {
 }
 
 type solution struct {
-	URL       string              `json:"url"`
-	Status    int                 `json:"status"`
-	Headers   map[string][]string `json:"headers"`
-	Response  string              `json:"response"`
-	Cookies   cookies             `json:"cookies"`
-	UserAgent string              `json:"userAgent"`
+	URL       string            `json:"url"`
+	Status    int               `json:"status"`
+	Headers   map[string]string `json:"headers"`
+	Response  string            `json:"response"`
+	Cookies   []cookie          `json:"cookies"`
+	UserAgent string            `json:"userAgent"`
 }
 
-type cookies struct {
+type cookie struct {
 	Name     string  `json:"name"`
 	Value    string  `json:"value"`
 	Domain   string  `json:"domain"`
@@ -34,20 +29,4 @@ type cookies struct {
 	Secure   bool    `json:"secure"`
 	Session  bool    `json:"session"`
 	SameSite string  `json:"sameSite"`
-}
-
-type container struct {
-	io.Reader
-}
-
-func newContainer(resp *response) *container {
-	return &container{Reader: strings.NewReader(resp.Solution.Response)}
-}
-
-func (c container) Read(p []byte) (n int, err error) {
-	return c.Reader.Read(p)
-}
-
-func (c container) Close() error {
-	return nil
 }
