@@ -3,6 +3,7 @@ package mangaplus
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strconv"
 
 	"github.com/lithammer/fuzzysearch/fuzzy"
@@ -59,6 +60,8 @@ func (p *plus) searchManga(ctx context.Context, mangas *[]mangadata.Manga, id st
 	return nil
 }
 
+const maxSearchResults = 20
+
 func (p *plus) searchMangas(ctx context.Context, mangas *[]mangadata.Manga, query string) error {
 	// Will default to english
 	prefLang := mangoplus.StringToLanguage(p.filter.Language)
@@ -67,15 +70,34 @@ func (p *plus) searchMangas(ctx context.Context, mangas *[]mangadata.Manga, quer
 		return err
 	}
 
+	type match struct {
+		title *mangoplus.Title
+		rank  int // lower is a closer match
+	}
+	var matches []match
 	for _, title := range titles {
-		if fuzzy.MatchNormalizedFold(query, title.Name) {
-			// Search for the titleDetail details and use that instead (contains more data)
-			titleDetail, err := p.client.Manga.GetContext(ctx, strconv.Itoa(int(title.TitleId)))
-			if err != nil {
-				return err
-			}
-			*mangas = append(*mangas, p.plusToMangoManga(titleDetail))
+		rank := fuzzy.RankMatchNormalizedFold(query, title.Name)
+		if rank != -1 {
+			matches = append(matches, match{title, rank})
 		}
+	}
+	sort.SliceStable(matches, func(i, j int) bool {
+		return matches[i].rank < matches[j].rank
+	})
+
+	// Each match needs its own request for the details, too slow for broad queries
+	if len(matches) > maxSearchResults {
+		mango.Log("%d mangas found for %q, only using the best %d", len(matches), query, maxSearchResults)
+		matches = matches[:maxSearchResults]
+	}
+
+	for _, m := range matches {
+		// Search for the titleDetail details and use that instead (contains more data)
+		titleDetail, err := p.client.Manga.GetContext(ctx, strconv.Itoa(int(m.title.TitleId)))
+		if err != nil {
+			return err
+		}
+		*mangas = append(*mangas, p.plusToMangoManga(titleDetail))
 	}
 	return nil
 }
@@ -98,15 +120,14 @@ func (p *plus) plusToMetadata(titleDetail *mangoplus.TitleDetailView) *mangadata
 
 	var status metadata.Status
 	switch titleDetail.GetTitleLabels().GetReleaseSchedule() {
-	case mangoplus.ReleaseSchedule_COMPLETED:
+	case mangoplus.ReleaseSchedule_COMPLETED, mangoplus.ReleaseSchedule_ONE_SHOT:
 		status = metadata.StatusFinished
 	// need to check if this is what disabled is used for,
 	// maybe it's for cancelled or not yet released?
-	case mangoplus.ReleaseSchedule_DISABLED:
+	case mangoplus.ReleaseSchedule_DISABLED, mangoplus.ReleaseSchedule_HIATUS:
 		status = metadata.StatusHiatus
 	default:
 		status = metadata.StatusReleasing
-
 	}
 	// Only way to look at the start date is by looking at the very first chapter,
 	// but there is no guarantee that the date of the first chapter is that of the
