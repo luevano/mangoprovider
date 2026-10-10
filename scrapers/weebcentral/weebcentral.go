@@ -1,4 +1,4 @@
-package mangasee
+package weebcentral
 
 import (
 	"fmt"
@@ -14,13 +14,16 @@ import (
 	"github.com/luevano/mangoprovider/scraper"
 )
 
-// MangaSee shut down and moved to Weeb Central, the id stays so existing setups keep working.
+// MangaSee shut down and moved to Weeb Central; its id is in the history so it still resolves.
 var Info = libmangal.ProviderInfo{
-	ID:          mango.BundleID + "-mangasee",
-	Name:        "MangaSee",
-	Version:     "0.3.0",
-	Description: "Weeb Central (formerly MangaSee) scraper",
+	ID:          mango.BundleID + "-weebcentral",
+	Name:        "Weeb Central",
+	Version:     "0.4.1",
+	Description: "Weeb Central scraper",
 	Website:     "https://weebcentral.com/",
+	History: []libmangal.ProviderAlias{
+		{ID: mango.BundleID + "-mangasee", Name: "MangaSee", Website: "https://mangasee123.com/"},
+	},
 }
 
 // Config: A new configuration, built on every load.

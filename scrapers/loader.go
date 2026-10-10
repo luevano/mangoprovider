@@ -8,15 +8,15 @@ import (
 	"github.com/luevano/mangoprovider/scrapers/batoto"
 	"github.com/luevano/mangoprovider/scrapers/mangabox"
 	"github.com/luevano/mangoprovider/scrapers/mangapill"
-	"github.com/luevano/mangoprovider/scrapers/mangasee"
 	"github.com/luevano/mangoprovider/scrapers/mangathemesia"
 	"github.com/luevano/mangoprovider/scrapers/toonily"
+	"github.com/luevano/mangoprovider/scrapers/weebcentral"
 )
 
 func Loaders(options mango.Options) []libmangal.ProviderLoader {
 	loaders := []libmangal.ProviderLoader{
 		Loader(mangapill.Info, mangapill.Config, options),
-		Loader(mangasee.Info, mangasee.Config, options),
+		Loader(weebcentral.Info, weebcentral.Config, options),
 		Loader(batoto.Info, batoto.Config, options),
 		// Mangathemesia
 		Loader(mangathemesia.AsurascansInfo, mangathemesia.AsurascansConfig, options),
