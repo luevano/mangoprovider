@@ -156,8 +156,6 @@ func GenericGetPageImage(
 	}
 	defer response.Body.Close()
 
-	// Log("Got response")
-
 	if response.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("GET %s: %d %s", page.URL, response.StatusCode, strings.ToLower(http.StatusText(response.StatusCode)))
 	}

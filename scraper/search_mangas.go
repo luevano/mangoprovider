@@ -79,7 +79,7 @@ func (s *Scraper) SearchMangas(ctx context.Context, store mango.Store, query str
 // Get the manga collector, the actual scraping logic is defined here.
 func (s *Scraper) getMangaCollector(id string) *colly.Collector {
 	collector := s.collector.Clone()
-	s.setCollectorOnRequest(collector, s.config, rod.ActionManga)
+	s.setCollectorOnRequest(collector, rod.ActionManga)
 	collector.OnHTML("html", func(e *colly.HTMLElement) {
 		defer recoverScrape(e)
 		selection := e.DOM.Find(s.config.MangaByIDExtractor.Selector).First()
@@ -102,7 +102,7 @@ func (s *Scraper) getMangaCollector(id string) *colly.Collector {
 // Get the mangas collector, the actual scraping logic is defined here.
 func (s *Scraper) getMangasCollector() *colly.Collector {
 	collector := s.collector.Clone()
-	s.setCollectorOnRequest(collector, s.config, rod.ActionManga)
+	s.setCollectorOnRequest(collector, rod.ActionManga)
 	collector.OnHTML("html", func(e *colly.HTMLElement) {
 		defer recoverScrape(e)
 		elements := e.DOM.Find(s.config.MangaExtractor.Selector)

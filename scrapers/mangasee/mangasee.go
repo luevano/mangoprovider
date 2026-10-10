@@ -119,18 +119,6 @@ var Config = &scraper.Configuration{
 		URL: func(selection *goquery.Selection) string {
 			return selection.AttrOr("src", "")
 		},
-		// Either use the Cookie "FullPage=yes" or this action
-		// Action: func(p *rod.Page) error {
-		// 	selector := ".DesktopNav > div > div:nth-child(4) > button"
-		// 	if p.MustHas(selector) {
-		// 		element, err := p.Element(selector)
-		// 		if err != nil {
-		// 			return err
-		// 		}
-		// 		_ = element.MustClick()
-		// 		mango.Log("clicked on Long Strip on nav bar")
-		// 	}
-		// 	return nil
-		// },
+		// all pages are shown with the "FullPage=yes" cookie, clicking the "Long Strip" button also works
 	},
 }

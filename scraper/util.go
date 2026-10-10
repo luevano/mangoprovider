@@ -12,7 +12,7 @@ import (
 )
 
 // Sets request headers via OnRequest callback for the collector.
-func (s *Scraper) setCollectorOnRequest(collector *colly.Collector, config *Configuration, collectorType rod.ActionType) {
+func (s *Scraper) setCollectorOnRequest(collector *colly.Collector, collectorType rod.ActionType) {
 	collector.OnRequest(func(r *colly.Request) {
 		var referer string
 		switch collectorType {
@@ -28,11 +28,11 @@ func (s *Scraper) setCollectorOnRequest(collector *colly.Collector, config *Conf
 		r.Headers.Set("Referer", referer)
 		r.Headers.Set("Accept-Language", "en-US") // TODO: remove this? shouldn't specify a language
 		r.Headers.Set("Accept", "text/html")
-		r.Headers.Set("Host", config.BaseURL) // TODO: remove this? even rod breaks when setting it
+		r.Headers.Set("Host", s.config.BaseURL) // TODO: remove this? even rod breaks when setting it
 		r.Headers.Set("User-Agent", s.options.UserAgent)
 
 		// Custom scraper headers (like "Cookie" for some sites)
-		for k, v := range config.Headers {
+		for k, v := range s.config.Headers {
 			r.Headers.Set(k, v)
 		}
 

@@ -55,7 +55,7 @@ func (s *Scraper) MangaVolumes(ctx context.Context, store mango.Store, manga man
 // Get the volumes collector, the actual scraping logic is defined here.
 func (s *Scraper) getVolumesCollector() *colly.Collector {
 	collector := s.collector.Clone()
-	s.setCollectorOnRequest(collector, s.config, rod.ActionVolume)
+	s.setCollectorOnRequest(collector, rod.ActionVolume)
 	collector.OnHTML("html", func(e *colly.HTMLElement) {
 		defer recoverScrape(e)
 		elements := e.DOM.Find(s.config.VolumeExtractor.Selector)

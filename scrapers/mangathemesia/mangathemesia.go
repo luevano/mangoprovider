@@ -20,10 +20,8 @@ import (
 // Mangathemesia is a generic type of website used by Asurascans, Flamecomics, etc.
 func Mangathemesia(info libmangal.ProviderInfo, mangaDir string) *scraper.Configuration {
 	name, baseUrl := info.ID, info.Website
-	// Looks like they don't need a headless browser (and thus no load wait), but will keep an eye
+	// no headless browser needed for now, if that changes: NeedsHeadlessBrowser and a 1s LoadWait
 	return &scraper.Configuration{
-		// LoadWait:        1 * time.Second,
-		// NeedsHeadlessBrowser: true,
 		Name:            name,
 		Delay:           50 * time.Millisecond,
 		ReverseChapters: true,
@@ -97,8 +95,7 @@ func Mangathemesia(info libmangal.ProviderInfo, mangaDir string) *scraper.Config
 			},
 		},
 		PageExtractor: &scraper.PageExtractor{
-			// Selector: "div#readerarea img",
-			// Taken from tachiyomi (RIP) source, but old one should also work fine
+			// taken from tachiyomi (RIP), the old "div#readerarea img" should also work
 			Selector: "div.rdminimal > img, div.rdminimal > p > img, div.rdminimal > a > img, div.rdminimal > p > a > img, div.rdminimal > noscript > img, div.rdminimal > p > noscript > img, div.rdminimal > a > noscript > img, div.rdminimal > p > a > noscript > img",
 			URL: func(selection *goquery.Selection) string {
 				return selection.AttrOr("src", "")

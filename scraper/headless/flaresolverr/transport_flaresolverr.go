@@ -50,14 +50,14 @@ func (t *TransportFlaresolverr) RoundTrip(r *http.Request) (*http.Response, erro
 	}
 
 	switch r.Method {
-	case "GET":
+	case http.MethodGet:
 		req, err = json.Marshal(request{
 			Cmd:        "request.get",
 			URL:        r.URL.String(),
 			MaxTimeout: timeout,
 			Session:    t.uuid.String(),
 		})
-	case "POST":
+	case http.MethodPost:
 		content, err := io.ReadAll(r.Body)
 		if err != nil {
 			return nil, err
@@ -76,7 +76,7 @@ func (t *TransportFlaresolverr) RoundTrip(r *http.Request) (*http.Response, erro
 		return nil, err
 	}
 
-	request, err := http.NewRequestWithContext(r.Context(), "POST", t.url, bytes.NewBuffer(req))
+	request, err := http.NewRequestWithContext(r.Context(), http.MethodPost, t.url, bytes.NewBuffer(req))
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +136,7 @@ func (t *TransportFlaresolverr) Close() error {
 	// no caller context on close, just don't hang if flaresolverr doesn't answer
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	request, err := http.NewRequestWithContext(ctx, "POST", t.url, bytes.NewBuffer(req))
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost, t.url, bytes.NewBuffer(req))
 	if err != nil {
 		return err
 	}

@@ -33,7 +33,7 @@ func (s *Scraper) ChapterPages(ctx context.Context, store mango.Store, chapter m
 // Get the pages collector, the actual scraping logic is defined here.
 func (s *Scraper) getPagesCollector() *colly.Collector {
 	collector := s.collector.Clone()
-	s.setCollectorOnRequest(collector, s.config, rod.ActionPage)
+	s.setCollectorOnRequest(collector, rod.ActionPage)
 	collector.OnHTML("html", func(e *colly.HTMLElement) {
 		defer recoverScrape(e)
 		elements := e.DOM.Find(s.config.PageExtractor.Selector)

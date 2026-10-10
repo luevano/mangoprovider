@@ -23,11 +23,6 @@ type Transport interface {
 	io.Closer
 }
 
-// IsLoaded returns true if the transport is loaded.
-func IsLoaded() bool {
-	return transport != nil
-}
-
 // GetTransport returns the singleton rod or flaresolverr transport.
 func GetTransport(
 	options mango.HeadlessOptions,
