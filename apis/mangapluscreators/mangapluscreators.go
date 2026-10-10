@@ -27,7 +27,6 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 	o := options.MangaPlusCreators
 	o.UserAgent = options.UserAgent
 	c := mpc{
-		client:  creators.NewCreatorsClient(o.Options),
 		filter:  options.Filter,
 		options: o,
 	}
@@ -35,13 +34,19 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 	return &mango.Loader{
 		ProviderInfo: providerInfo,
 		Options:      options,
-		F: func() mango.Functions {
+		F: func() (mango.Functions, error) {
+			client, err := creators.NewCreatorsClient(o.Options)
+			if err != nil {
+				return mango.Functions{}, err
+			}
+			c.client = client
+
 			return mango.Functions{
 				SearchMangas:   c.SearchMangas,
 				MangaVolumes:   c.MangaVolumes,
 				VolumeChapters: c.VolumeChapters,
 				ChapterPages:   c.ChapterPages,
-			}
+			}, nil
 		},
 	}
 }

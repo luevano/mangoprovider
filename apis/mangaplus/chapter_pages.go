@@ -28,7 +28,7 @@ func (p *plus) ChapterPages(ctx context.Context, store mango.Store, chapter mang
 		}
 		ext := filepath.Ext(u.Path)
 		if !mango.ImageExtensionRegex.MatchString(ext) {
-			return nil, fmt.Errorf("invalid page extension: %s (from path %s)", ext, u.Path)
+			return nil, fmt.Errorf("invalid image extension %q in %q", ext, u.Path)
 		}
 
 		// Includes the cookie needed for subscription-only images

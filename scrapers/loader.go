@@ -36,17 +36,17 @@ func Loader(info libmangal.ProviderInfo, config *scraper.Configuration, options 
 	return &mango.Loader{
 		ProviderInfo: info,
 		Options:      options,
-		F: func() mango.Functions {
+		F: func() (mango.Functions, error) {
 			s, err := scraper.NewScraper(config, options)
 			if err != nil {
-				panic(err)
+				return mango.Functions{}, err
 			}
 			return mango.Functions{
 				SearchMangas:   s.SearchMangas,
 				MangaVolumes:   s.MangaVolumes,
 				VolumeChapters: s.VolumeChapters,
 				ChapterPages:   s.ChapterPages,
-			}
+			}, nil
 		},
 	}
 }

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -18,10 +18,10 @@ var _ http.RoundTripper = (*TransportFlaresolverr)(nil)
 
 // TransportFlaresolverr implementation of Transport used for colly.
 type TransportFlaresolverr struct {
-	client      *http.Client
-	uuid        uuid.UUID
-	url         string
-	mutex       sync.Mutex
+	client *http.Client
+	uuid   uuid.UUID
+	url    string
+	mutex  sync.Mutex
 }
 
 // NewTransport creates a new transport for the given Flaresolerr URL.
@@ -69,7 +69,7 @@ func (t *TransportFlaresolverr) RoundTrip(r *http.Request) (*http.Response, erro
 			PostData:   string(content),
 		})
 	default:
-		return nil, errors.New("only supports GET and POST methods")
+		return nil, fmt.Errorf("flaresolverr: %s not supported, only GET and POST", r.Method)
 	}
 	if err != nil {
 		return nil, err
@@ -99,7 +99,7 @@ func (t *TransportFlaresolverr) RoundTrip(r *http.Request) (*http.Response, erro
 	}
 
 	if flareResponse.Status == "error" {
-		return nil, errors.New(flareResponse.Message)
+		return nil, fmt.Errorf("flaresolverr: %s", flareResponse.Message)
 	}
 
 	response := &http.Response{

@@ -155,14 +155,14 @@ var Config = &scraper.Configuration{
 			o := openssl.New()
 			dec, err := o.DecryptBytes(batoPass, []byte(batoWord), openssl.BytesToKeyMD5)
 			if err != nil {
-				mango.Log("error decrypting img passwords: %s", err.Error())
+				mango.Log("error decrypting img passwords: %s", err)
 				return imgHttps
 			}
 			// get as slice of string
 			var imgAcc []string
 			err = json.Unmarshal(dec, &imgAcc)
 			if err != nil {
-				mango.Log("error unmarshaling img passwords: %s", err.Error())
+				mango.Log("error unmarshaling img passwords: %s", err)
 				return imgHttps
 			}
 

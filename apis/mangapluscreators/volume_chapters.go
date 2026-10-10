@@ -45,7 +45,7 @@ func (c *mpc) searchChapters(ctx context.Context, chapters *[]mangadata.Chapter,
 
 		pagination := chaptersDTO.Pagination
 		if pagination == nil {
-			return fmt.Errorf("unexpected error: episodesDto is nil for manga id %q, page %d", id, page)
+			return fmt.Errorf("list chapters for manga %q (page %d): no pagination in response", id, page)
 		}
 
 		// All chapters are assumed to come in order, there is no other way to deal

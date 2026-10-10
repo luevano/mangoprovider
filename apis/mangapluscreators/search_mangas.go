@@ -16,7 +16,7 @@ func (c *mpc) SearchMangas(ctx context.Context, store mango.Store, query string)
 	matchGroups := mango.ReNamedGroups(mango.MangaQueryIDRegex, query)
 	_, byID := matchGroups[mango.MangaQueryID]
 	if byID {
-		return nil, fmt.Errorf("MangaPlusCreators doesn't support search manga by id")
+		return nil, fmt.Errorf("search by id: %w", mango.ErrNotSupported)
 	}
 
 	cacheID := fmt.Sprintf("%s-%s", query, c.filter.Language)
@@ -51,7 +51,7 @@ func (c *mpc) searchMangas(ctx context.Context, mangas *[]mangadata.Manga, query
 		}
 		pagination := titlesDTO.Pagination
 		if pagination == nil {
-			return fmt.Errorf("unexpected error: pagination is nil for query %q, page %d", query, page)
+			return fmt.Errorf("search %q (page %d): no pagination in response", query, page)
 		}
 
 		for _, title := range *titlesDTO.TitleList {

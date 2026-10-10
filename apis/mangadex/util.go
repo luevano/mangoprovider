@@ -82,10 +82,10 @@ func getScanlator(relationships []*mangodex.Relationship) string {
 // Filters out duplicate chapters, the logic tries to get the chapter that's from a scanlator that appears the most in the volume.
 func getUniqueChapters(agg *aggregate) ([]mangadata.Chapter, error) {
 	var chaptersFiltered []mangadata.Chapter
-	for _, chapters := range agg.chaptersMap {
+	for number, chapters := range agg.chaptersMap {
 		switch len(chapters) {
 		case 0:
-			return nil, fmt.Errorf("unexpected error; len(chapters) == 0 at AvoidDuplicateChapters")
+			return nil, fmt.Errorf("remove duplicate chapters: no chapters for number %q", number)
 		case 1:
 			chaptersFiltered = append(chaptersFiltered, chapters[0])
 		default:
@@ -108,7 +108,7 @@ func getUniqueChapters(agg *aggregate) ([]mangadata.Chapter, error) {
 				// uploads is the total times the scanlator appears in the volume (how many uploads)
 				uploads, found := agg.groupsCount[scanlator]
 				if !found {
-					return nil, fmt.Errorf("unexpected error; groupsCount[scanlator] not found at AvoidDuplicateChapters")
+					return nil, fmt.Errorf("remove duplicate chapters: uploads of group %q not counted", scanlator)
 				}
 				// if it has appeared the most then select it as a candidate for the chapter #
 				if uploads > maxUploads {
@@ -117,7 +117,7 @@ func getUniqueChapters(agg *aggregate) ([]mangadata.Chapter, error) {
 				}
 			}
 			if chapterTemp == nil {
-				return nil, fmt.Errorf("unexpected error; chapterTemp == nil at AvoidDuplicateChapters")
+				return nil, fmt.Errorf("remove duplicate chapters: no candidate for number %q", number)
 			}
 
 			chaptersFiltered = append(chaptersFiltered, chapterTemp)

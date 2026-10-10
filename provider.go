@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/luevano/libmangal"
 	"github.com/luevano/libmangal/logger"
@@ -53,7 +54,11 @@ func (p *Provider) SearchMangas(
 ) ([]mangadata.Manga, error) {
 	Log("searching mangas with query %q", query)
 
-	return p.F.SearchMangas(ctx, p.store, query)
+	mangas, err := p.F.SearchMangas(ctx, p.store, query)
+	if err != nil {
+		return nil, fmt.Errorf("%s: search %q: %w", p.ProviderInfo.ID, query, err)
+	}
+	return mangas, nil
 }
 
 func (p *Provider) MangaVolumes(
@@ -62,11 +67,15 @@ func (p *Provider) MangaVolumes(
 ) ([]mangadata.Volume, error) {
 	m, ok := manga.(*Manga)
 	if !ok {
-		return nil, fmt.Errorf("unexpected manga type: %T", manga)
+		return nil, fmt.Errorf("expected a mangoprovider manga, got %T", manga)
 	}
 
 	Log("fetching volumes for manga %q", m)
-	return p.F.MangaVolumes(ctx, p.store, *m)
+	volumes, err := p.F.MangaVolumes(ctx, p.store, *m)
+	if err != nil {
+		return nil, fmt.Errorf("%s: volumes of %q: %w", p.ProviderInfo.ID, m, err)
+	}
+	return volumes, nil
 }
 
 func (p *Provider) VolumeChapters(
@@ -75,11 +84,15 @@ func (p *Provider) VolumeChapters(
 ) ([]mangadata.Chapter, error) {
 	v, ok := volume.(*Volume)
 	if !ok {
-		return nil, fmt.Errorf("unexpected volume type: %T", volume)
+		return nil, fmt.Errorf("expected a mangoprovider volume, got %T", volume)
 	}
 
 	Log("fetching chapters for volume %s", v.String())
-	return p.F.VolumeChapters(ctx, p.store, *v)
+	chapters, err := p.F.VolumeChapters(ctx, p.store, *v)
+	if err != nil {
+		return nil, fmt.Errorf("%s: chapters of %q vol %s: %w", p.ProviderInfo.ID, v.Manga_, v, err)
+	}
+	return chapters, nil
 }
 
 func (p *Provider) ChapterPages(
@@ -88,11 +101,15 @@ func (p *Provider) ChapterPages(
 ) ([]mangadata.Page, error) {
 	c, ok := chapter.(*Chapter)
 	if !ok {
-		return nil, fmt.Errorf("unexpected chapter type: %T", chapter)
+		return nil, fmt.Errorf("expected a mangoprovider chapter, got %T", chapter)
 	}
 
 	Log("fetching pages for chapter %q", c)
-	return p.F.ChapterPages(ctx, p.store, *c)
+	pages, err := p.F.ChapterPages(ctx, p.store, *c)
+	if err != nil {
+		return nil, fmt.Errorf("%s: pages of chapter %q: %w", p.ProviderInfo.ID, c, err)
+	}
+	return pages, nil
 }
 
 func (p *Provider) GetPageImage(
@@ -101,15 +118,18 @@ func (p *Provider) GetPageImage(
 ) ([]byte, error) {
 	page_, ok := page.(*Page)
 	if !ok {
-		return nil, fmt.Errorf("unexpected page type: %T", page)
+		return nil, fmt.Errorf("expected a mangoprovider page, got %T", page)
 	}
 
-	// Log(fmt.Sprintf("Making HTTP GET request for %q", page_.URL))
+	getPageImage := GenericGetPageImage
 	if p.F.GetPageImage != nil {
-		return p.F.GetPageImage(ctx, p.client, *page_)
-	} else {
-		return GenericGetPageImage(ctx, p.client, *page_)
+		getPageImage = p.F.GetPageImage
 	}
+	image, err := getPageImage(ctx, p.client, *page_)
+	if err != nil {
+		return nil, fmt.Errorf("%s: image for chapter %q: %w", p.ProviderInfo.ID, page_.Chapter_, err)
+	}
+	return image, nil
 }
 
 func GenericGetPageImage(
@@ -139,7 +159,7 @@ func GenericGetPageImage(
 	// Log("Got response")
 
 	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d", response.StatusCode)
+		return nil, fmt.Errorf("GET %s: %d %s", page.URL, response.StatusCode, strings.ToLower(http.StatusText(response.StatusCode)))
 	}
 
 	image, err := io.ReadAll(response.Body)

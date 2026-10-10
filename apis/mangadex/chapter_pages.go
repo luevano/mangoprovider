@@ -25,18 +25,18 @@ func (d *dex) ChapterPages(ctx context.Context, store mango.Store, chapter mango
 		filenames = atHome.Chapter.DataSaver
 	}
 	if len(filenames) == 0 {
-		return nil, fmt.Errorf("no pages for chapter %q (%s); volume %s; manga %q", chapter.String(), chapter.ID, chapter.Volume_.String(), chapter.Volume_.Manga_.String())
+		return nil, fmt.Errorf("no pages in the MangaDex@Home response: %w", mango.ErrNotFound)
 	}
 
 	for _, filename := range filenames {
 		filenameSplit := strings.Split(filename, ".")
 		if len(filenameSplit) != 2 {
-			return nil, fmt.Errorf("unexpected error when extracting page extension; chapter %q (%s)", chapter.String(), chapter.ID)
+			return nil, fmt.Errorf("invalid image extension in %q", filename)
 		}
 
 		extension := fmt.Sprintf(".%s", filenameSplit[1])
 		if !mango.ImageExtensionRegex.MatchString(extension) {
-			return nil, fmt.Errorf("invalid page extension: %s", extension)
+			return nil, fmt.Errorf("invalid image extension %q in %q", extension, filename)
 		}
 
 		p := mango.Page{

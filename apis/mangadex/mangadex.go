@@ -26,7 +26,6 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 	// Not using options.UserAgent, MangaDex doesn't allow spoofed (browser) user agents
 	o := options.MangaDex
 	d := dex{
-		client:  mangodex.NewDexClient(o.Options),
 		filter:  options.Filter,
 		options: o,
 	}
@@ -34,14 +33,20 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 	return &mango.Loader{
 		ProviderInfo: providerInfo,
 		Options:      options,
-		F: func() mango.Functions {
+		F: func() (mango.Functions, error) {
+			client, err := mangodex.NewDexClient(o.Options)
+			if err != nil {
+				return mango.Functions{}, err
+			}
+			d.client = client
+
 			return mango.Functions{
 				SearchMangas:   d.SearchMangas,
 				MangaVolumes:   d.MangaVolumes,
 				VolumeChapters: d.VolumeChapters,
 				ChapterPages:   d.ChapterPages,
 				GetPageImage:   d.GetPageImage,
-			}
+			}, nil
 		},
 	}
 }

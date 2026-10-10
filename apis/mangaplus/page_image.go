@@ -35,7 +35,7 @@ func (p *plus) GetPageImage(ctx context.Context, client *http.Client, page mango
 func decodeXorCipher(data *[]byte, key string) error {
 	keyBytes, err := hex.DecodeString(key)
 	if err != nil {
-		mango.Log("error while decoding image with encryption key: %s", err.Error())
+		mango.Log("error while decoding image with encryption key: %s", err)
 		return err
 	}
 	keyLen := len(keyBytes)

@@ -2,6 +2,7 @@ package mangoprovider
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/luevano/libmangal"
 	"github.com/philippgille/gokv"
@@ -12,7 +13,7 @@ var _ libmangal.ProviderLoader = (*Loader)(nil)
 type Loader struct {
 	libmangal.ProviderInfo
 	Options Options
-	F       func() Functions // So that the scrapers are loaded on ProviderLoader.Load(ctx)
+	F       func() (Functions, error) // So that the providers are only built on ProviderLoader.Load(ctx)
 }
 
 func (l *Loader) String() string {
@@ -31,10 +32,15 @@ func (l *Loader) Load(ctx context.Context) (libmangal.Provider, error) {
 		},
 	}
 
+	f, err := l.F()
+	if err != nil {
+		return nil, fmt.Errorf("load %s: %w", l.ProviderInfo.Name, err)
+	}
+
 	return &Provider{
 		ProviderInfo: l.ProviderInfo,
 		Options:      l.Options,
-		F:            l.F(),
+		F:            f,
 		client:       l.Options.HTTPClient,
 		store:        store,
 	}, nil

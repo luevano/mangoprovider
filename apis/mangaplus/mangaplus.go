@@ -26,7 +26,6 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 	// Not using options.UserAgent, the API only accepts the one from the Android app
 	o := options.MangaPlus
 	p := plus{
-		client:  mangoplus.NewPlusClient(o.Options),
 		filter:  options.Filter,
 		options: o,
 	}
@@ -34,14 +33,20 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 	return &mango.Loader{
 		ProviderInfo: providerInfo,
 		Options:      options,
-		F: func() mango.Functions {
+		F: func() (mango.Functions, error) {
+			client, err := mangoplus.NewPlusClient(o.Options)
+			if err != nil {
+				return mango.Functions{}, err
+			}
+			p.client = client
+
 			return mango.Functions{
 				SearchMangas:   p.SearchMangas,
 				MangaVolumes:   p.MangaVolumes,
 				VolumeChapters: p.VolumeChapters,
 				ChapterPages:   p.ChapterPages,
 				GetPageImage:   p.GetPageImage,
-			}
+			}, nil
 		},
 	}
 }

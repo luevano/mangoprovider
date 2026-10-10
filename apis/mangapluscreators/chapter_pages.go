@@ -25,7 +25,7 @@ func (c *mpc) ChapterPages(ctx context.Context, store mango.Store, chapter mango
 		}
 		ext := filepath.Ext(u.Path)
 		if !mango.ImageExtensionRegex.MatchString(ext) {
-			return nil, fmt.Errorf("invalid page extension: %s (from path %s)", ext, u.Path)
+			return nil, fmt.Errorf("invalid image extension %q in %q", ext, u.Path)
 		}
 
 		pageHeaders := map[string]string{
