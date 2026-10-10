@@ -3,74 +3,78 @@ package mangasee
 import (
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/go-rod/rod"
-	"github.com/go-rod/rod/lib/proto"
 	"github.com/luevano/libmangal"
 	"github.com/luevano/libmangal/metadata"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/scraper"
 )
 
+// MangaSee shut down and moved to Weeb Central, the id stays so existing setups keep working.
 var Info = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-mangasee",
 	Name:        "MangaSee",
-	Version:     "0.2.1",
-	Description: "MangaSee scraper",
-	Website:     "https://mangasee123.com/",
+	Version:     "0.3.0",
+	Description: "Weeb Central (formerly MangaSee) scraper",
+	Website:     "https://weebcentral.com/",
 }
 
 // Config: A new configuration, built on every load.
 func Config(log *mango.Logger) *scraper.Configuration {
 	return &scraper.Configuration{
-		Name:                 Info.ID,
-		Delay:                50 * time.Millisecond,
-		ReverseChapters:      true,
-		NeedsHeadlessBrowser: true,
-		BaseURL:              Info.Website,
-		Headers: map[string]string{
-			"Cookie": "FullPage=yes",
-		},
+		Name:            Info.ID,
+		Delay:           50 * time.Millisecond,
+		ReverseChapters: true,
+		BaseURL:         Info.Website,
 		GenerateSearchURL: func(baseUrl string, query string) (string, error) {
-			// path is /search/?name=
 			params := url.Values{}
-			params.Set("name", query)
-			u, _ := url.Parse(baseUrl)
-			u.Path = "/search/"
-			u.RawQuery = params.Encode()
-
-			return u.String(), nil
+			params.Set("text", query)
+			params.Set("sort", "Best Match")
+			params.Set("order", "Descending")
+			params.Set("official", "Any")
+			params.Set("anime", "Any")
+			params.Set("adult", "Any")
+			params.Set("display_mode", "Full Display")
+			return baseUrl + "search/data?" + params.Encode(), nil
 		},
 		GenerateSearchByIDURL: func(baseUrl string, id string) (string, error) {
-			return fmt.Sprintf("%smanga/%s", baseUrl, id), nil
+			return baseUrl + "series/" + id, nil
+		},
+		// the series page only shows the latest chapters
+		ChaptersURL: func(manga mango.Manga) string {
+			return Info.Website + "series/" + manga.ID + "/full-chapter-list"
+		},
+		// the chapter page loads its images from here
+		PagesURL: func(chapter mango.Chapter) string {
+			return Info.Website + "chapters/" + chapter.ID + "/images?is_prev=False&current_page=1&reading_style=long_strip"
 		},
 		MangaByIDExtractor: &scraper.MangaByIDExtractor{
-			Selector: "div.Box > div.BoxBody > div.row",
+			Selector: "main",
 			Title: func(selection *goquery.Selection) string {
-				return selection.Find("div.col-md-9.col-sm-8.top-5 > ul > li").First().Find("h1").Text()
+				return selection.Find("h1").First().Text()
 			},
 			Cover: func(selection *goquery.Selection) string {
-				return selection.Find("div.col-md-3.col-sm-4.col-3.top-5 > img").AttrOr("src", "")
+				return selection.Find("picture img").First().AttrOr("src", "")
 			},
 		},
 		MangaExtractor: &scraper.MangaExtractor{
-			Selector: ".top-15.ng-scope > .row",
+			Selector: "article.bg-base-300",
 			Title: func(selection *goquery.Selection) string {
-				selector := `.SeriesName[ng-bind-html="Series.s"]`
-				return selection.Find(selector).First().Text()
+				return selection.Find(`section:nth-child(2) a[href*="/series/"]`).First().Text()
 			},
 			URL: func(selection *goquery.Selection) string {
-				selector := `.SeriesName[ng-bind-html="Series.s"]`
-				return selection.Find(selector).First().AttrOr("href", "")
+				return selection.Find(`section:nth-child(2) a[href*="/series/"]`).First().AttrOr("href", "")
 			},
 			Cover: func(selection *goquery.Selection) string {
-				return selection.Find("a.SeriesName > img.img-fluid").AttrOr("src", "")
+				return selection.Find("picture img").First().AttrOr("src", "")
 			},
+			// e.g. https://weebcentral.com/series/01J76XY7EF75DJNQCV04HTPDZK/Berserk
 			ID: func(_url string) string {
-				return strings.Split(_url, "/")[4]
+				return pathAfter(_url, "series")
 			},
 		},
 		VolumeExtractor: &scraper.VolumeExtractor{
@@ -80,48 +84,56 @@ func Config(log *mango.Logger) *scraper.Configuration {
 			},
 		},
 		ChapterExtractor: &scraper.ChapterExtractor{
-			Selector: ".ChapterLink",
+			Selector: `a[href*="/chapters/"]`,
 			Title: func(selection *goquery.Selection) string {
-				name := selection.Find("span").First().Text()
-				return name
+				return selection.Find("span.grow > span").First().Text()
 			},
 			URL: func(selection *goquery.Selection) string {
 				return selection.AttrOr("href", "")
 			},
+			// e.g. https://weebcentral.com/chapters/01KX4BFP5E3FEZ50TRS752CT9V
 			ID: func(_url string) string {
-				return strings.Split(_url, "/")[4]
+				return pathAfter(_url, "chapters")
 			},
+			Number: chapterNumber,
 			Date: func(selection *goquery.Selection) metadata.Date {
-				layout := "01/02/2006"
-				publishedDate := selection.Find("span.float-right").Text()
-				date, err := time.Parse(layout, publishedDate)
+				date, err := time.Parse(time.RFC3339, selection.Find("time").AttrOr("datetime", ""))
 				if err != nil {
-					// if failed to parse date, use scraping day
+					log.Log("chapter %q has no valid date, using today", selection.Text())
 					date = time.Now()
 				}
 				return mango.DateOf(date)
 			},
 			ScanlationGroup: func(_ *goquery.Selection) string {
-				return Info.Name
-			},
-			Action: func(p *rod.Page) error {
-				found, element, err := p.Has(".ShowAllChapters")
-				if err != nil || !found {
-					return err
-				}
-				if err := element.Click(proto.InputMouseButtonLeft, 1); err != nil {
-					return fmt.Errorf("show all chapters: %w", err)
-				}
-				log.Log(`clicked on "ShowAllChapters"`)
-				return nil
+				return "Weeb Central"
 			},
 		},
 		PageExtractor: &scraper.PageExtractor{
-			Selector: ".img-fluid",
+			Selector: `img[alt^="Page"]`,
 			URL: func(selection *goquery.Selection) string {
 				return selection.AttrOr("src", "")
 			},
-			// all pages are shown with the "FullPage=yes" cookie, clicking the "Long Strip" button also works
 		},
 	}
+}
+
+// chapterNumber: Prologues are numbered before chapter 1, e.g. "Prologue 3" is 0.03.
+func chapterNumber(title string) (float32, bool) {
+	if n, ok := strings.CutPrefix(title, "Prologue "); ok {
+		if parsed, err := strconv.ParseFloat(n, 32); err == nil && parsed < 100 {
+			return float32(parsed / 100), true
+		}
+	}
+	return mango.ParseChapterNumber(title)
+}
+
+// pathAfter: The path segment after the given one, e.g. the id after "series".
+func pathAfter(_url, segment string) string {
+	parts := strings.Split(strings.TrimRight(_url, "/"), "/")
+	for i, part := range parts[:len(parts)-1] {
+		if part == segment {
+			return parts[i+1]
+		}
+	}
+	panic(fmt.Sprintf("no %s id in %s", segment, _url))
 }
