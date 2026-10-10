@@ -23,9 +23,8 @@ type dex struct {
 }
 
 func Loader(options mango.Options) libmangal.ProviderLoader {
-	// Update the user agent with the actual one from the options
+	// Not using options.UserAgent, MangaDex doesn't allow spoofed (browser) user agents
 	o := options.MangaDex
-	o.UserAgent = options.UserAgent
 	d := dex{
 		client:  mangodex.NewDexClient(o.Options),
 		filter:  options.Filter,

@@ -17,6 +17,8 @@ type Chapter struct {
 	Number          float32       `json:"number"`
 	Date            metadata.Date `json:"date"`
 	ScanlationGroup string        `json:"scanlation_group"`
+	// Unavailable is the reason it can't be downloaded, see mangadata.ChapterInfo.
+	Unavailable string `json:"unavailable,omitempty"`
 
 	// AtHome is only required for mangadex
 	AtHome  *mangodex.AtHomeServer `json:"-"`
@@ -34,6 +36,7 @@ func (c *Chapter) Info() mangadata.ChapterInfo {
 		Number:          c.Number,
 		Date:            c.Date,
 		ScanlationGroup: c.ScanlationGroup,
+		Unavailable:     c.Unavailable,
 	}
 }
 

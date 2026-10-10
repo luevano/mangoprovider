@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/luevano/libmangal/mangadata"
 	"github.com/luevano/libmangal/metadata"
@@ -112,8 +113,11 @@ func (d *dex) getSearchMangasParams(query string, limit int) url.Values {
 func (d *dex) dexToMangoManga(manga *mangodex.Manga) *mango.Manga {
 	meta := d.dexToMetadata(manga)
 
-	// If requested language is not found, fallbacks to the first found
-	mangaTitle := meta.Title()
+	// Preferred language first, then english/romaji/native, then anything
+	mangaTitle := manga.GetTitle(d.filter.Language, false)
+	if mangaTitle == "" {
+		mangaTitle = meta.Title()
+	}
 	if mangaTitle == "" {
 		mangaTitle = manga.GetTitle(d.filter.Language, true)
 	}
@@ -130,10 +134,25 @@ func (d *dex) dexToMangoManga(manga *mangodex.Manga) *mango.Manga {
 
 // TODO: remove fallback (for filtered language) for tags/genres/descriptions?
 func (d *dex) dexToMetadata(manga *mangodex.Manga) *mangadata.Metadata {
-	var altTitles []string
-	for k, v := range manga.Attributes.AltTitles.Values {
-		if !(k == "en" || k == "ja-ro" || k == "ja") {
-			altTitles = append(altTitles, v)
+	// romaji/native depend on the original language, e.g. "ko-ro"/"ko" for manhwa
+	original := manga.Attributes.OriginalLanguage
+	englishTitle := manga.GetTitle("en", false)
+	romajiTitle := manga.GetTitle(original+"-ro", false)
+	nativeTitle := manga.GetTitle(original, false)
+
+	// every other title, in the order MangaDex lists them (case-insensitive duplicates skipped)
+	altTitles := []string{}
+	seen := map[string]bool{}
+	for _, title := range []string{englishTitle, romajiTitle, nativeTitle} {
+		seen[strings.ToLower(title)] = true
+	}
+	for _, titles := range []mangodex.LocalisedStrings{manga.Attributes.Title, manga.Attributes.AltTitles} {
+		for _, title := range titles.List {
+			key := strings.ToLower(title.Value)
+			if !seen[key] {
+				seen[key] = true
+				altTitles = append(altTitles, title.Value)
+			}
 		}
 	}
 
@@ -225,9 +244,9 @@ func (d *dex) dexToMetadata(manga *mangodex.Manga) *mangadata.Metadata {
 	// so IDProvider is not set but the name is to be able to differentiate
 	// when metadata comes from the provider
 	return &mangadata.Metadata{
-		EnglishTitle:      manga.GetTitle("en", false),
-		RomajiTitle:       manga.GetTitle("ja-ro", false),
-		NativeTitle:       manga.GetTitle("ja", false), // assumes the native is japanese
+		EnglishTitle:      englishTitle,
+		RomajiTitle:       romajiTitle,
+		NativeTitle:       nativeTitle,
 		Synonyms:          altTitles,
 		Summary:           manga.GetDescription(d.filter.Language, true),
 		CoverImage:        cover,

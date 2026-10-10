@@ -89,9 +89,21 @@ func getUniqueChapters(agg *aggregate) ([]mangadata.Chapter, error) {
 		case 1:
 			chaptersFiltered = append(chaptersFiltered, chapters[0])
 		default:
+			// prefer a downloadable upload over an unavailable one
+			candidates := chapters
+			var available []mangadata.Chapter
+			for _, chapter := range chapters {
+				if chapter.Info().Unavailable == "" {
+					available = append(available, chapter)
+				}
+			}
+			if len(available) != 0 {
+				candidates = available
+			}
+
 			var chapterTemp mangadata.Chapter
 			maxUploads := 0
-			for _, chapter := range chapters {
+			for _, chapter := range candidates {
 				scanlator := chapter.Info().ScanlationGroup
 				// uploads is the total times the scanlator appears in the volume (how many uploads)
 				uploads, found := agg.groupsCount[scanlator]

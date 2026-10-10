@@ -43,6 +43,9 @@ func (d *dex) VolumeChapters(ctx context.Context, store mango.Store, volume mang
 	params.Add("translatedLanguage[]", d.filter.Language)
 	params.Add("includes[]", string(mangodex.RelationshipTypeScanlationGroup))
 	params.Add("includes[]", string(mangodex.RelationshipTypeUser))
+	if !d.filter.ShowUnavailableChapters {
+		params.Set("includeEmptyPages", "0")
+	}
 
 	ratings := []mangodex.ContentRating{mangodex.ContentRatingSafe, mangodex.ContentRatingSuggestive}
 	if d.filter.NSFW {
@@ -114,8 +117,15 @@ func (d *dex) populateChapters(ctx context.Context, agg *aggregate, params url.V
 	}
 
 	for _, chapter := range chapterList {
-		// Skip external chapters (can't be downloaded) unless wanted.
-		if chapter.Attributes.ExternalURL != nil && !d.filter.ShowUnavailableChapters {
+		// External and empty chapters can't be downloaded, only shown if wanted.
+		var unavailable string
+		switch {
+		case chapter.Attributes.ExternalURL != nil:
+			unavailable = "external"
+		case chapter.Attributes.Pages == 0:
+			unavailable = "0 pages"
+		}
+		if unavailable != "" && !d.filter.ShowUnavailableChapters {
 			continue
 		}
 
@@ -145,6 +155,7 @@ func (d *dex) populateChapters(ctx context.Context, agg *aggregate, params url.V
 			Number:          chapterNumber,
 			Date:            date,
 			ScanlationGroup: scanlator,
+			Unavailable:     unavailable,
 			Volume_:         &volume,
 		}
 

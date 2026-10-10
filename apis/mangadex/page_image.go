@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 
 	mango "github.com/luevano/mangoprovider"
 )
@@ -19,5 +20,15 @@ func (d *dex) GetPageImage(ctx context.Context, client *http.Client, page mango.
 		data = "data-saver"
 	}
 	// TODO: make reporting configurable
-	return atHome.GetChapterPageContext(ctx, data, page.URL, true)
+	image, err := atHome.GetChapterPageContext(ctx, data, page.URL, true)
+	if err == nil || ctx.Err() != nil {
+		return image, err
+	}
+
+	// the MangaDex@Home node failed or its url expired (15 min), MangaDex asks to get a new one
+	fresh, freshErr := d.client.AtHome.GetContext(ctx, page.Chapter_.ID, url.Values{})
+	if freshErr != nil {
+		return nil, err
+	}
+	return fresh.GetChapterPageContext(ctx, data, page.URL, true)
 }
