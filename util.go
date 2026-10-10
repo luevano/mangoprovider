@@ -94,3 +94,32 @@ func FormattedFloat(n float32) string {
 func FloatIsInt(number float32) bool {
 	return number == float32(int(number))
 }
+
+// ParseChapterNumber returns the chapter number in the title, ok is false if there's none.
+func ParseChapterNumber(title string) (number float32, ok bool) {
+	match := strings.TrimSpace(ReNamedGroups(ChapterNameRegex, title)[ChapterNumberID])
+	// if the groups matching fail, it probably only contains the chapter number
+	if match == "" {
+		match = ChapterNumberRegex.FindString(title)
+	}
+	if match == "" {
+		return 0, false
+	}
+	// some sites use "-" for decimals, e.g. "12-5"
+	match = strings.Replace(match, "-", ".", 1)
+	parsed, err := strconv.ParseFloat(match, 32)
+	if err != nil {
+		return 0, false
+	}
+	return float32(parsed), true
+}
+
+// NextExtraNumber returns the number for a chapter without one that comes right after last,
+// e.g. an "Extra" after chapter 5 is 5.5, after 5.5 it's 5.6.
+func NextExtraNumber(last float32) float32 {
+	// avoids floating point precision issues https://stackoverflow.com/a/56300186
+	if FloatIsInt(last) {
+		return float32((float64(last*10) + 5) / 10)
+	}
+	return float32((float64(last*10) + 1) / 10)
+}

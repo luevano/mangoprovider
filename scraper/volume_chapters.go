@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"slices"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
@@ -46,6 +45,7 @@ func (s *Scraper) VolumeChapters(ctx context.Context, store mango.Store, volume 
 	if s.config.ReverseChapters {
 		slices.Reverse(chapters)
 	}
+	numberExtraChapters(chapters)
 
 	sort.SliceStable(chapters, func(i, j int) bool {
 		return chapters[i].Info().Number < chapters[j].Info().Number
@@ -77,23 +77,10 @@ func (s *Scraper) getChaptersCollector() *colly.Collector {
 			url := e.Request.AbsoluteURL(link)
 			title := strings.TrimSpace(mango.CleanString(s.config.ChapterExtractor.Title(selection)))
 
-			// default temp number
-			chapterNumber := float32(e.Index)
-
-			// check for matched groups, to extract the chapter number safely
-			matchGroups := mango.ReNamedGroups(mango.ChapterNameRegex, title)
-			match := strings.TrimSpace(matchGroups[mango.ChapterNumberID])
-
-			// if the groups matching fail, it means it probably only contains the chapter number
-			if match == "" {
-				match = mango.ChapterNumberRegex.FindString(title)
-			}
-			if match != "" {
-				match = strings.Replace(match, "-", ".", 1)
-				number, err := strconv.ParseFloat(match, 32)
-				if err == nil {
-					chapterNumber = float32(number)
-				}
+			chapterNumber, ok := mango.ParseChapterNumber(title)
+			if !ok {
+				// numbered once all chapters are in order, see numberExtraChapters
+				chapterNumber = -1
 			}
 
 			var chapterDate metadata.Date
@@ -119,4 +106,16 @@ func (s *Scraper) getChaptersCollector() *colly.Collector {
 		})
 	})
 	return collector
+}
+
+// numberExtraChapters: Chapters without a number (e.g. "Extra") go right after the previous one.
+func numberExtraChapters(chapters []mangadata.Chapter) {
+	var last float32
+	for _, chapter := range chapters {
+		c := chapter.(*mango.Chapter)
+		if c.Number < 0 {
+			c.Number = mango.NextExtraNumber(last)
+		}
+		last = c.Number
+	}
 }

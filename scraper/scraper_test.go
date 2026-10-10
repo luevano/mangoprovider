@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/luevano/libmangal/mangadata"
 	mango "github.com/luevano/mangoprovider"
 )
 
@@ -98,5 +99,22 @@ func TestChapterPagesEmpty(t *testing.T) {
 	_, err := s.ChapterPages(context.Background(), mango.Store{}, mango.Chapter{URL: url})
 	if !errors.Is(err, mango.ErrNotFound) {
 		t.Errorf("wanted ErrNotFound, got %v", err)
+	}
+}
+
+func TestNumberExtraChapters(t *testing.T) {
+	numbers := []float32{-1, 1, 2, -1, -1, 3}
+	var chapters []mangadata.Chapter
+	for _, n := range numbers {
+		chapters = append(chapters, &mango.Chapter{Number: n})
+	}
+
+	numberExtraChapters(chapters)
+
+	want := []float32{0.5, 1, 2, 2.5, 2.6, 3}
+	for i, chapter := range chapters {
+		if got := chapter.Info().Number; got != want[i] {
+			t.Errorf("chapter %d: wanted %v, got %v", i, want[i], got)
+		}
 	}
 }

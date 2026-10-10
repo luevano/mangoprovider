@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/luevano/libmangal/mangadata"
@@ -68,26 +67,10 @@ func (p *plus) searchChapters(ctx context.Context, chapters *[]mangadata.Chapter
 }
 
 func parseChapterNumber(s string, lastNumber float32) float32 {
-	number := float32(-1.0)
-	chNumMatch := mango.ChapterNumberRegex.FindString(s)
-	if chNumMatch != "" {
-		// Special case fo MangaPlus as it's "decimal" numbers contain "-"
-		chNumMatch = strings.Replace(chNumMatch, "-", ".", 1)
-		number64, err := strconv.ParseFloat(chNumMatch, 32)
-		if err == nil {
-			number = float32(number64)
-		}
-	}
-	// If either there was no match for the number or
-	// parsing the number failed for some reason, or if the number is the same as the last
-	if number == float32(-1.0) || number == lastNumber {
-		// If it's the first extra, make it 0.5, else add 0.1
-		// Using a trick to avoid floating point precision issues https://stackoverflow.com/a/56300186
-		if mango.FloatIsInt(lastNumber) {
-			number = float32((float64(lastNumber*10.0) + float64(5.0)) / 10.0)
-		} else {
-			number = float32((float64(lastNumber*10.0) + float64(1.0)) / 10.0)
-		}
+	number, ok := mango.ParseChapterNumber(s)
+	// extras have no number, or repeat the last one
+	if !ok || number == lastNumber {
+		return mango.NextExtraNumber(lastNumber)
 	}
 	return number
 }

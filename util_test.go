@@ -134,3 +134,33 @@ func TestChapterNumberRegexMatch(t *testing.T) {
 		}
 	}
 }
+
+func TestParseChapterNumber(t *testing.T) {
+	tests := []struct {
+		title  string
+		number float32
+		ok     bool
+	}{
+		{"Chapter 5: The start", 5, true},
+		{"Vol.2 Chapter 12.5 - Side story", 12.5, true},
+		{"#012-2", 12.2, true},
+		{"#001", 1, true},
+		{"Extra", 0, false},
+		{"Prologue", 0, false},
+	}
+	for _, tt := range tests {
+		number, ok := ParseChapterNumber(tt.title)
+		if number != tt.number || ok != tt.ok {
+			t.Errorf("%q: wanted %v, %v; got %v, %v", tt.title, tt.number, tt.ok, number, ok)
+		}
+	}
+}
+
+func TestNextExtraNumber(t *testing.T) {
+	tests := map[float32]float32{0: 0.5, 5: 5.5, 5.5: 5.6, 5.6: 5.7}
+	for last, want := range tests {
+		if got := NextExtraNumber(last); got != want {
+			t.Errorf("after %v: wanted %v, got %v", last, want, got)
+		}
+	}
+}

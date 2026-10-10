@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"slices"
 	"sort"
 	"strconv"
 
@@ -32,35 +33,34 @@ func (d *dex) MangaVolumes(ctx context.Context, store mango.Store, manga mango.M
 		return nil, err
 	}
 
-	none := false
+	// the label is sent back as is to get the chapters, e.g. "01" isn't the same as "1"
+	var unnumbered []string // "none" and labels that aren't numbers
 	latestNumber := float32(0.0)
-	// n is a string, could be "none", represents the volume number
-	for n := range volumeList {
-		if n == "none" {
-			none = true
-			continue
-		}
-
-		number64, err := strconv.ParseFloat(n, 32)
+	for label := range volumeList {
+		number64, err := strconv.ParseFloat(label, 32)
 		if err != nil {
-			return nil, err
+			unnumbered = append(unnumbered, label)
+			continue
 		}
 		number := float32(number64)
 		if number > latestNumber {
 			latestNumber = number
 		}
 
-		v := mango.Volume{
+		volumes = append(volumes, &mango.Volume{
 			Number: number,
+			Label:  label,
 			Manga_: &manga,
-		}
-		volumes = append(volumes, &v)
+		})
 	}
 
-	if none {
+	// listed after the numbered ones
+	slices.Sort(unnumbered)
+	for i, label := range unnumbered {
 		volumes = append(volumes, &mango.Volume{
-			Number: float32(int(latestNumber + float32(1.0))),
-			None:   none,
+			Number: float32(int(latestNumber) + 1 + i),
+			Label:  label,
+			None:   label == "none",
 			Manga_: &manga,
 		})
 	}

@@ -10,6 +10,8 @@ var _ mangadata.Volume = (*Volume)(nil)
 
 type Volume struct {
 	Number float32 `json:"number"`
+	// Label: The volume as the provider names it, if it's not just the number (e.g. "01", "none").
+	Label string `json:"-"`
 
 	None   bool   `json:"-"`
 	Manga_ *Manga `json:"-"`

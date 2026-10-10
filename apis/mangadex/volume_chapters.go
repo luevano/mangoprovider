@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"sort"
 	"strconv"
-	"strings"
 
 	"github.com/luevano/libmangal/mangadata"
 	"github.com/luevano/mangodex"
@@ -28,11 +27,13 @@ func (d *dex) VolumeChapters(ctx context.Context, store mango.Store, volume mang
 		groupsCount: map[string]int{},
 	}
 
-	// Mangadex api returns "none" for "non-volumed" chapters,
-	// which are saved as -1.0 in libmangal.Volume
-	volumeNumber := "none"
-	if !volume.None {
+	volumeNumber := volume.Label
+	// volumes cached before Label existed
+	if volumeNumber == "" {
 		volumeNumber = volume.String()
+		if volume.None {
+			volumeNumber = "none"
+		}
 	}
 
 	params := url.Values{}
@@ -159,7 +160,11 @@ func (d *dex) populateChapters(ctx context.Context, agg *aggregate, params url.V
 			Volume_:         &volume,
 		}
 
-		mapKey := strings.Split(chapterTitleNumber, " ")[1]
+		// chapters without a number (oneshots, extras) aren't duplicates of each other
+		mapKey := mango.FormattedFloat(chapterNumber)
+		if chapter.GetChapterNum() == "-" {
+			mapKey = chapterID
+		}
 		agg.chaptersMap[mapKey] = append(agg.chaptersMap[mapKey], &c)
 		agg.groupsCount[scanlator] += 1
 		agg.chapters = append(agg.chapters, &c)
