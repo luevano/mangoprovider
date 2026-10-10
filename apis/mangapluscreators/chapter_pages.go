@@ -13,7 +13,7 @@ import (
 func (c *mpc) ChapterPages(ctx context.Context, store mango.Store, chapter mango.Chapter) ([]mangadata.Page, error) {
 	var pages []mangadata.Page
 
-	chapterPages, err := c.client.Page.Get(chapter.ID)
+	chapterPages, err := c.client.Page.GetContext(ctx, chapter.ID)
 	if err != nil {
 		return nil, err
 	}

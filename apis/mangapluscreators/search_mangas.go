@@ -28,7 +28,7 @@ func (c *mpc) SearchMangas(ctx context.Context, store mango.Store, query string)
 		return mangas, nil
 	}
 
-	err = c.searchMangas(&mangas, query)
+	err = c.searchMangas(ctx, &mangas, query)
 	if err != nil {
 		return nil, err
 	}
@@ -41,11 +41,11 @@ func (c *mpc) SearchMangas(ctx context.Context, store mango.Store, query string)
 	return mangas, nil
 }
 
-func (c *mpc) searchMangas(mangas *[]mangadata.Manga, query string) error {
+func (c *mpc) searchMangas(ctx context.Context, mangas *[]mangadata.Manga, query string) error {
 	page := 1
 	for {
 		// Will default to english or the only available language
-		titlesDTO, err := c.client.Manga.List(query, c.filter.Language, page)
+		titlesDTO, err := c.client.Manga.ListContext(ctx, query, c.filter.Language, page)
 		if err != nil {
 			return err
 		}

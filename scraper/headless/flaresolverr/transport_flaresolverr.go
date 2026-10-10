@@ -127,7 +127,10 @@ func (t *TransportFlaresolverr) Close() error {
 	if err != nil {
 		return err
 	}
-	request, err := http.NewRequestWithContext(context.Background(), "POST", t.url, bytes.NewBuffer(req))
+	// no caller context on close, just don't hang if flaresolverr doesn't answer
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	request, err := http.NewRequestWithContext(ctx, "POST", t.url, bytes.NewBuffer(req))
 	request.Header.Set("Content-Type", "application/json")
 	if err != nil {
 		return err

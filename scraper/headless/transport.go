@@ -45,7 +45,8 @@ func GetTransport(
 			}
 
 			url.Path = ""
-			result, err := http.Get(url.String())
+			client := http.Client{Timeout: 10 * time.Second}
+			result, err := client.Get(url.String())
 			defer func() {
 				if result != nil && result.Body != nil {
 					result.Body.Close()

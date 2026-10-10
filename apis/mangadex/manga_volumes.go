@@ -27,7 +27,7 @@ func (d *dex) MangaVolumes(ctx context.Context, store mango.Store, manga mango.M
 		return volumes, nil
 	}
 
-	volumeList, err := d.client.Volume.List(manga.ID, params)
+	volumeList, err := d.client.Volume.ListContext(ctx, manga.ID, params)
 	if err != nil {
 		return nil, err
 	}

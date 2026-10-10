@@ -16,7 +16,7 @@ func (p *plus) ChapterPages(ctx context.Context, store mango.Store, chapter mang
 
 	// Will default to "super_high"
 	imgQuality := mangoplus.StringToImageQuality(p.options.Quality)
-	chapterPages, err := p.client.Page.Get(chapter.ID, false, imgQuality)
+	chapterPages, err := p.client.Page.GetContext(ctx, chapter.ID, false, imgQuality)
 	if err != nil {
 		return nil, err
 	}

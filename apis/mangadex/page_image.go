@@ -19,5 +19,5 @@ func (d *dex) GetPageImage(ctx context.Context, client *http.Client, page mango.
 		data = "data-saver"
 	}
 	// TODO: make reporting configurable
-	return atHome.GetChapterPage(data, page.URL, true)
+	return atHome.GetChapterPageContext(ctx, data, page.URL, true)
 }

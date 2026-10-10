@@ -68,7 +68,7 @@ func (d *dex) VolumeChapters(ctx context.Context, store mango.Store, volume mang
 	for {
 		// The offset is set on each iteration, shouldn't be included in the cacheID.
 		params.Set("offset", strconv.Itoa(offset))
-		ended, err := d.populateChapters(&agg, params, volume)
+		ended, err := d.populateChapters(ctx, &agg, params, volume)
 		if err != nil {
 			return nil, err
 		}
@@ -103,8 +103,8 @@ func (d *dex) VolumeChapters(ctx context.Context, store mango.Store, volume mang
 }
 
 // Make the request and parse the responses, populating the actual chapter list and extra info useful for filtering.
-func (d *dex) populateChapters(agg *aggregate, params url.Values, volume mango.Volume) (bool, error) {
-	chapterList, err := d.client.Chapter.List(params)
+func (d *dex) populateChapters(ctx context.Context, agg *aggregate, params url.Values, volume mango.Volume) (bool, error) {
+	chapterList, err := d.client.Chapter.ListContext(ctx, params)
 	if err != nil {
 		return false, err
 	}

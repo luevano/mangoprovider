@@ -24,7 +24,7 @@ func (p *plus) VolumeChapters(ctx context.Context, store mango.Store, volume man
 		return chapters, nil
 	}
 
-	err = p.searchChapters(&chapters, volume, mangaID)
+	err = p.searchChapters(ctx, &chapters, volume, mangaID)
 	if err != nil {
 		return nil, err
 	}
@@ -37,8 +37,8 @@ func (p *plus) VolumeChapters(ctx context.Context, store mango.Store, volume man
 	return chapters, nil
 }
 
-func (p *plus) searchChapters(chapters *[]mangadata.Chapter, volume mango.Volume, id string) error {
-	mangaDetails, err := p.client.Manga.Get(id)
+func (p *plus) searchChapters(ctx context.Context, chapters *[]mangadata.Chapter, volume mango.Volume, id string) error {
+	mangaDetails, err := p.client.Manga.GetContext(ctx, id)
 	if err != nil {
 		return err
 	}

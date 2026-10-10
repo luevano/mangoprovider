@@ -13,7 +13,7 @@ import (
 func (d *dex) ChapterPages(ctx context.Context, store mango.Store, chapter mango.Chapter) ([]mangadata.Page, error) {
 	var pages []mangadata.Page
 
-	atHome, err := d.client.AtHome.Get(chapter.ID, url.Values{})
+	atHome, err := d.client.AtHome.GetContext(ctx, chapter.ID, url.Values{})
 	if err != nil {
 		return nil, err
 	}

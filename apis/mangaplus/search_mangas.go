@@ -34,9 +34,9 @@ func (p *plus) SearchMangas(ctx context.Context, store mango.Store, query string
 	}
 
 	if byID {
-		err = p.searchManga(&mangas, mangaID)
+		err = p.searchManga(ctx, &mangas, mangaID)
 	} else {
-		err = p.searchMangas(&mangas, query)
+		err = p.searchMangas(ctx, &mangas, query)
 	}
 	if err != nil {
 		return nil, err
@@ -50,8 +50,8 @@ func (p *plus) SearchMangas(ctx context.Context, store mango.Store, query string
 	return mangas, nil
 }
 
-func (p *plus) searchManga(mangas *[]mangadata.Manga, id string) error {
-	titleDetail, err := p.client.Manga.Get(id)
+func (p *plus) searchManga(ctx context.Context, mangas *[]mangadata.Manga, id string) error {
+	titleDetail, err := p.client.Manga.GetContext(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -59,10 +59,10 @@ func (p *plus) searchManga(mangas *[]mangadata.Manga, id string) error {
 	return nil
 }
 
-func (p *plus) searchMangas(mangas *[]mangadata.Manga, query string) error {
+func (p *plus) searchMangas(ctx context.Context, mangas *[]mangadata.Manga, query string) error {
 	// Will default to english
 	prefLang := mangoplus.StringToLanguage(p.filter.Language)
-	titles, err := p.client.Manga.All(prefLang)
+	titles, err := p.client.Manga.AllContext(ctx, prefLang)
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func (p *plus) searchMangas(mangas *[]mangadata.Manga, query string) error {
 	for _, title := range titles {
 		if fuzzy.MatchNormalizedFold(query, title.Name) {
 			// Search for the titleDetail details and use that instead (contains more data)
-			titleDetail, err := p.client.Manga.Get(strconv.Itoa(int(title.TitleId)))
+			titleDetail, err := p.client.Manga.GetContext(ctx, strconv.Itoa(int(title.TitleId)))
 			if err != nil {
 				return err
 			}

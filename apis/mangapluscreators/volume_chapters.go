@@ -22,7 +22,7 @@ func (c *mpc) VolumeChapters(ctx context.Context, store mango.Store, volume mang
 		return chapters, nil
 	}
 
-	err = c.searchChapters(&chapters, volume, mangaID)
+	err = c.searchChapters(ctx, &chapters, volume, mangaID)
 	if err != nil {
 		return nil, err
 	}
@@ -35,10 +35,10 @@ func (c *mpc) VolumeChapters(ctx context.Context, store mango.Store, volume mang
 	return chapters, nil
 }
 
-func (c *mpc) searchChapters(chapters *[]mangadata.Chapter, volume mango.Volume, id string) error {
+func (c *mpc) searchChapters(ctx context.Context, chapters *[]mangadata.Chapter, volume mango.Volume, id string) error {
 	page := 1
 	for {
-		chaptersDTO, err := c.client.Chapter.List(volume.Manga_.ID, page)
+		chaptersDTO, err := c.client.Chapter.ListContext(ctx, volume.Manga_.ID, page)
 		if err != nil {
 			return err
 		}

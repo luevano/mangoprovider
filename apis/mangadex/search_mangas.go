@@ -37,9 +37,9 @@ func (d *dex) SearchMangas(ctx context.Context, store mango.Store, query string)
 	}
 
 	if byID {
-		err = d.searchManga(&mangas, mangaID)
+		err = d.searchManga(ctx, &mangas, mangaID)
 	} else {
-		err = d.searchMangas(&mangas, params, limit)
+		err = d.searchMangas(ctx, &mangas, params, limit)
 	}
 	if err != nil {
 		return nil, err
@@ -54,12 +54,12 @@ func (d *dex) SearchMangas(ctx context.Context, store mango.Store, query string)
 }
 
 // find manga by id and populate the list
-func (d *dex) searchManga(mangas *[]mangadata.Manga, id string) error {
+func (d *dex) searchManga(ctx context.Context, mangas *[]mangadata.Manga, id string) error {
 	params := url.Values{}
 	params.Add("includes[]", string(mangodex.RelationshipTypeCoverArt))
 	params.Add("includes[]", string(mangodex.RelationshipTypeAuthor))
 	params.Add("includes[]", string(mangodex.RelationshipTypeArtist))
-	manga, err := d.client.Manga.Get(id, params)
+	manga, err := d.client.Manga.GetContext(ctx, id, params)
 	if err != nil {
 		return err
 	}
@@ -68,11 +68,11 @@ func (d *dex) searchManga(mangas *[]mangadata.Manga, id string) error {
 }
 
 // search of mangas by query and populate the list
-func (d *dex) searchMangas(mangas *[]mangadata.Manga, params url.Values, limit int) error {
+func (d *dex) searchMangas(ctx context.Context, mangas *[]mangadata.Manga, params url.Values, limit int) error {
 	offset := 0
 	for {
 		params.Set("offset", strconv.Itoa(offset))
-		mangaList, err := d.client.Manga.List(params)
+		mangaList, err := d.client.Manga.ListContext(ctx, params)
 		if err != nil {
 			return err
 		}
