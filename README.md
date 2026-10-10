@@ -8,9 +8,40 @@
 >
 > The API is not stable and may change at any time.
 
-Provider for [libmangal](https://github.com/luevano/libmangal) written in go.
+Providers for [libmangal](https://github.com/luevano/libmangal) written in go, included in [mangal](https://github.com/luevano/mangal).
 
 Most of the code/functionality is based heavily on implementations from [Belphemur/mangal](https://github.com/Belphemur/mangal) (which in turn comes from [metafates/mangal](https://github.com/metafates/mangal)) adapted to work with [libmangal](https://github.com/luevano/libmangal)'s [mangal](https://github.com/luevano/mangal).
+
+## Providers
+
+APIs, through [mangodex](https://github.com/luevano/mangodex) and [mangoplus](https://github.com/luevano/mangoplus):
+
+- MangaDex
+- MangaPlus, including subscription chapters with a device secret
+- MangaPlus Creators, currently not working (its API blocks bots)
+
+Scrapers for sites like [Mangapill](https://mangapill.com/) and [Weeb Central](https://weebcentral.com/), see [scrapers](./scrapers) for all of them.
+
+Some scrapers can use a headless browser or [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) for sites behind Cloudflare (`Options.Headless`).
+
+## Usage
+
+```go
+options := mango.DefaultOptions()
+loaders := append(apis.Loaders(options), scrapers.Loaders(options)...)
+
+loader, _, ok := libmangal.FindLoader(loaders, "mango-mangadex")
+if !ok {
+	panic("provider not found")
+}
+client, err := libmangal.NewClient(loader, libmangal.DefaultClientOptions())
+if err != nil {
+	panic(err)
+}
+defer client.Close()
+
+mangas, err := client.SearchMangas("dandadan")
+```
 
 ## Credits
 
