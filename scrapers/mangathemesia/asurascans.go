@@ -18,9 +18,8 @@ var AsurascansInfo = libmangal.ProviderInfo{
 	Website:     "https://asuracomic.net/",
 }
 
-var AsurascansConfig = asurascans()
-
-func asurascans() *scraper.Configuration {
+// AsurascansConfig: A new configuration, built on every load.
+func AsurascansConfig(_ *mango.Logger) *scraper.Configuration {
 	a := Mangathemesia(AsurascansInfo, "manga")
 
 	// Need to remove trash cover URL, contains a prefixed URL

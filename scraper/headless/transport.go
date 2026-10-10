@@ -1,20 +1,15 @@
 package headless
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/url"
-	"sync"
 	"time"
 
 	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/scraper/headless/flaresolverr"
 	"github.com/luevano/mangoprovider/scraper/headless/rod"
-)
-
-var (
-	transport Transport
-	once      sync.Once
 )
 
 // Transport defines a transport used for colly.
@@ -23,39 +18,41 @@ type Transport interface {
 	io.Closer
 }
 
-// GetTransport returns the singleton rod or flaresolverr transport.
-func GetTransport(
+// NewTransport returns a flaresolverr transport if it's configured and reachable, else a rod one.
+func NewTransport(
+	ctx context.Context,
 	options mango.HeadlessOptions,
 	loadWait time.Duration,
 	localStorage map[string]string,
 	actions map[rod.ActionType]rod.Action,
+	log *mango.Logger,
 ) Transport {
-	once.Do(func() {
-		if options.UseFlaresolverr && options.FlaresolverrURL != "" {
-			url, err := url.Parse(options.FlaresolverrURL)
-			if err != nil {
-				mango.Log("couldn't parse flaresolverr url, falling back to rod")
-				transport = rod.NewTransport(loadWait, localStorage, actions)
-				return
-			}
-
-			url.Path = ""
-			client := http.Client{Timeout: 10 * time.Second}
-			result, err := client.Get(url.String())
-			defer func() {
-				if result != nil && result.Body != nil {
-					result.Body.Close()
-				}
-			}()
-			if err != nil || result.StatusCode != 200 {
-				mango.Log("couldn't connect to flaresolverr, falling back to rod")
-				transport = rod.NewTransport(loadWait, localStorage, actions)
-				return
-			}
-			transport = flaresolverr.NewTransport(options.FlaresolverrURL)
-			return
+	if options.UseFlaresolverr && options.FlaresolverrURL != "" {
+		if flaresolverrReachable(ctx, options.FlaresolverrURL) {
+			return flaresolverr.NewTransport(options.FlaresolverrURL)
 		}
-		transport = rod.NewTransport(loadWait, localStorage, actions)
-	})
-	return transport
+		log.Log("couldn't connect to flaresolverr, falling back to rod")
+	}
+	return rod.NewTransport(loadWait, localStorage, actions, log)
+}
+
+func flaresolverrReachable(ctx context.Context, flaresolverrURL string) bool {
+	u, err := url.Parse(flaresolverrURL)
+	if err != nil {
+		return false
+	}
+	u.Path = ""
+
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
+	if err != nil {
+		return false
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return false
+	}
+	resp.Body.Close()
+	return resp.StatusCode == http.StatusOK
 }

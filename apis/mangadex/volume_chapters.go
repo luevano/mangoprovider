@@ -146,8 +146,8 @@ func (d *dex) populateChapters(ctx context.Context, agg *aggregate, params url.V
 		}
 
 		chapterID := chapter.ID
-		date := getDate(chapter.Attributes.PublishAt)
-		scanlator := getScanlator(chapter.Relationships)
+		date := d.getDate(chapter.Attributes.PublishAt)
+		scanlator := d.getScanlator(chapter.Relationships)
 
 		c := mango.Chapter{
 			Title:           chapterTitle,

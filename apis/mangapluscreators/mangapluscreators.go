@@ -21,6 +21,7 @@ type mpc struct {
 	client  *creators.CreatorsClient
 	filter  mango.FilterOptions
 	options mango.MangaPlusCreatorsOptions
+	log     *mango.Logger
 }
 
 func Loader(options mango.Options) libmangal.ProviderLoader {
@@ -35,7 +36,8 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 	return &mango.Loader{
 		ProviderInfo: providerInfo,
 		Options:      options,
-		F: func(_ context.Context) (mango.Functions, error) {
+		F: func(_ context.Context, log *mango.Logger) (mango.Functions, error) {
+			c.log = log
 			client, err := creators.NewCreatorsClient(o.Options)
 			if err != nil {
 				return mango.Functions{}, err

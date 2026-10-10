@@ -16,9 +16,8 @@ var ManganatoInfo = libmangal.ProviderInfo{
 	Website:     "https://manganato.com/",
 }
 
-var ManganatoConfig = manganato()
-
-func manganato() *scraper.Configuration {
+// ManganatoConfig: A new configuration, built on every load.
+func ManganatoConfig(_ *mango.Logger) *scraper.Configuration {
 	m := Mangabox(ManganatoInfo, "/search/story/%s", "Jan 02,06", "span.chapter-time")
 
 	m.GenerateSearchByIDURL = func(_, id string) (string, error) {

@@ -26,7 +26,7 @@ func (s *Scraper) VolumeChapters(ctx context.Context, store mango.Store, volume 
 		return nil, err
 	}
 	if found {
-		mango.Log("found chapters in cache for manga %q with id %q", volume.Manga_.String(), volume.Manga_.ID)
+		s.log.Log("found chapters in cache for manga %q with id %q", volume.Manga_.String(), volume.Manga_.ID)
 		return chapters, nil
 	}
 

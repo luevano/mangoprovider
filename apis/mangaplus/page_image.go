@@ -3,6 +3,7 @@ package mangaplus
 import (
 	"context"
 	"encoding/hex"
+	"fmt"
 	"net/http"
 	"net/url"
 
@@ -35,8 +36,7 @@ func (p *plus) GetPageImage(ctx context.Context, client *http.Client, page mango
 func decodeXorCipher(data []byte, key string) error {
 	keyBytes, err := hex.DecodeString(key)
 	if err != nil {
-		mango.Log("error while decoding image with encryption key: %s", err)
-		return err
+		return fmt.Errorf("decode image encryption key: %w", err)
 	}
 	keyLen := len(keyBytes)
 

@@ -87,7 +87,7 @@ func (p *plus) searchMangas(ctx context.Context, mangas *[]mangadata.Manga, quer
 
 	// Each match needs its own request for the details, too slow for broad queries
 	if len(matches) > maxSearchResults {
-		mango.Log("%d mangas found for %q, only using the best %d", len(matches), query, maxSearchResults)
+		p.log.Log("%d mangas found for %q, only using the best %d", len(matches), query, maxSearchResults)
 		matches = matches[:maxSearchResults]
 	}
 

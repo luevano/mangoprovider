@@ -2,6 +2,7 @@ package mangoprovider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -20,6 +21,8 @@ type Functions struct {
 	VolumeChapters func(context.Context, Store, Volume) ([]mangadata.Chapter, error)
 	ChapterPages   func(context.Context, Store, Chapter) ([]mangadata.Page, error)
 	GetPageImage   func(context.Context, *http.Client, Page) ([]byte, error)
+	// Close: Optional, frees what the provider holds (e.g. a headless browser).
+	Close func() error
 }
 
 type Provider struct {
@@ -29,6 +32,7 @@ type Provider struct {
 
 	client *http.Client
 	store  Store
+	log    *Logger
 }
 
 func (p *Provider) String() string {
@@ -36,7 +40,11 @@ func (p *Provider) String() string {
 }
 
 func (p *Provider) Close() error {
-	return p.store.Close()
+	var err error
+	if p.F.Close != nil {
+		err = p.F.Close()
+	}
+	return errors.Join(err, p.store.Close())
 }
 
 func (p *Provider) Info() libmangal.ProviderInfo {
@@ -44,15 +52,14 @@ func (p *Provider) Info() libmangal.ProviderInfo {
 }
 
 func (p *Provider) SetLogger(logger *logger.Logger) {
-	prefix_ = p.ProviderInfo.ID + ": "
-	logger_ = logger
+	p.log.SetLogger(logger)
 }
 
 func (p *Provider) SearchMangas(
 	ctx context.Context,
 	query string,
 ) ([]mangadata.Manga, error) {
-	Log("searching mangas with query %q", query)
+	p.log.Log("searching mangas with query %q", query)
 
 	mangas, err := p.F.SearchMangas(ctx, p.store, query)
 	if err != nil {
@@ -70,7 +77,7 @@ func (p *Provider) MangaVolumes(
 		return nil, fmt.Errorf("expected a mangoprovider manga, got %T", manga)
 	}
 
-	Log("fetching volumes for manga %q", m)
+	p.log.Log("fetching volumes for manga %q", m)
 	volumes, err := p.F.MangaVolumes(ctx, p.store, *m)
 	if err != nil {
 		return nil, fmt.Errorf("%s: volumes of %q: %w", p.ProviderInfo.ID, m, err)
@@ -87,7 +94,7 @@ func (p *Provider) VolumeChapters(
 		return nil, fmt.Errorf("expected a mangoprovider volume, got %T", volume)
 	}
 
-	Log("fetching chapters for volume %s", v.String())
+	p.log.Log("fetching chapters for volume %s", v.String())
 	chapters, err := p.F.VolumeChapters(ctx, p.store, *v)
 	if err != nil {
 		return nil, fmt.Errorf("%s: chapters of %q vol %s: %w", p.ProviderInfo.ID, v.Manga_, v, err)
@@ -104,7 +111,7 @@ func (p *Provider) ChapterPages(
 		return nil, fmt.Errorf("expected a mangoprovider chapter, got %T", chapter)
 	}
 
-	Log("fetching pages for chapter %q", c)
+	p.log.Log("fetching pages for chapter %q", c)
 	pages, err := p.F.ChapterPages(ctx, p.store, *c)
 	if err != nil {
 		return nil, fmt.Errorf("%s: pages of chapter %q: %w", p.ProviderInfo.ID, c, err)

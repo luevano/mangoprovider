@@ -28,6 +28,7 @@ type TransportRod struct {
 	loadWait     time.Duration
 	localStorage map[string]string
 	actions      map[ActionType]Action
+	log          *mango.Logger
 }
 
 func (t *TransportRod) Close() error {
@@ -42,11 +43,13 @@ func NewTransport(
 	loadWait time.Duration,
 	localStorage map[string]string,
 	actions map[ActionType]Action,
+	log *mango.Logger,
 ) *TransportRod {
 	return &TransportRod{
 		loadWait:     loadWait,
 		localStorage: localStorage,
 		actions:      actions,
+		log:          log,
 	}
 }
 
@@ -139,7 +142,7 @@ func (t *TransportRod) RoundTrip(r *http.Request) (*http.Response, error) {
 	actionType := ActionType(r.Header.Get(ActionTypeHeader))
 	action, ok := t.actions[actionType]
 	if ok && action != nil {
-		mango.Log("found action for %s", actionType)
+		t.log.Log("found action for %s", actionType)
 		err := action(page)
 		if err != nil {
 			return nil, err

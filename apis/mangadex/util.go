@@ -31,10 +31,10 @@ func getChapterNum(chapter *mangodex.Chapter) (float32, string, error) {
 }
 
 // Get parsed published date or just today's date.
-func getDate(publishAt string) metadata.Date {
+func (d *dex) getDate(publishAt string) metadata.Date {
 	publishedDate, err := time.Parse(time.RFC3339, publishAt)
 	if err != nil {
-		mango.Log("failed to parse chapter date, using today")
+		d.log.Log("failed to parse chapter date, using today")
 		now := time.Now()
 		return mango.DateOf(now)
 
@@ -43,7 +43,7 @@ func getDate(publishAt string) metadata.Date {
 }
 
 // Finds the first scanlator or the first username or "mangadex".
-func getScanlator(relationships []*mangodex.Relationship) string {
+func (d *dex) getScanlator(relationships []*mangodex.Relationship) string {
 	var scanlator string
 	for _, relationship := range relationships {
 		if relationship.Type == mangodex.RelationshipTypeScanlationGroup {
@@ -54,7 +54,7 @@ func getScanlator(relationships []*mangodex.Relationship) string {
 	}
 	// If no scanlator group is linked to the chapter, use the uploader user.
 	if scanlator == "" {
-		mango.Log("no scanlator for chapter, using username")
+		d.log.Log("no scanlator for chapter, using username")
 		for _, relationship := range relationships {
 			if relationship.Type == mangodex.RelationshipTypeUser {
 				userRel, _ := relationship.Attributes.(*mangodex.UserAttributes)
@@ -66,7 +66,7 @@ func getScanlator(relationships []*mangodex.Relationship) string {
 	// If even then the scanlator is not set, just use "mangadex".
 	if scanlator == "" {
 		scanlator = "MangaDex"
-		mango.Log("no scanlator or username for chapter, defaulting to %q", scanlator)
+		d.log.Log("no scanlator or username for chapter, defaulting to %q", scanlator)
 	}
 	return scanlator
 }

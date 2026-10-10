@@ -17,9 +17,8 @@ var MangairoInfo = libmangal.ProviderInfo{
 	Website:     "https://w.mangairo.com/",
 }
 
-var MangairoConfig = mangairo()
-
-func mangairo() *scraper.Configuration {
+// MangairoConfig: A new configuration, built on every load.
+func MangairoConfig(_ *mango.Logger) *scraper.Configuration {
 	m := Mangabox(MangairoInfo, "/list/search/%s", "Jan-02-06", "p")
 
 	m.GenerateSearchByIDURL = func(_, id string) (string, error) {

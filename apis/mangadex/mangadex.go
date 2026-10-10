@@ -21,6 +21,7 @@ type dex struct {
 	client  *mangodex.DexClient
 	filter  mango.FilterOptions
 	options mango.MangaDexOptions
+	log     *mango.Logger
 }
 
 func Loader(options mango.Options) libmangal.ProviderLoader {
@@ -34,7 +35,8 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 	return &mango.Loader{
 		ProviderInfo: providerInfo,
 		Options:      options,
-		F: func(_ context.Context) (mango.Functions, error) {
+		F: func(_ context.Context, log *mango.Logger) (mango.Functions, error) {
+			d.log = log
 			client, err := mangodex.NewDexClient(o.Options)
 			if err != nil {
 				return mango.Functions{}, err

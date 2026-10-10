@@ -33,12 +33,12 @@ func Loaders(options mango.Options) []libmangal.ProviderLoader {
 	return loaders
 }
 
-func Loader(info libmangal.ProviderInfo, config *scraper.Configuration, options mango.Options) libmangal.ProviderLoader {
+func Loader(info libmangal.ProviderInfo, newConfig func(*mango.Logger) *scraper.Configuration, options mango.Options) libmangal.ProviderLoader {
 	return &mango.Loader{
 		ProviderInfo: info,
 		Options:      options,
-		F: func(ctx context.Context) (mango.Functions, error) {
-			s, err := scraper.NewScraper(ctx, config, options)
+		F: func(ctx context.Context, log *mango.Logger) (mango.Functions, error) {
+			s, err := scraper.NewScraper(ctx, newConfig(log), options, log)
 			if err != nil {
 				return mango.Functions{}, err
 			}
@@ -47,6 +47,7 @@ func Loader(info libmangal.ProviderInfo, config *scraper.Configuration, options 
 				MangaVolumes:   s.MangaVolumes,
 				VolumeChapters: s.VolumeChapters,
 				ChapterPages:   s.ChapterPages,
+				Close:          s.Close,
 			}, nil
 		},
 	}

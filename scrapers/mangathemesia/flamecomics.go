@@ -20,9 +20,9 @@ var FlamecomicsInfo = libmangal.ProviderInfo{
 
 // FlameComics in tachiyomi (RIP) has a really complicated
 // logic for dealing with "composite images" whatever that means, gotta keep an eye
-var FlamecomicsConfig = flamecomics()
 
-func flamecomics() *scraper.Configuration {
+// FlamecomicsConfig: A new configuration, built on every load.
+func FlamecomicsConfig(_ *mango.Logger) *scraper.Configuration {
 	a := Mangathemesia(FlamecomicsInfo, "series")
 
 	// Need to remove trash cover URL, contains a prefixed URL

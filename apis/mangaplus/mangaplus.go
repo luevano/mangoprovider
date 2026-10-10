@@ -21,6 +21,7 @@ type plus struct {
 	client  *mangoplus.PlusClient
 	filter  mango.FilterOptions
 	options mango.MangaPlusOptions
+	log     *mango.Logger
 }
 
 func Loader(options mango.Options) libmangal.ProviderLoader {
@@ -34,7 +35,8 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 	return &mango.Loader{
 		ProviderInfo: providerInfo,
 		Options:      options,
-		F: func(_ context.Context) (mango.Functions, error) {
+		F: func(_ context.Context, log *mango.Logger) (mango.Functions, error) {
+			p.log = log
 			client, err := mangoplus.NewPlusClient(o.Options)
 			if err != nil {
 				return mango.Functions{}, err

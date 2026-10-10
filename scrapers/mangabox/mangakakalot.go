@@ -18,9 +18,8 @@ var MangakakalotInfo = libmangal.ProviderInfo{
 	Website:     "https://mangakakalot.com/",
 }
 
-var MangakakalotConfig = mangakakalot()
-
-func mangakakalot() *scraper.Configuration {
+// MangakakalotConfig: A new configuration, built on every load.
+func MangakakalotConfig(_ *mango.Logger) *scraper.Configuration {
 	m := Mangabox(MangakakalotInfo, "/search/story/%s", "Jan 02,06", "span.chapter-time")
 
 	// Most of the time redirects to chapmanganato.to,

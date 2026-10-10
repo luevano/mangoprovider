@@ -19,6 +19,7 @@ const (
 type Store struct {
 	openStore func(bucketName string) (gokv.Store, error)
 	store     gokv.Store
+	log       *Logger
 }
 
 func (s *Store) open(bucketName string) error {
@@ -56,7 +57,7 @@ func (s *Store) GetMangas(cacheID string, query string, mangas *[]mangadata.Mang
 		return false, err
 	}
 	if found {
-		Log("cache: found mangas for query %q", query)
+		s.log.Log("cache: found mangas for query %q", query)
 		return true, nil
 	}
 	return false, nil
@@ -85,7 +86,7 @@ func (s *Store) GetVolumes(cacheID string, manga Manga, volumes *[]mangadata.Vol
 		return false, err
 	}
 	if found {
-		Log("cache: found volumes for manga %q", manga.String())
+		s.log.Log("cache: found volumes for manga %q", manga.String())
 		// Need to re-set the manga, as the read data will point to a different address
 		var updatedVolumes []mangadata.Volume
 		for _, v := range foundVolumes {
@@ -126,7 +127,7 @@ func (s *Store) GetChapters(cacheID string, volume Volume, chapters *[]mangadata
 		return false, err
 	}
 	if found {
-		Log("cache: found chapters for volume %s", volume.String())
+		s.log.Log("cache: found chapters for volume %s", volume.String())
 		// Need to re-set the volume, as the read data will point to a different address
 		var updatedChapters []mangadata.Chapter
 		for _, c := range foundChapters {

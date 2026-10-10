@@ -32,7 +32,7 @@ func TestChapterPagesCanceled(t *testing.T) {
 		Parallelism:   1,
 		PageExtractor: &PageExtractor{Selector: "img"},
 	}
-	s, err := NewScraper(context.Background(), config, mango.DefaultOptions())
+	s, err := NewScraper(context.Background(), config, mango.DefaultOptions(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,7 +61,7 @@ func newTestScraper(t *testing.T, status int, html string, extractor *PageExtrac
 	t.Cleanup(server.Close)
 
 	config := &Configuration{Name: "test", BaseURL: server.URL, Parallelism: 1, PageExtractor: extractor}
-	s, err := NewScraper(context.Background(), config, mango.DefaultOptions())
+	s, err := NewScraper(context.Background(), config, mango.DefaultOptions(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
