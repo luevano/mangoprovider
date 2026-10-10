@@ -37,8 +37,12 @@ func (s *Scraper) VolumeChapters(ctx context.Context, store mango.Store, volume 
 
 	// TODO: check if using this URL is good enough, only works for sources that
 	// don't provide volumes and thus everything is in the manga url
+	chaptersURL := volume.Manga_.URL
+	if s.config.ChaptersURL != nil {
+		chaptersURL = s.config.ChaptersURL(*volume.Manga_)
+	}
 	collector := s.getChaptersCollector()
-	if err := scrape(ctx, collector, volume.Manga_.URL, data); err != nil {
+	if err := scrape(ctx, collector, chaptersURL, data); err != nil {
 		return nil, err
 	}
 
@@ -77,7 +81,11 @@ func (s *Scraper) getChaptersCollector() *colly.Collector {
 			url := e.Request.AbsoluteURL(link)
 			title := strings.TrimSpace(mango.CleanString(s.config.ChapterExtractor.Title(selection)))
 
-			chapterNumber, ok := mango.ParseChapterNumber(title)
+			parseNumber := mango.ParseChapterNumber
+			if s.config.ChapterExtractor.Number != nil {
+				parseNumber = s.config.ChapterExtractor.Number
+			}
+			chapterNumber, ok := parseNumber(title)
 			if !ok {
 				// numbered once all chapters are in order, see numberExtraChapters
 				chapterNumber = -1

@@ -55,6 +55,9 @@ type ChapterExtractor struct {
 	URL func(*goquery.Selection) string
 	// ID: Get id from parsed url string.
 	ID func(string) string
+	// Number: Optional, get the number from the title, mango.ParseChapterNumber if nil.
+	// Not ok means the chapter has none, it goes right after the previous one.
+	Number func(title string) (number float32, ok bool)
 	// Date: Get the published date of the chapter if available.
 	Date func(*goquery.Selection) metadata.Date
 	// ScanlationGroup: Get the scanlation group if available.

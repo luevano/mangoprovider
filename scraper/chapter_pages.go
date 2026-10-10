@@ -19,8 +19,12 @@ func (s *Scraper) ChapterPages(ctx context.Context, store mango.Store, chapter m
 	data.Put("chapter", chapter)
 	data.Put("pages", &pages)
 
+	pagesURL := chapter.URL
+	if s.config.PagesURL != nil {
+		pagesURL = s.config.PagesURL(chapter)
+	}
 	collector := s.getPagesCollector()
-	if err := scrape(ctx, collector, chapter.URL, data); err != nil {
+	if err := scrape(ctx, collector, pagesURL, data); err != nil {
 		return nil, err
 	}
 	if len(pages) == 0 {

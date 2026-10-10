@@ -3,6 +3,7 @@ package scraper
 import (
 	"time"
 
+	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/scraper/headless/rod"
 )
 
@@ -38,6 +39,10 @@ type Configuration struct {
 	// GenerateSearchByIDURL: Create search URL from the id.
 	// E.g. (one piece) "manga-aa88620" -> "https://chapmanganelo.com/manga-aa88620"
 	GenerateSearchByIDURL func(baseUrl, id string) (string, error)
+	// ChaptersURL: Optional, the page listing the chapters if it isn't the manga page.
+	ChaptersURL func(manga mango.Manga) string
+	// PagesURL: Optional, the page listing the images if it isn't the chapter page.
+	PagesURL func(chapter mango.Chapter) string
 
 	// MangaByIDExtractor: Responsible for finding manga elements and extracting the data.
 	//
