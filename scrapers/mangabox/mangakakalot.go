@@ -21,7 +21,7 @@ var MangakakalotInfo = libmangal.ProviderInfo{
 var MangakakalotConfig = mangakakalot()
 
 func mangakakalot() *scraper.Configuration {
-	m := Mangabox(MangakakalotInfo.ID, MangakakalotInfo.Website, "/search/story/%s", "Jan 02,06", "span.chapter-time")
+	m := Mangabox(MangakakalotInfo, "/search/story/%s", "Jan 02,06", "span.chapter-time")
 
 	// Most of the time redirects to chapmanganato.to,
 	// no way to do checks or provide alternate urls on failed requests

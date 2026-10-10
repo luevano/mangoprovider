@@ -36,18 +36,10 @@ func getDate(publishAt string) metadata.Date {
 	if err != nil {
 		mango.Log("failed to parse chapter date, using today")
 		now := time.Now()
-		return metadata.Date{
-			Year:  now.Year(),
-			Month: int(now.Month()),
-			Day:   now.Day(),
-		}
+		return mango.DateOf(now)
 
 	}
-	return metadata.Date{
-		Year:  publishedDate.Year(),
-		Month: int(publishedDate.Month()),
-		Day:   publishedDate.Day(),
-	}
+	return mango.DateOf(publishedDate)
 }
 
 // Finds the first scanlator or the first username or "mangadex".

@@ -21,7 +21,7 @@ var AsurascansInfo = libmangal.ProviderInfo{
 var AsurascansConfig = asurascans()
 
 func asurascans() *scraper.Configuration {
-	a := Mangathemesia(AsurascansInfo.ID, AsurascansInfo.Website, "manga")
+	a := Mangathemesia(AsurascansInfo, "manga")
 
 	// Need to remove trash cover URL, contains a prefixed URL
 	// that basically "converts" the original one?

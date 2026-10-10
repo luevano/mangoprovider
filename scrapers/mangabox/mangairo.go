@@ -20,7 +20,7 @@ var MangairoInfo = libmangal.ProviderInfo{
 var MangairoConfig = mangairo()
 
 func mangairo() *scraper.Configuration {
-	m := Mangabox(MangairoInfo.ID, MangairoInfo.Website, "/list/search/%s", "Jan-02-06", "p")
+	m := Mangabox(MangairoInfo, "/list/search/%s", "Jan-02-06", "p")
 
 	m.GenerateSearchByIDURL = func(_, id string) (string, error) {
 		return fmt.Sprintf("%s%s", "https://chap.mangairo.com/", id), nil

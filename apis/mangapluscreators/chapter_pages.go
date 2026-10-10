@@ -2,9 +2,6 @@ package mangapluscreators
 
 import (
 	"context"
-	"fmt"
-	"net/url"
-	"path/filepath"
 
 	"github.com/luevano/libmangal/mangadata"
 	mango "github.com/luevano/mangoprovider"
@@ -19,13 +16,9 @@ func (c *mpc) ChapterPages(ctx context.Context, store mango.Store, chapter mango
 	}
 
 	for _, page := range chapterPages {
-		u, err := url.Parse(page.PublicBGImage)
+		ext, err := mango.ImageExtension(page.PublicBGImage)
 		if err != nil {
 			return nil, err
-		}
-		ext := filepath.Ext(u.Path)
-		if !mango.ImageExtensionRegex.MatchString(ext) {
-			return nil, fmt.Errorf("invalid image extension %q in %q", ext, u.Path)
 		}
 
 		pageHeaders := map[string]string{
@@ -36,7 +29,7 @@ func (c *mpc) ChapterPages(ctx context.Context, store mango.Store, chapter mango
 
 		p := mango.Page{
 			Ext:      ext,
-			URL:      u.String(),
+			URL:      page.PublicBGImage,
 			Headers:  pageHeaders,
 			Chapter_: &chapter,
 		}

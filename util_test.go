@@ -164,3 +164,20 @@ func TestNextExtraNumber(t *testing.T) {
 		}
 	}
 }
+
+func TestImageExtension(t *testing.T) {
+	tests := map[string]string{
+		"https://host/a/1.png":         ".png",
+		"https://host/a/1.jpg?v=1.2":   ".jpg",
+		"1-abc123.webp":                ".webp",
+		"https://host/a/1.jpeg#ab12cd": ".jpeg",
+	}
+	for in, want := range tests {
+		if got, err := ImageExtension(in); err != nil || got != want {
+			t.Errorf("%q: wanted %q, got %q, %v", in, want, got, err)
+		}
+	}
+	if _, err := ImageExtension("https://host/a/page"); err == nil {
+		t.Error("an url without an extension should be an error")
+	}
+}

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"strings"
 
 	"github.com/luevano/libmangal/mangadata"
 	mango "github.com/luevano/mangoprovider"
@@ -29,14 +28,9 @@ func (d *dex) ChapterPages(ctx context.Context, store mango.Store, chapter mango
 	}
 
 	for _, filename := range filenames {
-		filenameSplit := strings.Split(filename, ".")
-		if len(filenameSplit) != 2 {
-			return nil, fmt.Errorf("invalid image extension in %q", filename)
-		}
-
-		extension := fmt.Sprintf(".%s", filenameSplit[1])
-		if !mango.ImageExtensionRegex.MatchString(extension) {
-			return nil, fmt.Errorf("invalid image extension %q in %q", extension, filename)
+		extension, err := mango.ImageExtension(filename)
+		if err != nil {
+			return nil, err
 		}
 
 		p := mango.Page{

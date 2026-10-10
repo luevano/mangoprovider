@@ -95,11 +95,7 @@ var Config = &scraper.Configuration{
 				// if failed to parse date, use scraping day
 				date = now
 			}
-			return metadata.Date{
-				Year:  date.Year(),
-				Month: int(date.Month()),
-				Day:   date.Day(),
-			}
+			return mango.DateOf(date)
 		},
 		ScanlationGroup: func(_ *goquery.Selection) string {
 			return Info.Name

@@ -19,7 +19,7 @@ var MangabatInfo = libmangal.ProviderInfo{
 var MangabatConfig = mangabat()
 
 func mangabat() *scraper.Configuration {
-	m := Mangabox(MangabatInfo.ID, MangabatInfo.Website, "/search/manga/%s", "Jan 02,06", "span.chapter-time")
+	m := Mangabox(MangabatInfo, "/search/manga/%s", "Jan 02,06", "span.chapter-time")
 
 	m.GenerateSearchByIDURL = func(_, id string) (string, error) {
 		return fmt.Sprintf("%s%s", "https://readmangabat.com/", id), nil

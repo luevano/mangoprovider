@@ -3,8 +3,6 @@ package mangaplus
 import (
 	"context"
 	"fmt"
-	"net/url"
-	"path/filepath"
 
 	"github.com/luevano/libmangal/mangadata"
 	"github.com/luevano/mangoplus"
@@ -22,13 +20,9 @@ func (p *plus) ChapterPages(ctx context.Context, store mango.Store, chapter mang
 	}
 
 	for _, page := range chapterPages {
-		u, err := url.Parse(page.ImageUrl)
+		ext, err := mango.ImageExtension(page.ImageUrl)
 		if err != nil {
 			return nil, err
-		}
-		ext := filepath.Ext(u.Path)
-		if !mango.ImageExtensionRegex.MatchString(ext) {
-			return nil, fmt.Errorf("invalid image extension %q in %q", ext, u.Path)
 		}
 
 		// Includes the cookie needed for subscription-only images

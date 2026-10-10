@@ -2,9 +2,14 @@ package mangoprovider
 
 import (
 	"fmt"
+	"net/url"
+	"path"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/luevano/libmangal/metadata"
 )
 
 const (
@@ -122,4 +127,22 @@ func NextExtraNumber(last float32) float32 {
 		return float32((float64(last*10) + 5) / 10)
 	}
 	return float32((float64(last*10) + 1) / 10)
+}
+
+// DateOf converts t to a metadata.Date.
+func DateOf(t time.Time) metadata.Date {
+	return metadata.Date{Year: t.Year(), Month: int(t.Month()), Day: t.Day()}
+}
+
+// ImageExtension returns the extension of the image url (e.g. ".png"), ignoring its query.
+func ImageExtension(rawURL string) (string, error) {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return "", err
+	}
+	ext := path.Ext(u.Path)
+	if !ImageExtensionRegex.MatchString(ext) {
+		return "", fmt.Errorf("invalid image extension %q in %q", ext, rawURL)
+	}
+	return ext, nil
 }

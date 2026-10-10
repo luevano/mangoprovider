@@ -19,7 +19,7 @@ var ManganatoInfo = libmangal.ProviderInfo{
 var ManganatoConfig = manganato()
 
 func manganato() *scraper.Configuration {
-	m := Mangabox(ManganatoInfo.ID, ManganatoInfo.Website, "/search/story/%s", "Jan 02,06", "span.chapter-time")
+	m := Mangabox(ManganatoInfo, "/search/story/%s", "Jan 02,06", "span.chapter-time")
 
 	m.GenerateSearchByIDURL = func(_, id string) (string, error) {
 		return fmt.Sprintf("%s%s", "https://chapmanganato.to/", id), nil

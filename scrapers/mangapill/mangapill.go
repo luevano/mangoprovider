@@ -91,11 +91,7 @@ var Config = &scraper.Configuration{
 			// mangapill doesn't provide dates, just use scraping day
 			// else it will just use anilist publication day
 			today := time.Now()
-			return metadata.Date{
-				Year:  today.Year(),
-				Month: int(today.Month()),
-				Day:   today.Day(),
-			}
+			return mango.DateOf(today)
 		},
 		ScanlationGroup: func(_ *goquery.Selection) string {
 			return Info.Name

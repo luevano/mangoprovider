@@ -73,9 +73,5 @@ func (c *mpc) searchChapters(ctx context.Context, chapters *[]mangadata.Chapter,
 
 func parseTSMilli(timestamp int64) metadata.Date {
 	ts := time.UnixMilli(timestamp)
-	return metadata.Date{
-		Year:  ts.Year(),
-		Month: int(ts.Month()),
-		Day:   ts.Day(),
-	}
+	return mango.DateOf(ts)
 }

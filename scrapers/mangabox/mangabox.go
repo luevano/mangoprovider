@@ -2,11 +2,13 @@ package mangabox
 
 import (
 	"fmt"
+	mango "github.com/luevano/mangoprovider"
 	"net/url"
 	"strings"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/luevano/libmangal"
 	"github.com/luevano/libmangal/metadata"
 	"github.com/luevano/mangoprovider/scraper"
 )
@@ -14,7 +16,8 @@ import (
 // TODO: add manga search pager?
 
 // Mangabox is a generic type of website used by Manganato, Manganelo, Mangakakalot, etc.
-func Mangabox(name, baseUrl, searchPath, dateLayout, dateSelector string) *scraper.Configuration {
+func Mangabox(info libmangal.ProviderInfo, searchPath, dateLayout, dateSelector string) *scraper.Configuration {
+	name, baseUrl := info.ID, info.Website
 	return &scraper.Configuration{
 		Name:            name,
 		Delay:           50 * time.Millisecond,
@@ -79,14 +82,10 @@ func Mangabox(name, baseUrl, searchPath, dateLayout, dateSelector string) *scrap
 					// if failed to parse date, use scraping day
 					date = time.Now()
 				}
-				return metadata.Date{
-					Year:  date.Year(),
-					Month: int(date.Month()),
-					Day:   date.Day(),
-				}
+				return mango.DateOf(date)
 			},
 			ScanlationGroup: func(_ *goquery.Selection) string {
-				return name
+				return info.Name
 			},
 		},
 		PageExtractor: &scraper.PageExtractor{

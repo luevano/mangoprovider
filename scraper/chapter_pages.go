@@ -3,8 +3,6 @@ package scraper
 import (
 	"context"
 	"fmt"
-	"path/filepath"
-	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gocolly/colly/v2"
@@ -45,23 +43,34 @@ func (s *Scraper) getPagesCollector() *colly.Collector {
 		if s.config.PageExtractor.URLs != nil {
 			urls := s.config.PageExtractor.URLs(elements)
 			for _, u := range urls {
-				*pages = append(*pages, s.urlToPage(chapter, u))
+				page, err := s.urlToPage(chapter, u)
+				if err != nil {
+					setScrapeError(e.Request.Ctx, err)
+					return
+				}
+				*pages = append(*pages, page)
 			}
 			return
 		}
 
 		elements.Each(func(_ int, selection *goquery.Selection) {
 			url := s.config.PageExtractor.URL(selection)
-			*pages = append(*pages, s.urlToPage(chapter, url))
+			page, err := s.urlToPage(chapter, url)
+			if err != nil {
+				setScrapeError(e.Request.Ctx, err)
+				return
+			}
+			*pages = append(*pages, page)
 		})
 	})
 	return collector
 }
 
-func (s *Scraper) urlToPage(chapter mango.Chapter, url string) *mango.Page {
-	ext := filepath.Ext(url)
-	// remove some query params from the extension
-	ext = strings.Split(ext, "?")[0]
+func (s *Scraper) urlToPage(chapter mango.Chapter, url string) (*mango.Page, error) {
+	ext, err := mango.ImageExtension(url)
+	if err != nil {
+		return nil, err
+	}
 
 	headers := map[string]string{
 		"Referer":    chapter.URL,
@@ -73,5 +82,5 @@ func (s *Scraper) urlToPage(chapter mango.Chapter, url string) *mango.Page {
 		URL:      url,
 		Headers:  headers,
 		Chapter_: &chapter,
-	}
+	}, nil
 }

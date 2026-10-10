@@ -23,7 +23,7 @@ var FlamecomicsInfo = libmangal.ProviderInfo{
 var FlamecomicsConfig = flamecomics()
 
 func flamecomics() *scraper.Configuration {
-	a := Mangathemesia(FlamecomicsInfo.ID, FlamecomicsInfo.Website, "series")
+	a := Mangathemesia(FlamecomicsInfo, "series")
 
 	// Need to remove trash cover URL, contains a prefixed URL
 	// that basically "converts" the original one?
