@@ -23,9 +23,8 @@ type plus struct {
 }
 
 func Loader(options mango.Options) libmangal.ProviderLoader {
-	// Update the user agent with the actual one from the options
+	// Not using options.UserAgent, the API only accepts the one from the Android app
 	o := options.MangaPlus
-	o.UserAgent = options.UserAgent
 	p := plus{
 		client:  mangoplus.NewPlusClient(o.Options),
 		filter:  options.Filter,

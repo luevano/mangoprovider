@@ -22,7 +22,7 @@ func (p *plus) ChapterPages(ctx context.Context, store mango.Store, chapter mang
 	}
 
 	for _, page := range chapterPages {
-		u, err := url.Parse(page.ImageURL)
+		u, err := url.Parse(page.ImageUrl)
 		if err != nil {
 			return nil, err
 		}
@@ -31,20 +31,19 @@ func (p *plus) ChapterPages(ctx context.Context, store mango.Store, chapter mang
 			return nil, fmt.Errorf("invalid page extension: %s (from path %s)", ext, u.Path)
 		}
 
-		pageHeaders := map[string]string{
-			"Origin":     website,
-			"Referer":    chapter.URL,
-			"User-Agent": p.options.UserAgent,
-		}
+		// Includes the cookie needed for subscription-only images
+		pageHeaders := p.client.ImageHeaders(page.ImageUrl)
+		pageHeaders["Origin"] = website
+		pageHeaders["Referer"] = chapter.URL
 
 		enc := ""
-		if page.EncryptionKey != nil {
-			enc = fmt.Sprintf("#%s", *page.EncryptionKey)
+		if page.EncryptionKey != "" {
+			enc = fmt.Sprintf("#%s", page.EncryptionKey)
 		}
 
 		p := mango.Page{
 			Ext:      ext,
-			URL:      fmt.Sprintf("%s%s", page.ImageURL, enc),
+			URL:      fmt.Sprintf("%s%s", page.ImageUrl, enc),
 			Headers:  pageHeaders,
 			Chapter_: &chapter,
 		}

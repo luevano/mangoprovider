@@ -9,7 +9,6 @@ import (
 
 	"github.com/luevano/libmangal/mangadata"
 	"github.com/luevano/libmangal/metadata"
-	"github.com/luevano/mangoplus"
 	mango "github.com/luevano/mangoprovider"
 )
 
@@ -38,44 +37,6 @@ func (p *plus) VolumeChapters(ctx context.Context, store mango.Store, volume man
 	return chapters, nil
 }
 
-// DEPRECATED: old way of getting chapterlist, mangaplus changed the structure of this
-func (p *plus) searchChaptersOld(chapters *[]mangadata.Chapter, volume mango.Volume, id string) error {
-	mangaDetails, err := p.client.Manga.Get(id)
-	if err != nil {
-		return err
-	}
-	chapterListGroup := mangaDetails.ChapterListGroup
-
-	// All chapters are assumed to come in order, there is no other way to deal
-	// with extra/bonus chapters (if they don't come with a number)
-	lastNumber := float32(0.0)
-	for _, chapterGroup := range chapterListGroup {
-		var chapterLists []mangoplus.Chapter
-		chapterLists = append(chapterLists, chapterGroup.FirstChapterList...)
-		chapterLists = append(chapterLists, chapterGroup.MidChapterList...)
-		chapterLists = append(chapterLists, chapterGroup.LastChapterList...)
-
-		for _, chapter := range chapterLists {
-			title := chapter.Name
-			if chapter.SubTitle != nil {
-				title = mango.ParseChapterTitle(*chapter.SubTitle)
-			}
-			c := mango.Chapter{
-				Title:           title,
-				ID:              strconv.Itoa(chapter.ChapterId),
-				URL:             fmt.Sprintf("%sviewer/%d", website, chapter.ChapterId),
-				Number:          parseChapterNumber(chapter.Name, lastNumber),
-				Date:            parseTSSecs(chapter.StartTimeStamp),
-				ScanlationGroup: "MangaPlus",
-				Volume_:         &volume,
-			}
-			*chapters = append(*chapters, &c)
-			lastNumber = c.Number
-		}
-	}
-	return nil
-}
-
 func (p *plus) searchChapters(chapters *[]mangadata.Chapter, volume mango.Volume, id string) error {
 	mangaDetails, err := p.client.Manga.Get(id)
 	if err != nil {
@@ -88,12 +49,12 @@ func (p *plus) searchChapters(chapters *[]mangadata.Chapter, volume mango.Volume
 	lastNumber := float32(0.0)
 	for _, chapter := range chapterList {
 		title := chapter.Name
-		if chapter.SubTitle != nil {
-			title = mango.ParseChapterTitle(*chapter.SubTitle)
+		if chapter.SubTitle != "" {
+			title = mango.ParseChapterTitle(chapter.SubTitle)
 		}
 		c := mango.Chapter{
 			Title:           title,
-			ID:              strconv.Itoa(chapter.ChapterId),
+			ID:              strconv.Itoa(int(chapter.ChapterId)),
 			URL:             fmt.Sprintf("%sviewer/%d", website, chapter.ChapterId),
 			Number:          parseChapterNumber(chapter.Name, lastNumber),
 			Date:            parseTSSecs(chapter.StartTimeStamp),
@@ -131,8 +92,8 @@ func parseChapterNumber(s string, lastNumber float32) float32 {
 	return number
 }
 
-func parseTSSecs(timestamp int) metadata.Date {
-	ts := time.Unix(int64(timestamp), 0)
+func parseTSSecs(timestamp int64) metadata.Date {
+	ts := time.Unix(timestamp, 0)
 	return metadata.Date{
 		Year:  ts.Year(),
 		Month: int(ts.Month()),

@@ -60,56 +60,49 @@ func (p *plus) searchManga(mangas *[]mangadata.Manga, id string) error {
 }
 
 func (p *plus) searchMangas(mangas *[]mangadata.Manga, query string) error {
-	titlesGroupList, err := p.client.Manga.All()
+	// Will default to english
+	prefLang := mangoplus.StringToLanguage(p.filter.Language)
+	titles, err := p.client.Manga.All(prefLang)
 	if err != nil {
 		return err
 	}
 
-	// Will default to english
-	prefLang := mangoplus.StringToLanguage(p.filter.Language)
-	for _, titleGroup := range titlesGroupList {
-		for _, title := range titleGroup.Titles {
-			// Sometimes when the language is not provided
-			// it's because it's the english one
-			lang := title.Language
-			if lang == nil || lang == &prefLang {
-				if fuzzy.MatchNormalizedFold(query, title.Name) {
-					// Search for the titleDetail details and use that instead (contains more data)
-					titleDetail, err := p.client.Manga.Get(strconv.Itoa(title.TitleID))
-					if err != nil {
-						return err
-					}
-					*mangas = append(*mangas, p.plusToMangoManga(titleDetail))
-				}
+	for _, title := range titles {
+		if fuzzy.MatchNormalizedFold(query, title.Name) {
+			// Search for the titleDetail details and use that instead (contains more data)
+			titleDetail, err := p.client.Manga.Get(strconv.Itoa(int(title.TitleId)))
+			if err != nil {
+				return err
 			}
+			*mangas = append(*mangas, p.plusToMangoManga(titleDetail))
 		}
 	}
 	return nil
 }
 
-func (p *plus) plusToMangoManga(titleDetail mangoplus.TitleDetailView) *mango.Manga {
+func (p *plus) plusToMangoManga(titleDetail *mangoplus.TitleDetailView) *mango.Manga {
 	meta := p.plusToMetadata(titleDetail)
 	var m metadata.Metadata = meta
 	return &mango.Manga{
 		Title:     meta.Title(),
 		URL:       meta.URL(),
-		ID:        strconv.Itoa(titleDetail.Title.TitleID),
+		ID:        strconv.Itoa(int(titleDetail.Title.TitleId)),
 		Cover:     meta.Cover(),
 		Banner:    meta.Banner(),
 		Metadata_: &m,
 	}
 }
 
-func (p *plus) plusToMetadata(titleDetail mangoplus.TitleDetailView) *mangadata.Metadata {
+func (p *plus) plusToMetadata(titleDetail *mangoplus.TitleDetailView) *mangadata.Metadata {
 	title := titleDetail.Title
 
 	var status metadata.Status
-	switch titleDetail.TitleLabels.ReleaseSchedule {
-	case mangoplus.ReleaseScheduleCompleted:
+	switch titleDetail.GetTitleLabels().GetReleaseSchedule() {
+	case mangoplus.ReleaseSchedule_COMPLETED:
 		status = metadata.StatusFinished
 	// need to check if this is what disabled is used for,
 	// maybe it's for cancelled or not yet released?
-	case mangoplus.ReleaseScheduleDisabled:
+	case mangoplus.ReleaseSchedule_DISABLED:
 		status = metadata.StatusHiatus
 	default:
 		status = metadata.StatusReleasing
@@ -119,12 +112,8 @@ func (p *plus) plusToMetadata(titleDetail mangoplus.TitleDetailView) *mangadata.
 	// but there is no guarantee that the date of the first chapter is that of the
 	// manga start date, as the chapter could've been released much later in time
 	var date metadata.Date
-	for _, chapterListGroup := range titleDetail.ChapterListGroup {
-		for _, chapter := range chapterListGroup.FirstChapterList {
-			date = parseTSSecs(chapter.StartTimeStamp)
-			break
-		}
-		break
+	if len(titleDetail.ChapterListV2) != 0 {
+		date = parseTSSecs(titleDetail.ChapterListV2[0].StartTimeStamp)
 	}
 
 	// Assume it is in english, there are no alternate titles (unless many other requests where to be performed).
@@ -132,14 +121,14 @@ func (p *plus) plusToMetadata(titleDetail mangoplus.TitleDetailView) *mangadata.
 	return &mangadata.Metadata{
 		EnglishTitle:      title.Name,
 		Summary:           titleDetail.Overview,
-		CoverImage:        title.PortraitImageURL,
+		CoverImage:        title.PortraitImageUrl,
 		BannerImage:       titleDetail.TitleImageUrl,
 		AuthorList:        []string{title.Author},
 		ArtistList:        []string{title.Author},
 		DateStart:         date,
 		PublicationStatus: status,
-		SourceURL:         fmt.Sprintf("%stitles/%d", website, title.TitleID),
-		ProviderID:        strconv.Itoa(title.TitleID),
+		SourceURL:         fmt.Sprintf("%stitles/%d", website, title.TitleId),
+		ProviderID:        strconv.Itoa(int(title.TitleId)),
 		ProviderIDCode:    "mp",
 	}
 }
