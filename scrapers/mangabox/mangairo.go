@@ -12,7 +12,7 @@ import (
 var MangairoInfo = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-mangairo",
 	Name:        "Mangairo",
-	Version:     "0.2.2",
+	Version:     "0.2.3",
 	Description: "Mangairo scraper",
 	Website:     "https://w.mangairo.com/",
 }

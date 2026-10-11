@@ -18,7 +18,7 @@ import (
 var Info = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-weebcentral",
 	Name:        "Weeb Central",
-	Version:     "0.4.1",
+	Version:     "0.4.2",
 	Description: "Weeb Central scraper",
 	Website:     "https://weebcentral.com/",
 	History: []libmangal.ProviderAlias{

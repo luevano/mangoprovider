@@ -13,7 +13,7 @@ import (
 var MangakakalotInfo = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-mangakakalot",
 	Name:        "Mangakakalot",
-	Version:     "0.2.2",
+	Version:     "0.2.3",
 	Description: "Mangakakalot scraper",
 	Website:     "https://mangakakalot.com/",
 }

@@ -12,7 +12,7 @@ const website = "https://mangadex.org/"
 var providerInfo = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-mangadex",
 	Name:        "MangaDex",
-	Version:     "0.8.0",
+	Version:     "0.8.1",
 	Description: "MangaDex scraper using mangodex",
 	Website:     website,
 }

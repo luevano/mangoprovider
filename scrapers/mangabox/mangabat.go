@@ -11,7 +11,7 @@ import (
 var MangabatInfo = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-mangabat",
 	Name:        "Mangabat",
-	Version:     "0.2.2",
+	Version:     "0.2.3",
 	Description: "Mangabat scraper",
 	Website:     "https://h.mangabat.com/",
 }
