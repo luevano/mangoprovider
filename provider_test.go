@@ -68,3 +68,24 @@ func TestGenericGetPageImageStatus(t *testing.T) {
 		t.Errorf("wanted %q, got %v", want, err)
 	}
 }
+
+func TestAccount(t *testing.T) {
+	p := &Provider{ProviderInfo: libmangal.ProviderInfo{ID: "mango-x"}}
+	if _, found, err := p.Account(context.Background()); found || err != nil {
+		t.Errorf("found %t, %v without an Account function", found, err)
+	}
+
+	p.F.Account = func(context.Context) (libmangal.Account, bool, error) {
+		return libmangal.Account{Status: "deluxe"}, true, nil
+	}
+	if account, found, err := p.Account(context.Background()); !found || err != nil || account.Status != "deluxe" {
+		t.Errorf("got %+v %t %v", account, found, err)
+	}
+
+	p.F.Account = func(context.Context) (libmangal.Account, bool, error) {
+		return libmangal.Account{}, false, errors.New("down")
+	}
+	if _, _, err := p.Account(context.Background()); err == nil || err.Error() != "mango-x: account: down" {
+		t.Errorf("got %v", err)
+	}
+}

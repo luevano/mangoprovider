@@ -13,7 +13,10 @@ import (
 	"github.com/luevano/libmangal/mangadata"
 )
 
-var _ libmangal.Provider = (*Provider)(nil)
+var (
+	_ libmangal.Provider        = (*Provider)(nil)
+	_ libmangal.AccountProvider = (*Provider)(nil)
+)
 
 type Functions struct {
 	SearchMangas   func(context.Context, Store, string) ([]mangadata.Manga, error)
@@ -23,6 +26,8 @@ type Functions struct {
 	GetPageImage   func(context.Context, *http.Client, Page) ([]byte, error)
 	// Close: Optional, frees what the provider holds (e.g. a headless browser).
 	Close func() error
+	// Account: Optional, the user's account (e.g. a subscription).
+	Account func(context.Context) (libmangal.Account, bool, error)
 }
 
 type Provider struct {
@@ -45,6 +50,18 @@ func (p *Provider) Close() error {
 		err = p.F.Close()
 	}
 	return errors.Join(err, p.store.Close())
+}
+
+// Account: The user's account, found false if the provider has none.
+func (p *Provider) Account(ctx context.Context) (libmangal.Account, bool, error) {
+	if p.F.Account == nil {
+		return libmangal.Account{}, false, nil
+	}
+	account, found, err := p.F.Account(ctx)
+	if err != nil {
+		return account, found, fmt.Errorf("%s: account: %w", p.ProviderInfo.ID, err)
+	}
+	return account, found, nil
 }
 
 func (p *Provider) Info() libmangal.ProviderInfo {

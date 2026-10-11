@@ -49,6 +49,7 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 				VolumeChapters: p.VolumeChapters,
 				ChapterPages:   p.ChapterPages,
 				GetPageImage:   p.GetPageImage,
+				Account:        p.Account,
 			}, nil
 		},
 	}
