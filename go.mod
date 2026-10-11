@@ -3,7 +3,6 @@ module github.com/luevano/mangoprovider
 go 1.27.0
 
 require (
-	github.com/Luzifer/go-openssl/v4 v4.2.2
 	github.com/PuerkitoBio/goquery v1.13.0
 	github.com/go-rod/rod v0.116.2
 	github.com/gocolly/colly/v2 v2.3.0
@@ -14,8 +13,7 @@ require (
 	github.com/luevano/mangoplus v0.7.1
 	github.com/philippgille/gokv v0.7.0
 	github.com/philippgille/gokv/syncmap v0.7.0
-	github.com/tj/go-naturaldate v1.3.0
-	github.com/vineesh12344/gojsfuck v0.2.0
+	golang.org/x/time v0.15.0
 )
 
 require (
@@ -38,6 +36,7 @@ require (
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d // indirect
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966 // indirect
 	github.com/spf13/afero v1.15.0 // indirect
+	github.com/stretchr/testify v1.8.4 // indirect
 	github.com/temoto/robotstxt v1.1.2 // indirect
 	github.com/ysmood/fetchup v0.2.4 // indirect
 	github.com/ysmood/goob v0.4.0 // indirect
@@ -51,7 +50,6 @@ require (
 	golang.org/x/net v0.60.0 // indirect
 	golang.org/x/sync v0.24.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
-	golang.org/x/time v0.15.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 )
