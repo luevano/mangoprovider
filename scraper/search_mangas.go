@@ -2,7 +2,9 @@ package scraper
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
@@ -14,30 +16,16 @@ import (
 )
 
 func (s *Scraper) SearchMangas(ctx context.Context, store mango.Store, query string) ([]mangadata.Manga, error) {
-	var mangas []mangadata.Manga
-
-	matchGroups := mango.ReNamedGroups(mango.MangaQueryIDRegex, query)
-	mangaID, byID := matchGroups[mango.MangaQueryID]
-	mangaID = strings.Trim(mangaID, "/")
-
-	var err error
-	var cacheID string
-	var searchURL string
-	if byID {
-		if s.config.GenerateSearchByIDURL == nil {
-			return nil, fmt.Errorf("search by id: %w (no GenerateSearchByIDURL)", mango.ErrNotSupported)
-		}
-		searchURL, err = s.config.GenerateSearchByIDURL(s.config.BaseURL, mangaID)
-		cacheID = fmt.Sprintf("mid:%s", mangaID)
-	} else {
-		searchURL, err = s.config.GenerateSearchURL(s.config.BaseURL, query)
-		cacheID = searchURL
+	if id, byID := mango.ReNamedGroups(mango.MangaQueryIDRegex, query)[mango.MangaQueryID]; byID {
+		return mango.SearchByID(s.MangaByID(ctx, store, id))
 	}
+
+	var mangas []mangadata.Manga
+	searchURL, err := s.config.GenerateSearchURL(s.config.BaseURL, query)
 	if err != nil {
 		return nil, err
 	}
-
-	found, err := store.GetMangas(cacheID, query, &mangas)
+	found, err := store.GetMangas(searchURL, query, &mangas)
 	if err != nil {
 		return nil, err
 	}
@@ -48,18 +36,7 @@ func (s *Scraper) SearchMangas(ctx context.Context, store mango.Store, query str
 	// data shared with the collector callbacks
 	data := colly.NewContext()
 	data.Put("mangas", &mangas)
-
-	var collector *colly.Collector
-	if byID {
-		if s.config.MangaByIDExtractor == nil {
-			return nil, fmt.Errorf("search by id: %w (no MangaByIDExtractor)", mango.ErrNotSupported)
-		}
-		collector = s.getMangaCollector(mangaID)
-	} else {
-		collector = s.getMangasCollector()
-	}
-
-	if err := scrape(ctx, collector, searchURL, data); err != nil {
+	if err := scrape(ctx, s.getMangasCollector(), searchURL, data); err != nil {
 		return nil, err
 	}
 
@@ -67,13 +44,52 @@ func (s *Scraper) SearchMangas(ctx context.Context, store mango.Store, query str
 	if len(mangas) == 0 {
 		return mangas, nil
 	}
-	err = store.SetMangas(cacheID, mangas)
+	return mangas, store.SetMangas(searchURL, mangas)
+}
+
+// MangaByID scrapes the manga's page, found false if the site answers 404.
+func (s *Scraper) MangaByID(ctx context.Context, store mango.Store, id string) (mangadata.Manga, bool, error) {
+	id = strings.Trim(id, "/")
+	if s.config.GenerateSearchByIDURL == nil {
+		return nil, false, fmt.Errorf("search by id: %w (no GenerateSearchByIDURL)", mango.ErrNotSupported)
+	}
+	if s.config.MangaByIDExtractor == nil {
+		return nil, false, fmt.Errorf("search by id: %w (no MangaByIDExtractor)", mango.ErrNotSupported)
+	}
+	mangaURL, err := s.config.GenerateSearchByIDURL(s.config.BaseURL, id)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
-	return mangas, nil
+	cacheID := "mid:" + id
+	var mangas []mangadata.Manga
+	if found, err := store.GetMangas(cacheID, cacheID, &mangas); err != nil {
+		return nil, false, err
+	} else if found && len(mangas) == 1 {
+		return mangas[0], true, nil
+	}
+
+	mangas = nil
+	data := colly.NewContext()
+	data.Put("mangas", &mangas)
+	if err := scrape(ctx, s.getMangaCollector(id), mangaURL, data); err != nil {
+		if errors.Is(err, mango.ErrNotFound) {
+			return nil, false, nil
+		}
+		return nil, false, err
+	}
+	if data.GetAny(notFoundKey) != nil {
+		return nil, false, nil
+	}
+	if len(mangas) == 0 {
+		return nil, false, fmt.Errorf("GET %s: no manga in the page", mangaURL)
+	}
+	return mangas[0], true, store.SetMangas(cacheID, mangas[:1])
 }
+
+const notFoundKey = "notFound"
+
+var errorPagePath = regexp.MustCompile(`^/(400|404)/?$`)
 
 // TODO: define metadata scraping logic
 // Get the manga collector, the actual scraping logic is defined here.
@@ -82,7 +98,15 @@ func (s *Scraper) getMangaCollector(id string) *colly.Collector {
 	s.setCollectorOnRequest(collector, rod.ActionManga)
 	collector.OnHTML("html", func(e *colly.HTMLElement) {
 		defer recoverScrape(e)
+		// some sites (weebcentral) redirect unknown mangas to an error page that answers 200
+		if errorPagePath.MatchString(e.Request.URL.Path) {
+			e.Request.Ctx.Put(notFoundKey, true)
+			return
+		}
 		selection := e.DOM.Find(s.config.MangaByIDExtractor.Selector).First()
+		if selection.Length() == 0 {
+			return
+		}
 		mangas := e.Request.Ctx.GetAny("mangas").(*[]mangadata.Manga)
 
 		var meta metadata.Metadata = &mangadata.Metadata{}

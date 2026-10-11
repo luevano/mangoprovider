@@ -2,6 +2,7 @@ package mangaplus
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strconv"
@@ -14,17 +15,12 @@ import (
 )
 
 func (p *plus) SearchMangas(ctx context.Context, store mango.Store, query string) ([]mangadata.Manga, error) {
-	var mangas []mangadata.Manga
-
-	matchGroups := mango.ReNamedGroups(mango.MangaQueryIDRegex, query)
-	mangaID, byID := matchGroups[mango.MangaQueryID]
-
-	var cacheID string
-	if byID {
-		cacheID = fmt.Sprintf("mid:%s", mangaID)
-	} else {
-		cacheID = fmt.Sprintf("%s-%s-%s", query, p.filter.Language, p.options.Quality)
+	if id, byID := mango.ReNamedGroups(mango.MangaQueryIDRegex, query)[mango.MangaQueryID]; byID {
+		return mango.SearchByID(p.MangaByID(ctx, store, id))
 	}
+
+	var mangas []mangadata.Manga
+	cacheID := fmt.Sprintf("%s-%s-%s", query, p.filter.Language, p.options.Quality)
 
 	found, err := store.GetMangas(cacheID, query, &mangas)
 	if err != nil {
@@ -34,12 +30,7 @@ func (p *plus) SearchMangas(ctx context.Context, store mango.Store, query string
 		return mangas, nil
 	}
 
-	if byID {
-		err = p.searchManga(ctx, &mangas, mangaID)
-	} else {
-		err = p.searchMangas(ctx, &mangas, query)
-	}
-	if err != nil {
+	if err := p.searchMangas(ctx, &mangas, query); err != nil {
 		return nil, err
 	}
 
@@ -51,13 +42,32 @@ func (p *plus) SearchMangas(ctx context.Context, store mango.Store, query string
 	return mangas, nil
 }
 
-func (p *plus) searchManga(ctx context.Context, mangas *[]mangadata.Manga, id string) error {
-	titleDetail, err := p.client.Manga.GetContext(ctx, id)
-	if err != nil {
-		return err
+// MangaByID gets the title by its number.
+func (p *plus) MangaByID(ctx context.Context, store mango.Store, id string) (mangadata.Manga, bool, error) {
+	cacheID := "mid:" + id
+	var mangas []mangadata.Manga
+	if found, err := store.GetMangas(cacheID, cacheID, &mangas); err != nil {
+		return nil, false, err
+	} else if found && len(mangas) == 1 {
+		return mangas[0], true, nil
 	}
-	*mangas = []mangadata.Manga{p.plusToMangoManga(titleDetail)}
-	return nil
+
+	titleDetail, err := p.client.Manga.GetContext(ctx, id)
+	if errors.Is(err, mangoplus.ErrNotFound) || isUnknownTitle(err) {
+		return nil, false, nil
+	}
+	if err != nil {
+		return nil, false, err
+	}
+	m := p.plusToMangoManga(titleDetail)
+	return m, true, store.SetMangas(cacheID, []mangadata.Manga{m})
+}
+
+// isUnknownTitle: title_detail answers an unknown title with a generic "failed to load the
+// page" (11101).
+func isUnknownTitle(err error) bool {
+	var serverErr *mangoplus.ServerError
+	return errors.As(err, &serverErr) && serverErr.Code == 11101
 }
 
 const maxSearchResults = 20

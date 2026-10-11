@@ -12,7 +12,7 @@ const website = "https://mangadex.org/"
 var providerInfo = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-mangadex",
 	Name:        "MangaDex",
-	Version:     "0.8.1",
+	Version:     "0.8.2",
 	Description: "MangaDex scraper using mangodex",
 	Website:     website,
 }
@@ -45,6 +45,7 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 
 			return mango.Functions{
 				SearchMangas:   d.SearchMangas,
+				MangaByID:      d.MangaByID,
 				MangaVolumes:   d.MangaVolumes,
 				VolumeChapters: d.VolumeChapters,
 				ChapterPages:   d.ChapterPages,

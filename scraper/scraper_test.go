@@ -118,3 +118,59 @@ func TestNumberExtraChapters(t *testing.T) {
 		}
 	}
 }
+
+func TestMangaByID(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/manga/1/one-piece":
+			w.Write([]byte(`<html><main><h1> One Piece </h1><img src="cover.jpg"></main></html>`))
+		case "/manga/2/changed":
+			w.Write([]byte(`<html><div>new layout</div></html>`))
+		case "/manga/4/gone":
+			http.Redirect(w, r, "/404", http.StatusFound)
+		case "/404":
+			w.Write([]byte(`<html><main><h1>Page not found</h1></main></html>`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+
+	config := &Configuration{
+		Name:        "test",
+		BaseURL:     server.URL + "/",
+		Parallelism: 1,
+		GenerateSearchByIDURL: func(baseUrl string, id string) (string, error) {
+			return baseUrl + "manga/" + id, nil
+		},
+		MangaByIDExtractor: &MangaByIDExtractor{
+			Selector: "main",
+			Title:    func(s *goquery.Selection) string { return s.Find("h1").Text() },
+			Cover:    func(s *goquery.Selection) string { return s.Find("img").AttrOr("src", "") },
+		},
+	}
+	s, err := NewScraper(context.Background(), config, mango.DefaultOptions(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+
+	manga, found, err := s.MangaByID(ctx, mango.Store{}, "/1/one-piece/")
+	if err != nil || !found {
+		t.Fatalf("got %v, %v, %v", manga, found, err)
+	}
+	if info := manga.Info(); info.Title != "One Piece" || info.ID != "1/one-piece" || info.Cover != "cover.jpg" {
+		t.Errorf("got %+v", info)
+	}
+	for _, id := range []string{"3/nope", "4/gone"} {
+		if manga, found, err := s.MangaByID(ctx, mango.Store{}, id); err != nil || found {
+			t.Errorf("%s: %v, %v, %v, want not found", id, manga, found, err)
+		}
+	}
+	if _, found, err := s.MangaByID(ctx, mango.Store{}, "2/changed"); err == nil || found {
+		t.Errorf("page without the manga: %v, %v, want an error", found, err)
+	}
+	if mangas, err := s.SearchMangas(ctx, mango.Store{}, "mid: 1/one-piece"); err != nil || len(mangas) != 1 {
+		t.Errorf("search by id: %v, %v", mangas, err)
+	}
+}

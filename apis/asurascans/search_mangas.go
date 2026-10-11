@@ -2,6 +2,7 @@ package asurascans
 
 import (
 	"context"
+	"errors"
 	"net/url"
 	"strconv"
 	"strings"
@@ -33,13 +34,7 @@ type series struct {
 // their "-<hash>" suffix redirect to the series too).
 func (a *asura) SearchMangas(ctx context.Context, store mango.Store, query string) ([]mangadata.Manga, error) {
 	if id, byID := mango.ReNamedGroups(mango.MangaQueryIDRegex, query)[mango.MangaQueryID]; byID {
-		var resp struct {
-			Series series `json:"series"`
-		}
-		if err := a.get(ctx, "series/"+url.PathEscape(id), &resp); err != nil {
-			return nil, err
-		}
-		return []mangadata.Manga{toManga(resp.Series)}, nil
+		return mango.SearchByID(a.MangaByID(ctx, store, id))
 	}
 
 	var mangas []mangadata.Manga
@@ -51,6 +46,21 @@ func (a *asura) SearchMangas(ctx context.Context, store mango.Store, query strin
 		return nil, err
 	}
 	return mangas, store.SetMangas(query, mangas)
+}
+
+// MangaByID gets the series by its slug (old asuracomic.net ids with their "-<hash>" suffix
+// redirect to the series too).
+func (a *asura) MangaByID(ctx context.Context, _ mango.Store, id string) (mangadata.Manga, bool, error) {
+	var resp struct {
+		Series series `json:"series"`
+	}
+	if err := a.get(ctx, "series/"+url.PathEscape(id), &resp); err != nil {
+		if errors.Is(err, mango.ErrNotFound) {
+			return nil, false, nil
+		}
+		return nil, false, err
+	}
+	return toManga(resp.Series), true, nil
 }
 
 func (a *asura) search(ctx context.Context, query string) ([]mangadata.Manga, error) {

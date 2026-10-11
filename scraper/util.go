@@ -78,7 +78,10 @@ const scrapeErrorKey = "scrape_error"
 func scrape(ctx context.Context, collector *colly.Collector, url string, data *colly.Context) error {
 	collector.Context = ctx
 	collector.OnError(func(r *colly.Response, err error) {
-		if r.StatusCode != 0 {
+		switch {
+		case r.StatusCode == http.StatusNotFound:
+			err = fmt.Errorf("%d %w", r.StatusCode, mango.ErrNotFound)
+		case r.StatusCode != 0:
 			err = fmt.Errorf("%d %s", r.StatusCode, strings.ToLower(http.StatusText(r.StatusCode)))
 		}
 		setScrapeError(r.Ctx, fmt.Errorf("GET %s: %w", r.Request.URL, err))

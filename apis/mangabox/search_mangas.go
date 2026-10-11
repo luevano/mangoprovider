@@ -3,6 +3,7 @@ package mangabox
 import (
 	"bytes"
 	"context"
+	"errors"
 	"regexp"
 	"strings"
 
@@ -16,11 +17,7 @@ import (
 // or gets one by "mid:" (the slug in /manga/<slug>).
 func (m *mangabox) SearchMangas(ctx context.Context, store mango.Store, query string) ([]mangadata.Manga, error) {
 	if id, byID := mango.ReNamedGroups(mango.MangaQueryIDRegex, query)[mango.MangaQueryID]; byID {
-		manga, err := m.manga(ctx, store, id)
-		if err != nil {
-			return nil, err
-		}
-		return []mangadata.Manga{manga}, nil
+		return mango.SearchByID(m.MangaByID(ctx, store, id))
 	}
 
 	var mangas []mangadata.Manga
@@ -53,6 +50,18 @@ func (m *mangabox) search(ctx context.Context, store mango.Store, query string) 
 		mangas = append(mangas, m.toManga(slug, url, strings.TrimSpace(link.Text()), s.Find("img").First().AttrOr("src", ""), nil))
 	})
 	return mangas, nil
+}
+
+// MangaByID gets the manga by its slug (/manga/<slug>).
+func (m *mangabox) MangaByID(ctx context.Context, store mango.Store, id string) (mangadata.Manga, bool, error) {
+	manga, err := m.manga(ctx, store, id)
+	if errors.Is(err, mango.ErrNotFound) {
+		return nil, false, nil
+	}
+	if err != nil {
+		return nil, false, err
+	}
+	return manga, true, nil
 }
 
 // manga reads the manga's page, with more metadata than the search.

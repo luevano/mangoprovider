@@ -25,7 +25,7 @@ const (
 var providerInfo = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-asurascans",
 	Name:        "AsuraScans",
-	Version:     "0.4.1",
+	Version:     "0.4.2",
 	Description: "AsuraScans, from the site's API",
 	Website:     website,
 }
@@ -54,6 +54,7 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 		F: func(context.Context, *mango.Logger) (mango.Functions, error) {
 			return mango.Functions{
 				SearchMangas:   a.SearchMangas,
+				MangaByID:      a.MangaByID,
 				MangaVolumes:   a.MangaVolumes,
 				VolumeChapters: a.VolumeChapters,
 				ChapterPages:   a.ChapterPages,

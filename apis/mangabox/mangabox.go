@@ -23,7 +23,7 @@ var (
 	MangabatInfo = libmangal.ProviderInfo{
 		ID:          mango.BundleID + "-mangabat",
 		Name:        "Mangabat",
-		Version:     "0.3.1",
+		Version:     "0.3.2",
 		Description: "Mangabat (needs FlareSolverr to search)",
 		Website:     "https://www.mangabats.com/",
 	}
@@ -31,7 +31,7 @@ var (
 	MangakakalotInfo = libmangal.ProviderInfo{
 		ID:          mango.BundleID + "-mangakakalot",
 		Name:        "Mangakakalot",
-		Version:     "0.3.1",
+		Version:     "0.3.2",
 		Description: "Mangakakalot (needs FlareSolverr to search)",
 		Website:     "https://www.mangakakalove.com/",
 		Mirrors:     []string{"https://www.mangakakalot.gg/"},
@@ -39,7 +39,7 @@ var (
 	ManganatoInfo = libmangal.ProviderInfo{
 		ID:          mango.BundleID + "-manganato",
 		Name:        "Manganato",
-		Version:     "0.4.1",
+		Version:     "0.4.2",
 		Description: "Manganato (needs FlareSolverr)",
 		Website:     "https://www.natomanga.com/",
 		Mirrors:     []string{"https://www.nelomanga.net/", "https://www.manganato.gg/"},
@@ -89,6 +89,7 @@ func loader(info libmangal.ProviderInfo, options mango.Options) libmangal.Provid
 			}
 			return mango.Functions{
 				SearchMangas:   m.SearchMangas,
+				MangaByID:      m.MangaByID,
 				MangaVolumes:   m.MangaVolumes,
 				VolumeChapters: m.VolumeChapters,
 				ChapterPages:   m.ChapterPages,

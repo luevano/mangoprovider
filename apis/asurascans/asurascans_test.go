@@ -2,7 +2,6 @@ package asurascans
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -58,8 +57,19 @@ func TestSearchByID(t *testing.T) {
 		t.Errorf("alt titles %q, want the joined ones split", alt)
 	}
 
-	if _, err := a.SearchMangas(context.Background(), mango.Store{}, "mid: nope"); !errors.Is(err, mango.ErrNotFound) {
-		t.Errorf("unknown id: %v, want not found", err)
+	if mangas, err := a.SearchMangas(context.Background(), mango.Store{}, "mid: nope"); err != nil || len(mangas) != 0 {
+		t.Errorf("unknown id: %v, %v, want no mangas", mangas, err)
+	}
+}
+
+func TestMangaByID(t *testing.T) {
+	a := newTest(t)
+	manga, found, err := a.MangaByID(context.Background(), mango.Store{}, "solo-farming-in-the-tower")
+	if err != nil || !found || manga.Info().Title != "Solo Farming In The Tower" {
+		t.Fatalf("got %v, %v, %v", manga, found, err)
+	}
+	if manga, found, err := a.MangaByID(context.Background(), mango.Store{}, "nope"); err != nil || found {
+		t.Errorf("unknown id: %v, %v, %v, want not found", manga, found, err)
 	}
 }
 

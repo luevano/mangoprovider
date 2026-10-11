@@ -32,6 +32,7 @@ func Loader(info libmangal.ProviderInfo, newConfig func(*mango.Logger) *scraper.
 			}
 			return mango.Functions{
 				SearchMangas:   s.SearchMangas,
+				MangaByID:      s.MangaByID,
 				MangaVolumes:   s.MangaVolumes,
 				VolumeChapters: s.VolumeChapters,
 				ChapterPages:   s.ChapterPages,

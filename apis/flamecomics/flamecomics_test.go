@@ -2,7 +2,6 @@ package flamecomics
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -43,8 +42,23 @@ func TestSearchByID(t *testing.T) {
 		t.Errorf("got %+v, %+v", m, meta)
 	}
 
-	if _, err := f.SearchMangas(context.Background(), mango.Store{}, "mid: 999"); !errors.Is(err, mango.ErrNotFound) {
-		t.Errorf("unknown id: %v, want not found", err)
+	if mangas, err := f.SearchMangas(context.Background(), mango.Store{}, "mid: 999"); err != nil || len(mangas) != 0 {
+		t.Errorf("unknown id: %v, %v, want no mangas", mangas, err)
+	}
+}
+
+func TestMangaByID(t *testing.T) {
+	pages["/series/3"] = `{"series":null}`
+	defer delete(pages, "/series/3")
+	f := newTest(t)
+	manga, found, err := f.MangaByID(context.Background(), mango.Store{}, "2")
+	if err != nil || !found || manga.Info().ID != "2" {
+		t.Fatalf("got %v, %v, %v", manga, found, err)
+	}
+	for _, id := range []string{"999", "3"} {
+		if manga, found, err := f.MangaByID(context.Background(), mango.Store{}, id); err != nil || found {
+			t.Errorf("unknown id %s: %v, %v, %v, want not found", id, manga, found, err)
+		}
 	}
 }
 

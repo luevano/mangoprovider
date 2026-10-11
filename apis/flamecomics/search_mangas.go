@@ -2,6 +2,8 @@ package flamecomics
 
 import (
 	"context"
+	"errors"
+	"net/url"
 	"slices"
 	"strconv"
 	"strings"
@@ -30,13 +32,7 @@ type series struct {
 // SearchMangas filters the whole catalog (/browse lists every series), or gets one by "mid:".
 func (f *flame) SearchMangas(ctx context.Context, store mango.Store, query string) ([]mangadata.Manga, error) {
 	if id, byID := mango.ReNamedGroups(mango.MangaQueryIDRegex, query)[mango.MangaQueryID]; byID {
-		var props struct {
-			Series series `json:"series"`
-		}
-		if err := f.page(ctx, "series/"+id, &props); err != nil {
-			return nil, err
-		}
-		return []mangadata.Manga{toManga(props.Series)}, nil
+		return mango.SearchByID(f.MangaByID(ctx, store, id))
 	}
 
 	var mangas []mangadata.Manga
@@ -61,6 +57,24 @@ func (f *flame) SearchMangas(ctx context.Context, store mango.Store, query strin
 		}
 	}
 	return mangas, store.SetMangas(query, mangas)
+}
+
+// MangaByID gets the series by its number.
+func (f *flame) MangaByID(ctx context.Context, _ mango.Store, id string) (mangadata.Manga, bool, error) {
+	var props struct {
+		Series series `json:"series"`
+	}
+	if err := f.page(ctx, "series/"+url.PathEscape(id), &props); err != nil {
+		if errors.Is(err, mango.ErrNotFound) {
+			return nil, false, nil
+		}
+		return nil, false, err
+	}
+	// next.js may answer an unknown series with an empty page
+	if props.Series.ID == 0 {
+		return nil, false, nil
+	}
+	return toManga(props.Series), true, nil
 }
 
 func toManga(s series) *mango.Manga {

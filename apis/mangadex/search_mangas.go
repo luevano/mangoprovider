@@ -2,6 +2,7 @@ package mangadex
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -14,20 +15,14 @@ import (
 )
 
 func (d *dex) SearchMangas(ctx context.Context, store mango.Store, query string) ([]mangadata.Manga, error) {
-	var mangas []mangadata.Manga
-
-	matchGroups := mango.ReNamedGroups(mango.MangaQueryIDRegex, query)
-	mangaID, byID := matchGroups[mango.MangaQueryID]
-
-	limit := 100
-	var params url.Values
-	var cacheID string
-	if byID {
-		cacheID = fmt.Sprintf("mid:%s", mangaID)
-	} else {
-		params = d.getSearchMangasParams(query, limit)
-		cacheID = fmt.Sprintf("%s-%s", params.Encode(), d.filter.String())
+	if id, byID := mango.ReNamedGroups(mango.MangaQueryIDRegex, query)[mango.MangaQueryID]; byID {
+		return mango.SearchByID(d.MangaByID(ctx, store, id))
 	}
+
+	var mangas []mangadata.Manga
+	limit := 100
+	params := d.getSearchMangasParams(query, limit)
+	cacheID := fmt.Sprintf("%s-%s", params.Encode(), d.filter.String())
 
 	found, err := store.GetMangas(cacheID, query, &mangas)
 	if err != nil {
@@ -37,12 +32,7 @@ func (d *dex) SearchMangas(ctx context.Context, store mango.Store, query string)
 		return mangas, nil
 	}
 
-	if byID {
-		err = d.searchManga(ctx, &mangas, mangaID)
-	} else {
-		err = d.searchMangas(ctx, &mangas, params, limit)
-	}
-	if err != nil {
+	if err := d.searchMangas(ctx, &mangas, params, limit); err != nil {
 		return nil, err
 	}
 
@@ -54,18 +44,29 @@ func (d *dex) SearchMangas(ctx context.Context, store mango.Store, query string)
 	return mangas, nil
 }
 
-// find manga by id and populate the list
-func (d *dex) searchManga(ctx context.Context, mangas *[]mangadata.Manga, id string) error {
+// MangaByID gets the manga by its uuid.
+func (d *dex) MangaByID(ctx context.Context, store mango.Store, id string) (mangadata.Manga, bool, error) {
+	cacheID := "mid:" + id
+	var mangas []mangadata.Manga
+	if found, err := store.GetMangas(cacheID, cacheID, &mangas); err != nil {
+		return nil, false, err
+	} else if found && len(mangas) == 1 {
+		return mangas[0], true, nil
+	}
+
 	params := url.Values{}
 	params.Add("includes[]", string(mangodex.RelationshipTypeCoverArt))
 	params.Add("includes[]", string(mangodex.RelationshipTypeAuthor))
 	params.Add("includes[]", string(mangodex.RelationshipTypeArtist))
 	manga, err := d.client.Manga.GetContext(ctx, id, params)
-	if err != nil {
-		return err
+	if errors.Is(err, mangodex.ErrNotFound) {
+		return nil, false, nil
 	}
-	*mangas = []mangadata.Manga{d.dexToMangoManga(manga)}
-	return nil
+	if err != nil {
+		return nil, false, err
+	}
+	m := d.dexToMangoManga(manga)
+	return m, true, store.SetMangas(cacheID, []mangadata.Manga{m})
 }
 
 // search of mangas by query and populate the list

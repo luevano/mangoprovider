@@ -191,3 +191,18 @@ func TestPageImageFallback(t *testing.T) {
 		t.Errorf("got %v, want the cdn's error", err)
 	}
 }
+
+func TestMangaByID(t *testing.T) {
+	page := `<div class="manga-info-top"><ul class="manga-info-text"><li><h1>Solo Leveling</h1></li><li>Author(s) : Chugong</li><li>Status : Completed</li></ul></div>`
+	m := newTest(t, false, map[string]string{"/manga/solo-leveling": page})
+	manga, found, err := m.MangaByID(context.Background(), mango.Store{}, "solo-leveling")
+	if err != nil || !found || manga.Info().Title != "Solo Leveling" || manga.Info().ID != "solo-leveling" {
+		t.Fatalf("got %v, %v, %v", manga, found, err)
+	}
+	if manga, found, err := m.MangaByID(context.Background(), mango.Store{}, "nope"); err != nil || found {
+		t.Errorf("unknown id: %v, %v, %v, want not found", manga, found, err)
+	}
+	if mangas, err := m.SearchMangas(context.Background(), mango.Store{}, "mid:solo-leveling"); err != nil || len(mangas) != 1 {
+		t.Errorf("search by id: %v, %v", mangas, err)
+	}
+}
