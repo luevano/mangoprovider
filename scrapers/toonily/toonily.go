@@ -16,7 +16,7 @@ import (
 var Info = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-toonily",
 	Name:        "Toonily",
-	Version:     "0.1.2",
+	Version:     "0.1.3",
 	Description: "Toonily scraper",
 	Website:     "https://toonily.com/",
 }
@@ -103,8 +103,14 @@ func Config(_ *mango.Logger) *scraper.Configuration {
 		},
 		PageExtractor: &scraper.PageExtractor{
 			Selector: "div.reading-content div.page-break.no-gaps img",
+			// lazy loaded images had the url in data-src, now it's src (like keiyoushi's madara)
 			URL: func(selection *goquery.Selection) string {
-				return strings.TrimSpace(selection.AttrOr("data-src", ""))
+				for _, attr := range []string{"data-src", "data-lazy-src", "src"} {
+					if url := strings.TrimSpace(selection.AttrOr(attr, "")); url != "" {
+						return url
+					}
+				}
+				return ""
 			},
 		},
 	}
