@@ -27,7 +27,7 @@ func (m *mangabox) VolumeChapters(ctx context.Context, store mango.Store, volume
 	if found, err := store.GetChapters(id, volume, &chapters); err != nil || found {
 		return chapters, err
 	}
-	chapters, err := m.chapters(ctx, volume)
+	chapters, err := m.chapters(ctx, store, volume)
 	if err != nil {
 		return nil, err
 	}
@@ -35,10 +35,10 @@ func (m *mangabox) VolumeChapters(ctx context.Context, store mango.Store, volume
 }
 
 // chapters from the site's api, the manga page only lists the last 50.
-func (m *mangabox) chapters(ctx context.Context, volume mango.Volume) ([]mangadata.Chapter, error) {
+func (m *mangabox) chapters(ctx context.Context, store mango.Store, volume mango.Volume) ([]mangadata.Chapter, error) {
 	slug := volume.Manga_.ID
 	path := "api/manga/" + url.PathEscape(slug) + "/chapters?limit=-1"
-	body, err := m.get(ctx, path)
+	body, site, err := m.get(ctx, store, path)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func (m *mangabox) chapters(ctx context.Context, volume mango.Volume) ([]mangada
 		chapters = append(chapters, &mango.Chapter{
 			Title:           c.Name,
 			ID:              c.Slug,
-			URL:             m.base + "manga/" + slug + "/" + c.Slug,
+			URL:             site + "manga/" + slug + "/" + c.Slug,
 			Number:          c.Number,
 			Date:            date,
 			ScanlationGroup: m.info.Name,

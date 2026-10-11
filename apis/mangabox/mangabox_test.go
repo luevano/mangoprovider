@@ -2,6 +2,7 @@ package mangabox
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -20,7 +21,7 @@ const (
 	chapterPage  = `<script>var cdns = ["https:\/\/img-r1.2xstorage.com\/"]; var chapterImages = ["solo-leveling\/1\/0.webp","solo-leveling\/1\/1.webp"];</script>`
 )
 
-func newTest(t *testing.T, flaresolverr bool, pages map[string]string) *mangabox {
+func newServer(t *testing.T, pages map[string]string) *httptest.Server {
 	t.Helper()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, ok := pages[r.URL.Path]
@@ -30,16 +31,25 @@ func newTest(t *testing.T, flaresolverr bool, pages map[string]string) *mangabox
 		case body == challenge:
 			w.WriteHeader(http.StatusForbidden)
 			w.Write([]byte(body))
+		case body == "down":
+			w.WriteHeader(http.StatusServiceUnavailable)
 		default:
 			w.Write([]byte(body))
 		}
 	}))
 	t.Cleanup(server.Close)
+	return server
+}
+
+func newTest(t *testing.T, flaresolverr bool, pages map[string]string, mirrors ...string) *mangabox {
+	t.Helper()
+	info := MangabatInfo
+	info.Website, info.Mirrors = newServer(t, pages).URL+"/", mirrors
 	m := &mangabox{
-		info:    MangabatInfo,
-		client:  server.Client(),
+		info:    info,
+		client:  http.DefaultClient,
 		limiter: rate.NewLimiter(rate.Inf, 0),
-		base:    server.URL + "/",
+		mirrors: mango.NewMirrors(info, "", nil),
 	}
 	m.headless.UseFlaresolverr = flaresolverr
 	return m
@@ -47,7 +57,7 @@ func newTest(t *testing.T, flaresolverr bool, pages map[string]string) *mangabox
 
 func TestSearch(t *testing.T) {
 	m := newTest(t, false, map[string]string{"/search/story/solo_leveling": searchPage})
-	mangas, err := m.search(context.Background(), "Solo Leveling!")
+	mangas, err := m.search(context.Background(), mango.Store{}, "Solo Leveling!")
 	if err != nil || len(mangas) != 1 {
 		t.Fatalf("got %v, %v", mangas, err)
 	}
@@ -58,7 +68,7 @@ func TestSearch(t *testing.T) {
 
 func TestChallengeWithoutFlaresolverr(t *testing.T) {
 	m := newTest(t, false, map[string]string{"/search/story/solo_leveling": challenge})
-	_, err := m.search(context.Background(), "solo leveling")
+	_, err := m.search(context.Background(), mango.Store{}, "solo leveling")
 	if err == nil || !strings.Contains(err.Error(), "use_flaresolverr") {
 		t.Errorf("got %v, want a hint to enable flaresolverr", err)
 	}
@@ -71,7 +81,7 @@ func TestChapters(t *testing.T) {
 		"flaresolverr": `<html><head></head><body><pre>` + strings.ReplaceAll(chaptersJSON, `"`, "&quot;") + `</pre></body></html>`,
 	} {
 		m := newTest(t, false, map[string]string{"/api/manga/solo-leveling/chapters": body})
-		chapters, err := m.chapters(context.Background(), mango.Volume{Manga_: &mango.Manga{ID: "solo-leveling"}})
+		chapters, err := m.chapters(context.Background(), mango.Store{}, mango.Volume{Manga_: &mango.Manga{ID: "solo-leveling"}})
 		if err != nil || len(chapters) != 2 {
 			t.Fatalf("%s: got %v, %v", name, chapters, err)
 		}
@@ -103,5 +113,20 @@ func TestSearchAlias(t *testing.T) {
 		if got := searchAlias(query); got != want {
 			t.Errorf("%q: got %q, want %q", query, got, want)
 		}
+	}
+}
+
+func TestMirrorFallback(t *testing.T) {
+	mirror := newServer(t, map[string]string{"/search/story/solo_leveling": searchPage, "/manga/nope": "down"})
+	m := newTest(t, false, map[string]string{"/search/story/solo_leveling": "down"}, mirror.URL+"/")
+	mangas, err := m.search(context.Background(), mango.Store{}, "solo leveling")
+	if err != nil || len(mangas) != 1 {
+		t.Fatalf("got %v, %v, want the mirror's results", mangas, err)
+	}
+
+	// not found isn't the site being down: no fallback
+	_, err = m.manga(context.Background(), mango.Store{}, "missing")
+	if !errors.Is(err, mango.ErrNotFound) {
+		t.Errorf("got %v, want not found from the first site", err)
 	}
 }

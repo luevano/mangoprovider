@@ -16,7 +16,7 @@ import (
 // or gets one by "mid:" (the slug in /manga/<slug>).
 func (m *mangabox) SearchMangas(ctx context.Context, store mango.Store, query string) ([]mangadata.Manga, error) {
 	if id, byID := mango.ReNamedGroups(mango.MangaQueryIDRegex, query)[mango.MangaQueryID]; byID {
-		manga, err := m.manga(ctx, id)
+		manga, err := m.manga(ctx, store, id)
 		if err != nil {
 			return nil, err
 		}
@@ -27,15 +27,15 @@ func (m *mangabox) SearchMangas(ctx context.Context, store mango.Store, query st
 	if found, err := store.GetMangas(query, query, &mangas); err != nil || found {
 		return mangas, err
 	}
-	mangas, err := m.search(ctx, query)
+	mangas, err := m.search(ctx, store, query)
 	if err != nil {
 		return nil, err
 	}
 	return mangas, store.SetMangas(query, mangas)
 }
 
-func (m *mangabox) search(ctx context.Context, query string) ([]mangadata.Manga, error) {
-	body, err := m.get(ctx, "search/story/"+searchAlias(query))
+func (m *mangabox) search(ctx context.Context, store mango.Store, query string) ([]mangadata.Manga, error) {
+	body, _, err := m.get(ctx, store, "search/story/"+searchAlias(query))
 	if err != nil {
 		return nil, err
 	}
@@ -56,8 +56,8 @@ func (m *mangabox) search(ctx context.Context, query string) ([]mangadata.Manga,
 }
 
 // manga reads the manga's page, with more metadata than the search.
-func (m *mangabox) manga(ctx context.Context, slug string) (*mango.Manga, error) {
-	body, err := m.get(ctx, "manga/"+slug)
+func (m *mangabox) manga(ctx context.Context, store mango.Store, slug string) (*mango.Manga, error) {
+	body, site, err := m.get(ctx, store, "manga/"+slug)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +94,7 @@ func (m *mangabox) manga(ctx context.Context, slug string) (*mango.Manga, error)
 	}
 	title := strings.TrimSpace(info.Find("h1, h2").First().Text())
 	cover := doc.Find("div.manga-info-pic img, span.info-image img").First().AttrOr("src", "")
-	return m.toManga(slug, m.base+"manga/"+slug, title, cover, &details), nil
+	return m.toManga(slug, site+"manga/"+slug, title, cover, &details), nil
 }
 
 type mangaDetails struct {

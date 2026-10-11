@@ -32,7 +32,8 @@ var (
 		Name:        "Mangakakalot",
 		Version:     "0.3.0",
 		Description: "Mangakakalot (needs FlareSolverr to search)",
-		Website:     "https://www.mangakakalove.com/",
+		Website:     "https://www.mangakakalot.gg/",
+		Mirrors:     []string{"https://www.mangakakalove.com/"},
 	}
 	ManganatoInfo = libmangal.ProviderInfo{
 		ID:          mango.BundleID + "-manganato",
@@ -40,6 +41,7 @@ var (
 		Version:     "0.4.0",
 		Description: "Manganato (needs FlareSolverr)",
 		Website:     "https://www.natomanga.com/",
+		Mirrors:     []string{"https://www.nelomanga.net/", "https://www.manganato.gg/"},
 	}
 )
 
@@ -51,8 +53,9 @@ func Loaders(options mango.Options) []libmangal.ProviderLoader {
 	}
 }
 
-// flaresolverrTimeout: solving a challenge takes 10-20s, more when it's slow
-const flaresolverrTimeout = 90 * time.Second
+// flaresolverrTimeout: solving a challenge takes 10-20s; with mirrors, an unsolvable one
+// shouldn't hold the next for long
+const flaresolverrTimeout = 60 * time.Second
 
 type mangabox struct {
 	info      libmangal.ProviderInfo
@@ -61,8 +64,7 @@ type mangabox struct {
 	headless  mango.HeadlessOptions
 	// 2 requests per second, like keiyoushi's
 	limiter *rate.Limiter
-	// base is the website, a test server in tests
-	base string
+	mirrors *mango.Mirrors
 
 	mu sync.Mutex
 	// flaresolverr is created on the first challenge, its session closed with the provider
@@ -73,14 +75,14 @@ func loader(info libmangal.ProviderInfo, options mango.Options) libmangal.Provid
 	return &mango.Loader{
 		ProviderInfo: info,
 		Options:      options,
-		F: func(context.Context, *mango.Logger) (mango.Functions, error) {
+		F: func(_ context.Context, log *mango.Logger) (mango.Functions, error) {
 			m := &mangabox{
 				info:      info,
 				client:    options.HTTPClient,
 				userAgent: options.UserAgent,
 				headless:  options.Headless,
 				limiter:   rate.NewLimiter(rate.Every(500*time.Millisecond), 2),
-				base:      info.Website,
+				mirrors:   mango.NewMirrors(info, options.Mirrors[info.ID], log),
 			}
 			return mango.Functions{
 				SearchMangas:   m.SearchMangas,
@@ -103,34 +105,56 @@ func (m *mangabox) Close() error {
 }
 
 // get the page at path (relative to the website), through FlareSolverr when Cloudflare
-// challenges the request.
-func (m *mangabox) get(ctx context.Context, path string) ([]byte, error) {
+// challenges the request, from the first mirror that's up. Returns the website it came from.
+func (m *mangabox) get(ctx context.Context, store mango.Store, path string) (body []byte, website string, err error) {
+	path = strings.TrimPrefix(path, "/")
+	err = m.mirrors.Do(ctx, store, func(site string) error {
+		body, err = m.getFrom(ctx, site+path)
+		if err != nil {
+			return fmt.Errorf("GET /%s: %w", path, err)
+		}
+		website = site
+		return nil
+	})
+	return body, website, err
+}
+
+func (m *mangabox) getFrom(ctx context.Context, url string) ([]byte, error) {
 	if err := m.limiter.Wait(ctx); err != nil {
 		return nil, err
 	}
-	url := m.base + strings.TrimPrefix(path, "/")
 	body, status, err := m.do(ctx, m.client, url)
 	if err != nil {
-		return nil, err
+		return nil, down(ctx, err)
 	}
 	if challenged(status, body) {
 		fs, err := m.flaresolverrClient()
 		if err != nil {
-			return nil, fmt.Errorf("GET /%s: %w", strings.TrimPrefix(path, "/"), err)
+			return nil, fmt.Errorf("%w: %w", mango.ErrSiteDown, err)
 		}
 		ctx, cancel := context.WithTimeout(ctx, flaresolverrTimeout)
 		defer cancel()
 		if body, status, err = m.do(ctx, fs, url); err != nil {
-			return nil, fmt.Errorf("GET /%s: %w", strings.TrimPrefix(path, "/"), err)
+			return nil, down(ctx, err)
 		}
 	}
 	switch {
 	case status == http.StatusNotFound:
-		return nil, fmt.Errorf("GET /%s: %w", strings.TrimPrefix(path, "/"), mango.ErrNotFound)
+		return nil, mango.ErrNotFound
+	case status >= 500:
+		return nil, fmt.Errorf("%w: %d %s", mango.ErrSiteDown, status, strings.ToLower(http.StatusText(status)))
 	case status != http.StatusOK:
-		return nil, fmt.Errorf("GET /%s: %d %s", strings.TrimPrefix(path, "/"), status, strings.ToLower(http.StatusText(status)))
+		return nil, fmt.Errorf("%d %s", status, strings.ToLower(http.StatusText(status)))
 	}
 	return body, nil
+}
+
+// down marks a request error as the site being down, unless it was cancelled.
+func down(ctx context.Context, err error) error {
+	if ctx.Err() != nil {
+		return err
+	}
+	return fmt.Errorf("%w: %w", mango.ErrSiteDown, err)
 }
 
 func (m *mangabox) do(ctx context.Context, client *http.Client, url string) ([]byte, int, error) {

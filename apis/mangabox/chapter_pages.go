@@ -20,9 +20,9 @@ var (
 
 // ChapterPages: the chapter page has the image paths and the cdns they're on in a script,
 // older chapters have the images in the reader.
-func (m *mangabox) ChapterPages(ctx context.Context, _ mango.Store, chapter mango.Chapter) ([]mangadata.Page, error) {
+func (m *mangabox) ChapterPages(ctx context.Context, store mango.Store, chapter mango.Chapter) ([]mangadata.Page, error) {
 	slug := chapter.Volume_.Manga_.ID
-	body, err := m.get(ctx, "manga/"+url.PathEscape(slug)+"/"+url.PathEscape(chapter.ID))
+	body, site, err := m.get(ctx, store, "manga/"+url.PathEscape(slug)+"/"+url.PathEscape(chapter.ID))
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func (m *mangabox) ChapterPages(ctx context.Context, _ mango.Store, chapter mang
 		pages = append(pages, &mango.Page{
 			Ext:      ext,
 			URL:      u,
-			Headers:  map[string]string{"Referer": m.base, "User-Agent": m.userAgent},
+			Headers:  map[string]string{"Referer": site, "User-Agent": m.userAgent},
 			Chapter_: &chapter,
 		})
 	}
