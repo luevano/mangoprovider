@@ -20,7 +20,6 @@ func Loaders(options mango.Options) []libmangal.ProviderLoader {
 		Loader(batoto.Info, batoto.Config, options),
 		// Mangathemesia
 		Loader(mangathemesia.AsurascansInfo, mangathemesia.AsurascansConfig, options),
-		Loader(mangathemesia.FlamecomicsInfo, mangathemesia.FlamecomicsConfig, options),
 		// Mangabox
 		Loader(mangabox.ManganatoInfo, mangabox.ManganatoConfig, options),
 		Loader(mangabox.MangabatInfo, mangabox.MangabatConfig, options),
