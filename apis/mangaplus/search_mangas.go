@@ -53,7 +53,7 @@ func (p *plus) MangaByID(ctx context.Context, store mango.Store, id string) (man
 	}
 
 	titleDetail, err := p.client.Manga.GetContext(ctx, id)
-	if errors.Is(err, mangoplus.ErrNotFound) || isUnknownTitle(err) {
+	if errors.Is(err, mangoplus.ErrNotFound) {
 		return nil, false, nil
 	}
 	if err != nil {
@@ -61,13 +61,6 @@ func (p *plus) MangaByID(ctx context.Context, store mango.Store, id string) (man
 	}
 	m := p.plusToMangoManga(titleDetail)
 	return m, true, store.SetMangas(cacheID, []mangadata.Manga{m})
-}
-
-// isUnknownTitle: title_detail answers an unknown title with a generic "failed to load the
-// page" (11101).
-func isUnknownTitle(err error) bool {
-	var serverErr *mangoplus.ServerError
-	return errors.As(err, &serverErr) && serverErr.Code == 11101
 }
 
 const maxSearchResults = 20
