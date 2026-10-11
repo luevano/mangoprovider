@@ -3,6 +3,7 @@ package apis
 import (
 	"github.com/luevano/libmangal"
 	mango "github.com/luevano/mangoprovider"
+	"github.com/luevano/mangoprovider/apis/asurascans"
 	"github.com/luevano/mangoprovider/apis/flamecomics"
 	"github.com/luevano/mangoprovider/apis/mangadex"
 	"github.com/luevano/mangoprovider/apis/mangaplus"
@@ -15,5 +16,6 @@ func Loaders(options mango.Options) []libmangal.ProviderLoader {
 		mangaplus.Loader(options),
 		mangapluscreators.Loader(options),
 		flamecomics.Loader(options),
+		asurascans.Loader(options),
 	}
 }
