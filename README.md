@@ -20,9 +20,15 @@ APIs, through [mangodex](https://github.com/luevano/mangodex) and [mangoplus](ht
 - MangaPlus, including subscription chapters with a device secret
 - MangaPlus Creators, currently not working (its API blocks bots)
 
-Scrapers for sites like [Mangapill](https://mangapill.com/) and [Weeb Central](https://weebcentral.com/), see [scrapers](./scrapers) for all of them.
+Other sites, see [apis](./apis):
 
-Some scrapers can use a headless browser or [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) for sites behind Cloudflare (`Options.Headless`).
+- AsuraScans
+- FlameComics
+- Mangabat, Mangakakalot and Manganato (mangabox), behind Cloudflare: they need [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) (`Options.Headless`); Manganato only works with a FlareSolverr running Google Chrome, not Chromium
+
+Scrapers: [Mangapill](https://mangapill.com/), [Weeb Central](https://weebcentral.com/) and [Toonily](https://toonily.com/), see [scrapers](./scrapers).
+
+Every provider but MangaPlus Creators can get a manga by its id without a search (`libmangal.MangaByIDProvider`, or a `mid:<id>` search query). Sites with more than one domain fall back to their mirrors when one is down.
 
 ## Usage
 
