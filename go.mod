@@ -9,7 +9,7 @@ require (
 	github.com/gocolly/colly/v2 v2.3.0
 	github.com/google/uuid v1.6.0
 	github.com/lithammer/fuzzysearch v1.1.8
-	github.com/luevano/libmangal v0.22.1
+	github.com/luevano/libmangal v0.23.0
 	github.com/luevano/mangodex v0.5.0
 	github.com/luevano/mangoplus v0.7.1
 	github.com/philippgille/gokv v0.7.0
