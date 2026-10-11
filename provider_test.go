@@ -123,3 +123,37 @@ func TestDefaultCacheHits(t *testing.T) {
 		t.Errorf("searched %d times, want 1 (second from the cache)", searches)
 	}
 }
+
+func TestMangaByID(t *testing.T) {
+	want := &Manga{Title: "One Piece", ID: "13"}
+	p := &Provider{
+		ProviderInfo: libmangal.ProviderInfo{ID: "mango-test"},
+		F: Functions{
+			MangaByID: func(_ context.Context, _ Store, id string) (mangadata.Manga, bool, error) {
+				switch id {
+				case "13":
+					return want, true, nil
+				case "fail":
+					return nil, false, errAPI
+				}
+				return nil, false, nil
+			},
+		},
+	}
+	ctx := context.Background()
+
+	if manga, found, err := p.MangaByID(ctx, "13"); err != nil || !found || manga != want {
+		t.Errorf("got %v, %v, %v", manga, found, err)
+	}
+	if manga, found, err := p.MangaByID(ctx, "nope"); err != nil || found || manga != nil {
+		t.Errorf("unknown id: %v, %v, %v", manga, found, err)
+	}
+	if _, _, err := p.MangaByID(ctx, "fail"); !errors.Is(err, errAPI) || err.Error() != `mango-test: manga "fail": `+errAPI.Error() {
+		t.Errorf("error: %v", err)
+	}
+
+	p.F.MangaByID = nil
+	if _, _, err := p.MangaByID(ctx, "13"); !errors.Is(err, libmangal.ErrMangaByIDUnsupported) {
+		t.Errorf("without MangaByID: %v, want ErrMangaByIDUnsupported", err)
+	}
+}

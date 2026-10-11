@@ -93,10 +93,16 @@ func (s Store) DeleteMirror(providerID string) error {
 }
 
 func (s Store) SetMangas(cacheID string, mangas []mangadata.Manga) error {
+	if s.mangas == nil {
+		return nil
+	}
 	return s.mangas.Set(cacheID, mangas)
 }
 
 func (s Store) GetMangas(cacheID string, query string, mangas *[]mangadata.Manga) (bool, error) {
+	if s.mangas == nil {
+		return false, nil
+	}
 	found, err := s.mangas.Get(cacheID, mangas)
 	if err != nil {
 		return false, err

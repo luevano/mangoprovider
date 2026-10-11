@@ -14,8 +14,9 @@ import (
 )
 
 var (
-	_ libmangal.Provider        = (*Provider)(nil)
-	_ libmangal.AccountProvider = (*Provider)(nil)
+	_ libmangal.Provider          = (*Provider)(nil)
+	_ libmangal.AccountProvider   = (*Provider)(nil)
+	_ libmangal.MangaByIDProvider = (*Provider)(nil)
 )
 
 type Functions struct {
@@ -24,6 +25,8 @@ type Functions struct {
 	VolumeChapters func(context.Context, Store, Volume) ([]mangadata.Chapter, error)
 	ChapterPages   func(context.Context, Store, Chapter) ([]mangadata.Page, error)
 	GetPageImage   func(context.Context, *http.Client, Page) ([]byte, error)
+	// MangaByID: Optional, the manga with the given id, found false if there's none.
+	MangaByID func(context.Context, Store, string) (mangadata.Manga, bool, error)
 	// Close: Optional, frees what the provider holds (e.g. a headless browser).
 	Close func() error
 	// Account: Optional, the user's account (e.g. a subscription).
@@ -83,6 +86,31 @@ func (p *Provider) SearchMangas(
 		return nil, fmt.Errorf("%s: search %q: %w", p.ProviderInfo.ID, query, err)
 	}
 	return mangas, nil
+}
+
+// MangaByID: The manga with the given id, found false if there's none. The error matches
+// libmangal.ErrMangaByIDUnsupported if the provider can't get mangas by id.
+func (p *Provider) MangaByID(ctx context.Context, id string) (mangadata.Manga, bool, error) {
+	if p.F.MangaByID == nil {
+		return nil, false, fmt.Errorf("%s: %w", p.ProviderInfo.ID, libmangal.ErrMangaByIDUnsupported)
+	}
+	p.log.Log("getting manga with id %q", id)
+	manga, found, err := p.F.MangaByID(ctx, p.store, id)
+	if err != nil {
+		return nil, false, fmt.Errorf("%s: manga %q: %w", p.ProviderInfo.ID, id, err)
+	}
+	if !found || manga == nil {
+		return nil, false, nil
+	}
+	return manga, true, nil
+}
+
+// SearchByID: The result of a MangaByID as a search result, for "mid:" queries.
+func SearchByID(manga mangadata.Manga, found bool, err error) ([]mangadata.Manga, error) {
+	if err != nil || !found {
+		return nil, err
+	}
+	return []mangadata.Manga{manga}, nil
 }
 
 func (p *Provider) MangaVolumes(
