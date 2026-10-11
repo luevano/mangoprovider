@@ -143,6 +143,9 @@ type Options struct {
 	// Headless options.
 	Headless HeadlessOptions
 
+	// Mirrors: the preferred website (its Website or one of its Mirrors) by provider id.
+	Mirrors map[string]string
+
 	// MangaDex options
 	MangaDex MangaDexOptions
 

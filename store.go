@@ -13,6 +13,8 @@ const (
 	CacheBucketNameMangas   = "mangas"
 	CacheBucketNameVolumes  = "volumes"
 	CacheBucketNameChapters = "chapters"
+	// CacheBucketNameMirrors: the mirror that last worked by provider id, should expire.
+	CacheBucketNameMirrors = "mirrors"
 )
 
 // the cached slices hold interfaces, gob needs the concrete types (same names as mangal's)
@@ -32,8 +34,8 @@ func init() {
 //
 // The buckets are opened once when the provider loads and closed with it.
 type Store struct {
-	mangas, volumes, chapters gokv.Store
-	log                       *Logger
+	mangas, volumes, chapters, mirrors gokv.Store
+	log                                *Logger
 }
 
 func openStore(open func(bucketName string) (gokv.Store, error), log *Logger) (Store, error) {
@@ -45,6 +47,7 @@ func openStore(open func(bucketName string) (gokv.Store, error), log *Logger) (S
 		{CacheBucketNameMangas, &s.mangas},
 		{CacheBucketNameVolumes, &s.volumes},
 		{CacheBucketNameChapters, &s.chapters},
+		{CacheBucketNameMirrors, &s.mirrors},
 	} {
 		st, err := open(b.name)
 		if err != nil {
@@ -57,12 +60,36 @@ func openStore(open func(bucketName string) (gokv.Store, error), log *Logger) (S
 
 func (s Store) Close() error {
 	var errs []error
-	for _, st := range []gokv.Store{s.mangas, s.volumes, s.chapters} {
+	for _, st := range []gokv.Store{s.mangas, s.volumes, s.chapters, s.mirrors} {
 		if st != nil {
 			errs = append(errs, st.Close())
 		}
 	}
 	return errors.Join(errs...)
+}
+
+// GetMirror: the mirror that last worked for the provider, if it hasn't expired.
+func (s Store) GetMirror(providerID string) (string, bool, error) {
+	var mirror string
+	if s.mirrors == nil {
+		return "", false, nil
+	}
+	found, err := s.mirrors.Get(providerID, &mirror)
+	return mirror, found, err
+}
+
+func (s Store) SetMirror(providerID, mirror string) error {
+	if s.mirrors == nil {
+		return nil
+	}
+	return s.mirrors.Set(providerID, mirror)
+}
+
+func (s Store) DeleteMirror(providerID string) error {
+	if s.mirrors == nil {
+		return nil
+	}
+	return s.mirrors.Delete(providerID)
 }
 
 func (s Store) SetMangas(cacheID string, mangas []mangadata.Manga) error {
