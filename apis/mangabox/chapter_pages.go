@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
@@ -15,6 +16,7 @@ import (
 
 var (
 	cdnsRegex          = regexp.MustCompile(`cdns\s*=\s*\[([^\]]+)\]`)
+	backupImageRegex   = regexp.MustCompile(`backupImage\s*=\s*\[([^\]]+)\]`)
 	chapterImagesRegex = regexp.MustCompile(`chapterImages\s*=\s*\[([^\]]+)\]`)
 )
 
@@ -26,13 +28,16 @@ func (m *mangabox) ChapterPages(ctx context.Context, store mango.Store, chapter 
 	if err != nil {
 		return nil, err
 	}
-	var urls []string
-	cdns, images := jsArray(body, cdnsRegex), jsArray(body, chapterImagesRegex)
-	if len(cdns) > 0 && len(images) > 0 {
-		// TODO: the other cdns (and backupImage) as fallbacks, like keiyoushi
-		cdn := strings.TrimSuffix(cdns[0], "/")
+	// every image is on each cdn: the first one is the url, the others fallbacks
+	var urls [][]string
+	cdns := uniqueCDNs(append(jsArray(body, cdnsRegex), jsArray(body, backupImageRegex)...))
+	if images := jsArray(body, chapterImagesRegex); len(cdns) > 0 && len(images) > 0 {
 		for _, image := range images {
-			urls = append(urls, cdn+"/"+strings.TrimPrefix(image, "/"))
+			var onCDNs []string
+			for _, cdn := range cdns {
+				onCDNs = append(onCDNs, cdn+"/"+strings.TrimPrefix(image, "/"))
+			}
+			urls = append(urls, onCDNs)
 		}
 	} else {
 		doc, err := goquery.NewDocumentFromReader(bytes.NewReader(body))
@@ -41,7 +46,7 @@ func (m *mangabox) ChapterPages(ctx context.Context, store mango.Store, chapter 
 		}
 		doc.Find("div.container-chapter-reader > img").Each(func(_ int, s *goquery.Selection) {
 			if src := s.AttrOr("src", ""); src != "" {
-				urls = append(urls, src)
+				urls = append(urls, onOtherCDNs(src, cdns))
 			}
 		})
 	}
@@ -50,15 +55,16 @@ func (m *mangabox) ChapterPages(ctx context.Context, store mango.Store, chapter 
 	}
 	var pages []mangadata.Page
 	for _, u := range urls {
-		ext, err := mango.ImageExtension(u)
+		ext, err := mango.ImageExtension(u[0])
 		if err != nil {
 			return nil, err
 		}
 		pages = append(pages, &mango.Page{
-			Ext:      ext,
-			URL:      u,
-			Headers:  map[string]string{"Referer": site, "User-Agent": m.userAgent},
-			Chapter_: &chapter,
+			Ext:       ext,
+			URL:       u[0],
+			Fallbacks: u[1:],
+			Headers:   map[string]string{"Referer": site, "User-Agent": m.userAgent},
+			Chapter_:  &chapter,
 		})
 	}
 	return pages, nil
@@ -78,4 +84,32 @@ func jsArray(body []byte, re *regexp.Regexp) []string {
 		}
 	}
 	return items
+}
+
+// uniqueCDNs drops the trailing slashes and repeated cdns.
+func uniqueCDNs(cdns []string) []string {
+	var unique []string
+	for _, cdn := range cdns {
+		if cdn = strings.TrimSuffix(cdn, "/"); !slices.Contains(unique, cdn) {
+			unique = append(unique, cdn)
+		}
+	}
+	return unique
+}
+
+// onOtherCDNs: the image at src, then on the cdns that aren't its own (same path).
+func onOtherCDNs(src string, cdns []string) []string {
+	urls := []string{src}
+	u, err := url.Parse(src)
+	if err != nil || u.Host == "" {
+		return urls
+	}
+	for _, cdn := range cdns {
+		c, err := url.Parse(cdn)
+		if err != nil || c.Host == "" || c.Host == u.Host {
+			continue
+		}
+		urls = append(urls, c.Scheme+"://"+c.Host+u.EscapedPath())
+	}
+	return urls
 }

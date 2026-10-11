@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strings"
 	"testing"
 
@@ -128,5 +129,65 @@ func TestMirrorFallback(t *testing.T) {
 	_, err = m.manga(context.Background(), mango.Store{}, "missing")
 	if !errors.Is(err, mango.ErrNotFound) {
 		t.Errorf("got %v, want not found from the first site", err)
+	}
+}
+
+func TestChapterPagesFallbacks(t *testing.T) {
+	m := newTest(t, false, map[string]string{
+		"/manga/solo-leveling/chapter-1": `<script>var cdns = ["https:\/\/a.com\/","https:\/\/a.com"]; var backupImage = ["https:\/\/b.com\/"]; var chapterImages = ["solo-leveling\/1\/0.webp"];</script>`,
+		"/manga/solo-leveling/chapter-2": `<script>var cdns = ["https:\/\/a.com\/"];</script><div class="container-chapter-reader"><img src="https://c.com/2/0.jpg"></div>`,
+	})
+	for id, want := range map[string][]string{
+		"chapter-1": {"https://a.com/solo-leveling/1/0.webp", "https://b.com/solo-leveling/1/0.webp"},
+		"chapter-2": {"https://c.com/2/0.jpg", "https://a.com/2/0.jpg"},
+	} {
+		chapter := mango.Chapter{ID: id, Volume_: &mango.Volume{Manga_: &mango.Manga{ID: "solo-leveling"}}}
+		pages, err := m.ChapterPages(context.Background(), mango.Store{}, chapter)
+		if err != nil || len(pages) != 1 {
+			t.Fatalf("%s: got %v, %v", id, pages, err)
+		}
+		page := pages[0].(*mango.Page)
+		if got := append([]string{page.URL}, page.Fallbacks...); !slices.Equal(got, want) {
+			t.Errorf("%s: got %v, want %v", id, got, want)
+		}
+	}
+}
+
+func TestPageImageFallback(t *testing.T) {
+	var brokenHits int
+	broken := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		brokenHits++
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	t.Cleanup(broken.Close)
+	working := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Referer") != "https://site/" {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+		w.Write([]byte("image " + r.URL.Path))
+	}))
+	t.Cleanup(working.Close)
+
+	m := newTest(t, false, nil)
+	for _, path := range []string{"/1/0.webp", "/1/1.webp"} {
+		page := mango.Page{
+			URL:       broken.URL + path,
+			Fallbacks: []string{working.URL + path},
+			Headers:   map[string]string{"Referer": "https://site/"},
+		}
+		image, err := m.GetPageImage(context.Background(), http.DefaultClient, page)
+		if err != nil || string(image) != "image "+path {
+			t.Fatalf("%s: got %q, %v", path, image, err)
+		}
+	}
+	// the second page went straight to the cdn that worked
+	if brokenHits != 1 {
+		t.Errorf("broken cdn hit %d times, want 1", brokenHits)
+	}
+
+	_, err := m.GetPageImage(context.Background(), http.DefaultClient, mango.Page{URL: broken.URL + "/2/0.webp"})
+	if err == nil || !strings.Contains(err.Error(), "500") {
+		t.Errorf("got %v, want the cdn's error", err)
 	}
 }

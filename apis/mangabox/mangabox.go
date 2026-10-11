@@ -23,14 +23,14 @@ var (
 	MangabatInfo = libmangal.ProviderInfo{
 		ID:          mango.BundleID + "-mangabat",
 		Name:        "Mangabat",
-		Version:     "0.3.0",
+		Version:     "0.3.1",
 		Description: "Mangabat (needs FlareSolverr to search)",
 		Website:     "https://www.mangabats.com/",
 	}
 	MangakakalotInfo = libmangal.ProviderInfo{
 		ID:          mango.BundleID + "-mangakakalot",
 		Name:        "Mangakakalot",
-		Version:     "0.3.0",
+		Version:     "0.3.1",
 		Description: "Mangakakalot (needs FlareSolverr to search)",
 		Website:     "https://www.mangakakalot.gg/",
 		Mirrors:     []string{"https://www.mangakakalove.com/"},
@@ -38,7 +38,7 @@ var (
 	ManganatoInfo = libmangal.ProviderInfo{
 		ID:          mango.BundleID + "-manganato",
 		Name:        "Manganato",
-		Version:     "0.4.0",
+		Version:     "0.4.1",
 		Description: "Manganato (needs FlareSolverr)",
 		Website:     "https://www.natomanga.com/",
 		Mirrors:     []string{"https://www.nelomanga.net/", "https://www.manganato.gg/"},
@@ -69,6 +69,8 @@ type mangabox struct {
 	mu sync.Mutex
 	// flaresolverr is created on the first challenge, its session closed with the provider
 	flaresolverr *flaresolverr.TransportFlaresolverr
+	// cdn: the origin of the cdn that served the last image, tried first
+	cdn string
 }
 
 func loader(info libmangal.ProviderInfo, options mango.Options) libmangal.ProviderLoader {
@@ -89,6 +91,7 @@ func loader(info libmangal.ProviderInfo, options mango.Options) libmangal.Provid
 				MangaVolumes:   m.MangaVolumes,
 				VolumeChapters: m.VolumeChapters,
 				ChapterPages:   m.ChapterPages,
+				GetPageImage:   m.GetPageImage,
 				Close:          m.Close,
 			}, nil
 		},

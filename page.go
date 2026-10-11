@@ -9,6 +9,9 @@ type Page struct {
 	URL     string            `json:"url"`
 	Headers map[string]string `json:"-"`
 	Cookies map[string]string `json:"-"`
+	// Fallbacks: other urls of the same image (e.g. on other cdns), for the provider's
+	// GetPageImage to try when URL fails; GenericGetPageImage ignores them.
+	Fallbacks []string `json:"-"`
 
 	Chapter_ *Chapter `json:"-"`
 }
