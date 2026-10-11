@@ -27,13 +27,14 @@ var (
 		Description: "Mangabat (needs FlareSolverr to search)",
 		Website:     "https://www.mangabats.com/",
 	}
+	// .gg's pages are challenged and only a FlareSolverr on Google Chrome solves them
 	MangakakalotInfo = libmangal.ProviderInfo{
 		ID:          mango.BundleID + "-mangakakalot",
 		Name:        "Mangakakalot",
 		Version:     "0.3.1",
 		Description: "Mangakakalot (needs FlareSolverr to search)",
-		Website:     "https://www.mangakakalot.gg/",
-		Mirrors:     []string{"https://www.mangakakalove.com/"},
+		Website:     "https://www.mangakakalove.com/",
+		Mirrors:     []string{"https://www.mangakakalot.gg/"},
 	}
 	ManganatoInfo = libmangal.ProviderInfo{
 		ID:          mango.BundleID + "-manganato",
