@@ -39,6 +39,7 @@ func (t *TransportFlaresolverr) RoundTrip(r *http.Request) (*http.Response, erro
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
 
+	// flaresolverr (v3) creates the session on its first request, Close destroys it
 	var req []byte
 	var err error
 	var timeout int
@@ -58,8 +59,8 @@ func (t *TransportFlaresolverr) RoundTrip(r *http.Request) (*http.Response, erro
 			Session:    t.uuid.String(),
 		})
 	case http.MethodPost:
-		content, err := io.ReadAll(r.Body)
-		if err != nil {
+		var content []byte
+		if content, err = io.ReadAll(r.Body); err != nil {
 			return nil, err
 		}
 		req, err = json.Marshal(request{
