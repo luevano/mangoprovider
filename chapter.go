@@ -2,6 +2,7 @@ package mangoprovider
 
 import (
 	"encoding/json"
+	"strconv"
 
 	"github.com/luevano/libmangal/mangadata"
 	"github.com/luevano/libmangal/metadata"
@@ -26,6 +27,9 @@ type Chapter struct {
 }
 
 func (c *Chapter) String() string {
+	if c.Title == "" {
+		return strconv.FormatFloat(float64(c.Number), 'f', -1, 32)
+	}
 	return c.Title
 }
 
