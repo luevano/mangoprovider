@@ -8,9 +8,9 @@ require (
 	github.com/gocolly/colly/v2 v2.3.0
 	github.com/google/uuid v1.6.0
 	github.com/lithammer/fuzzysearch v1.1.8
-	github.com/luevano/libmangal v0.26.0
+	github.com/luevano/libmangal v0.27.0
 	github.com/luevano/mangodex v0.5.0
-	github.com/luevano/mangoplus v0.7.1
+	github.com/luevano/mangoplus v0.7.2
 	github.com/philippgille/gokv v0.7.0
 	github.com/philippgille/gokv/encoding v0.7.0
 	github.com/philippgille/gokv/syncmap v0.7.0
