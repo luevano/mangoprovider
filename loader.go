@@ -14,6 +14,13 @@ type Loader struct {
 	libmangal.ProviderInfo
 	Options Options
 	F       func(ctx context.Context, log *Logger) (Functions, error) // So that the providers are only built on ProviderLoader.Load(ctx)
+	// Account: The provider has a user account (Functions.Account), known before loading it.
+	Account bool
+}
+
+// HasAccount: The provider has a user account, see libmangal.AccountProvider.
+func (l *Loader) HasAccount() bool {
+	return l.Account
 }
 
 func (l *Loader) String() string {
