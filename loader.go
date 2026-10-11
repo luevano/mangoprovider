@@ -2,6 +2,7 @@ package mangoprovider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/luevano/libmangal"
@@ -33,17 +34,16 @@ func (l *Loader) Info() libmangal.ProviderInfo {
 
 func (l *Loader) Load(ctx context.Context) (libmangal.Provider, error) {
 	log := NewLogger(l.ProviderInfo.ID + ": ")
-	// gokv.Store wrapper
-	store := Store{
-		log: log,
-		openStore: func(bucketName string) (gokv.Store, error) {
-			return l.Options.CacheStore(l.ProviderInfo.ID, bucketName)
-		},
+	store, err := openStore(func(bucketName string) (gokv.Store, error) {
+		return l.Options.CacheStore(l.ProviderInfo.ID, bucketName)
+	}, log)
+	if err != nil {
+		return nil, fmt.Errorf("load %s: %w", l.ProviderInfo.Name, err)
 	}
 
 	f, err := l.F(ctx, log)
 	if err != nil {
-		return nil, fmt.Errorf("load %s: %w", l.ProviderInfo.Name, err)
+		return nil, errors.Join(fmt.Errorf("load %s: %w", l.ProviderInfo.Name, err), store.Close())
 	}
 
 	return &Provider{

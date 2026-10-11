@@ -8,6 +8,7 @@ import (
 	"github.com/luevano/mangoplus"
 	"github.com/luevano/mangoplus/creators"
 	"github.com/philippgille/gokv"
+	"github.com/philippgille/gokv/encoding"
 	"github.com/philippgille/gokv/syncmap"
 )
 
@@ -157,7 +158,7 @@ func DefaultOptions() Options {
 		HTTPClient: &http.Client{},
 		UserAgent:  defaultUserAgent,
 		CacheStore: func(dbName, bucketName string) (gokv.Store, error) {
-			return syncmap.NewStore(syncmap.DefaultOptions), nil
+			return syncmap.NewStore(syncmap.Options{Codec: encoding.Gob}), nil
 		},
 		Parallelism:       uint8(15),
 		Filter:            DefaultFilterOptions(),

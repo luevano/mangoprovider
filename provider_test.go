@@ -89,3 +89,37 @@ func TestAccount(t *testing.T) {
 		t.Errorf("got %v", err)
 	}
 }
+
+func TestDefaultCacheHits(t *testing.T) {
+	searches := 0
+	loader := &Loader{
+		ProviderInfo: libmangal.ProviderInfo{ID: "mango-test", Name: "Test", Version: "0.1.0"},
+		Options:      DefaultOptions(),
+		F: func(context.Context, *Logger) (Functions, error) {
+			return Functions{
+				SearchMangas: func(_ context.Context, store Store, query string) ([]mangadata.Manga, error) {
+					var mangas []mangadata.Manga
+					if found, err := store.GetMangas(query, query, &mangas); err != nil || found {
+						return mangas, err
+					}
+					searches++
+					mangas = []mangadata.Manga{&Manga{Title: "One Piece"}}
+					return mangas, store.SetMangas(query, mangas)
+				},
+			}, nil
+		},
+	}
+	p, err := loader.Load(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer p.Close()
+	for range 2 {
+		if mangas, err := p.SearchMangas(context.Background(), "one piece"); err != nil || len(mangas) != 1 {
+			t.Fatalf("got %v, %v", mangas, err)
+		}
+	}
+	if searches != 1 {
+		t.Errorf("searched %d times, want 1 (second from the cache)", searches)
+	}
+}

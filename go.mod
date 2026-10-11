@@ -12,6 +12,7 @@ require (
 	github.com/luevano/mangodex v0.5.0
 	github.com/luevano/mangoplus v0.7.1
 	github.com/philippgille/gokv v0.7.0
+	github.com/philippgille/gokv/encoding v0.7.0
 	github.com/philippgille/gokv/syncmap v0.7.0
 	golang.org/x/time v0.15.0
 )
@@ -31,7 +32,6 @@ require (
 	github.com/mattn/go-runewidth v0.0.31 // indirect
 	github.com/nlnwa/whatwg-url v0.6.2 // indirect
 	github.com/pdfcpu/pdfcpu v0.16.1 // indirect
-	github.com/philippgille/gokv/encoding v0.7.0 // indirect
 	github.com/philippgille/gokv/util v0.7.0 // indirect
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d // indirect
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966 // indirect
