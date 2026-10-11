@@ -5,7 +5,6 @@ import (
 	"github.com/luevano/libmangal"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/scraper"
-	"github.com/luevano/mangoprovider/scrapers/mangabox"
 	"github.com/luevano/mangoprovider/scrapers/mangapill"
 	"github.com/luevano/mangoprovider/scrapers/toonily"
 	"github.com/luevano/mangoprovider/scrapers/weebcentral"
@@ -15,11 +14,6 @@ func Loaders(options mango.Options) []libmangal.ProviderLoader {
 	loaders := []libmangal.ProviderLoader{
 		Loader(mangapill.Info, mangapill.Config, options),
 		Loader(weebcentral.Info, weebcentral.Config, options),
-		// Mangabox
-		Loader(mangabox.ManganatoInfo, mangabox.ManganatoConfig, options),
-		Loader(mangabox.MangabatInfo, mangabox.MangabatConfig, options),
-		Loader(mangabox.MangairoInfo, mangabox.MangairoConfig, options),
-		Loader(mangabox.MangakakalotInfo, mangabox.MangakakalotConfig, options),
 
 		Loader(toonily.Info, toonily.Config, options),
 	}
