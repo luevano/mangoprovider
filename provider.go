@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/luevano/libmangal"
 	"github.com/luevano/libmangal/logger"
@@ -184,14 +186,44 @@ func (p *Provider) GetPageImage(
 	return image, nil
 }
 
+// pageRetries is how many times a page is tried again after a 429, waiting Retry-After
+// (at most maxRetryWait) or pageRetryWait, doubled each time.
+const (
+	pageRetries  = 3
+	maxRetryWait = time.Minute
+)
+
+var pageRetryWait = 5 * time.Second
+
 func GenericGetPageImage(
 	ctx context.Context,
 	client *http.Client,
 	page Page,
 ) ([]byte, error) {
+	wait := pageRetryWait
+	for retry := 0; ; retry++ {
+		image, after, err := getPageImage(ctx, client, page)
+		if after < 0 || retry == pageRetries {
+			return image, err
+		}
+		if after == 0 {
+			after = wait
+			wait *= 2
+		}
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(min(after, maxRetryWait)):
+		}
+	}
+}
+
+// getPageImage gets the page once; after is how long to wait before trying again after a
+// 429 (0 when the site didn't say), -1 for any other outcome.
+func getPageImage(ctx context.Context, client *http.Client, page Page) (image []byte, after time.Duration, err error) {
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, page.URL, nil)
 	if err != nil {
-		return nil, err
+		return nil, -1, err
 	}
 
 	for key, value := range page.Headers {
@@ -204,18 +236,33 @@ func GenericGetPageImage(
 
 	response, err := client.Do(request)
 	if err != nil {
-		return nil, err
+		return nil, -1, err
 	}
 	defer response.Body.Close()
 
 	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("GET %s: %d %s", page.URL, response.StatusCode, strings.ToLower(http.StatusText(response.StatusCode)))
+		err := fmt.Errorf("GET %s: %d %s", page.URL, response.StatusCode, strings.ToLower(http.StatusText(response.StatusCode)))
+		if response.StatusCode == http.StatusTooManyRequests {
+			return nil, retryAfter(response.Header.Get("Retry-After")), err
+		}
+		return nil, -1, err
 	}
 
-	image, err := io.ReadAll(response.Body)
+	image, err = io.ReadAll(response.Body)
 	if err != nil {
-		return nil, err
+		return nil, -1, err
 	}
 
-	return image, nil
+	return image, -1, nil
+}
+
+// retryAfter is the wait a Retry-After header asks for (seconds or a date), 0 if none.
+func retryAfter(v string) time.Duration {
+	if secs, err := strconv.Atoi(v); err == nil && secs > 0 {
+		return time.Duration(secs) * time.Second
+	}
+	if t, err := http.ParseTime(v); err == nil {
+		return max(time.Until(t), 0)
+	}
+	return 0
 }

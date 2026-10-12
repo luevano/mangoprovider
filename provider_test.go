@@ -5,7 +5,9 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/luevano/libmangal"
 	"github.com/luevano/libmangal/mangadata"
@@ -155,5 +157,48 @@ func TestMangaByID(t *testing.T) {
 	p.F.MangaByID = nil
 	if _, _, err := p.MangaByID(ctx, "13"); !errors.Is(err, libmangal.ErrMangaByIDUnsupported) {
 		t.Errorf("without MangaByID: %v, want ErrMangaByIDUnsupported", err)
+	}
+}
+
+func TestGenericGetPageImageRetries(t *testing.T) {
+	defer func(w time.Duration) { pageRetryWait = w }(pageRetryWait)
+	pageRetryWait = time.Millisecond
+	var calls atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch calls.Add(1) {
+		case 1:
+			w.WriteHeader(http.StatusTooManyRequests)
+		case 2:
+			w.Header().Set("Retry-After", "1")
+			w.WriteHeader(http.StatusTooManyRequests)
+		default:
+			_, _ = w.Write([]byte("png"))
+		}
+	}))
+	defer server.Close()
+
+	start := time.Now()
+	image, err := GenericGetPageImage(context.Background(), server.Client(), Page{URL: server.URL + "/1.png"})
+	if err != nil || string(image) != "png" || calls.Load() != 3 {
+		t.Fatalf("got %q, %v after %d calls", image, err, calls.Load())
+	}
+	if time.Since(start) < time.Second {
+		t.Errorf("didn't wait the Retry-After")
+	}
+
+	// it gives up after pageRetries
+	calls.Store(0)
+	always := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls.Add(1)
+		w.WriteHeader(http.StatusTooManyRequests)
+	}))
+	defer always.Close()
+	if _, err := GenericGetPageImage(context.Background(), always.Client(), Page{URL: always.URL + "/1.png"}); err == nil || calls.Load() != pageRetries+1 {
+		t.Errorf("always 429: %v after %d calls", err, calls.Load())
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, err := GenericGetPageImage(ctx, always.Client(), Page{URL: always.URL + "/1.png"}); !errors.Is(err, context.Canceled) {
+		t.Errorf("cancelled: %v", err)
 	}
 }
