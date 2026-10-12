@@ -25,7 +25,7 @@ const (
 var providerInfo = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-asurascans",
 	Name:        "AsuraScans",
-	Version:     "0.4.2",
+	Version:     "0.4.3",
 	Description: "AsuraScans, from the site's API",
 	Website:     website,
 }
@@ -34,7 +34,8 @@ type asura struct {
 	client    *http.Client
 	userAgent string
 	filter    mango.FilterOptions
-	// limiter keeps to the 2 requests / 2 s the site tolerates (keiyoushi's limit), across loads
+	// limiter keeps to the 2 requests / 2 s the site tolerates (keiyoushi's limit, the cdn's
+	// images included), across loads
 	limiter *rate.Limiter
 	// base is the api, a test server in tests
 	base string
@@ -58,9 +59,18 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 				MangaVolumes:   a.MangaVolumes,
 				VolumeChapters: a.VolumeChapters,
 				ChapterPages:   a.ChapterPages,
+				GetPageImage:   a.GetPageImage,
 			}, nil
 		},
 	}
+}
+
+// GetPageImage is the generic one, throttled: the cdn answers 429 to unthrottled pages.
+func (a *asura) GetPageImage(ctx context.Context, client *http.Client, page mango.Page) ([]byte, error) {
+	if err := a.limiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+	return mango.GenericGetPageImage(ctx, client, page)
 }
 
 // get decodes the api response at path into v.
