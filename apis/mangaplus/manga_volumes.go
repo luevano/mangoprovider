@@ -10,6 +10,6 @@ import (
 func (p *plus) MangaVolumes(ctx context.Context, store mango.Store, manga mango.Manga) ([]mangadata.Volume, error) {
 	// MangoPlus doesn't provide volume information
 	return []mangadata.Volume{
-		&mango.Volume{Number: float32(1.0), Manga_: &manga},
+		&mango.Volume{Number: 1, None: true, Manga_: &manga},
 	}, nil
 }

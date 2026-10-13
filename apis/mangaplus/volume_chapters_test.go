@@ -1,6 +1,11 @@
 package mangaplus
 
-import "testing"
+import (
+	"context"
+	"testing"
+
+	mango "github.com/luevano/mangoprovider"
+)
 
 func TestParseChapterNumber(t *testing.T) {
 	// names as MangaPlus sends them, in order
@@ -14,5 +19,12 @@ func TestParseChapterNumber(t *testing.T) {
 			t.Errorf("%q after %v: wanted %v, got %v", name, last, want[i], got)
 		}
 		last = got
+	}
+}
+
+func TestVolumes(t *testing.T) {
+	volumes, err := (&plus{}).MangaVolumes(context.Background(), mango.Store{}, mango.Manga{ID: "1"})
+	if err != nil || len(volumes) != 1 || !volumes[0].(*mango.Volume).None {
+		t.Errorf("wanted the \"no volumes\" volume, got %v, %v", volumes, err)
 	}
 }
