@@ -10,6 +10,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/luevano/libmangal"
 	"github.com/luevano/libmangal/progress"
 	"github.com/luevano/mangodex"
 	mango "github.com/luevano/mangoprovider"
@@ -176,8 +177,8 @@ func TestAtHomeRateLimited(t *testing.T) {
 
 func TestLoadsIndependent(t *testing.T) {
 	loader := fakeLoader(newFakeDex())
-	first := load(t, loader, mango.NewLogger("first: "))
-	load(t, loader, mango.NewLogger("second: "))
+	first := load(t, loader, mango.NewProviderLogger(libmangal.ProviderInfo{ID: "first"}))
+	load(t, loader, mango.NewProviderLogger(libmangal.ProviderInfo{ID: "second"}))
 
 	var sources []string
 	ctx := progress.WithReporter(context.Background(), func(s progress.Status) {

@@ -6,6 +6,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/luevano/libmangal"
 	"github.com/luevano/libmangal/logger"
 )
 
@@ -23,7 +24,7 @@ func newTestLogger() (*logger.Logger, *[]string) {
 }
 
 func TestLoggerPerProvider(t *testing.T) {
-	dex, plus := NewLogger("mango-mangadex: "), NewLogger("mango-mangaplus: ")
+	dex, plus := NewProviderLogger(libmangal.ProviderInfo{ID: "mango-mangadex"}), NewProviderLogger(libmangal.ProviderInfo{ID: "mango-mangaplus"})
 	dexOut, dexMsgs := newTestLogger()
 	plusOut, plusMsgs := newTestLogger()
 
@@ -43,7 +44,7 @@ func TestLoggerPerProvider(t *testing.T) {
 }
 
 func TestLoggerConcurrent(t *testing.T) {
-	log := NewLogger("p: ")
+	log := NewProviderLogger(libmangal.ProviderInfo{ID: "p"})
 	out, msgs := newTestLogger()
 	var wg sync.WaitGroup
 	for i := range 20 {
