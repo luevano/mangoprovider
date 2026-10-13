@@ -179,6 +179,9 @@ func (p *Provider) GetPageImage(
 	if p.F.GetPageImage != nil {
 		getPageImage = p.F.GetPageImage
 	}
+	ctx = context.WithValue(ctx, pageRetryKey{}, func(retry int, wait time.Duration) {
+		p.log.Status(ctx, "page of chapter %q: 429 too many requests, retry %d/%d in %s", page_.Chapter_, retry, pageRetries, wait.Round(time.Second))
+	})
 	image, err := getPageImage(ctx, p.client, *page_)
 	if err != nil {
 		return nil, fmt.Errorf("%s: image for chapter %q: %w", p.ProviderInfo.ID, page_.Chapter_, err)
@@ -195,6 +198,10 @@ const (
 
 var pageRetryWait = 5 * time.Second
 
+// pageRetryKey: the context value (a func(retry int, wait time.Duration)) that
+// (*Provider).GetPageImage sets to report the retries of GenericGetPageImage.
+type pageRetryKey struct{}
+
 func GenericGetPageImage(
 	ctx context.Context,
 	client *http.Client,
@@ -210,10 +217,14 @@ func GenericGetPageImage(
 			after = wait
 			wait *= 2
 		}
+		after = min(after, maxRetryWait)
+		if report, ok := ctx.Value(pageRetryKey{}).(func(int, time.Duration)); ok {
+			report(retry+1, after)
+		}
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
-		case <-time.After(min(after, maxRetryWait)):
+		case <-time.After(after):
 		}
 	}
 }

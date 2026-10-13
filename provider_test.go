@@ -11,6 +11,7 @@ import (
 
 	"github.com/luevano/libmangal"
 	"github.com/luevano/libmangal/mangadata"
+	"github.com/luevano/libmangal/progress"
 )
 
 var errAPI = errors.New("mangodex: GET /manga: 429 too many requests")
@@ -200,5 +201,37 @@ func TestGenericGetPageImageRetries(t *testing.T) {
 	cancel()
 	if _, err := GenericGetPageImage(ctx, always.Client(), Page{URL: always.URL + "/1.png"}); !errors.Is(err, context.Canceled) {
 		t.Errorf("cancelled: %v", err)
+	}
+}
+
+func TestGetPageImageReportsRetries(t *testing.T) {
+	defer func(w time.Duration) { pageRetryWait = w }(pageRetryWait)
+	pageRetryWait = time.Millisecond
+	var calls atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if calls.Add(1) == 1 {
+			w.WriteHeader(http.StatusTooManyRequests)
+			return
+		}
+		_, _ = w.Write([]byte("png"))
+	}))
+	defer server.Close()
+
+	info := libmangal.ProviderInfo{ID: "mango-test", Name: "Test"}
+	p := &Provider{ProviderInfo: info, client: server.Client(), log: NewProviderLogger(info)}
+	var got []string
+	ctx := progress.WithReporter(context.Background(), func(s progress.Status) {
+		if s.Source != "mango-test" {
+			t.Errorf("source %q", s.Source)
+		}
+		got = append(got, s.String())
+	})
+	chapter := &Chapter{Title: "Ch. 40"}
+	if _, err := p.GetPageImage(ctx, &Page{URL: server.URL + "/1.png", Chapter_: chapter}); err != nil {
+		t.Fatal(err)
+	}
+	want := `Test: page of chapter "Ch. 40": 429 too many requests, retry 1/3 in 0s`
+	if len(got) != 1 || got[0] != want {
+		t.Errorf("reported %q, want %q", got, want)
 	}
 }
