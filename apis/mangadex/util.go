@@ -14,20 +14,34 @@ import (
 // TODO: make this configurable?
 const chapterNumberFormat = "Chapter %s"
 
-// Get parsed chapter number as a float and string.
-func getChapterNum(chapter *mangodex.Chapter) (float32, string, error) {
+// getChapterNum: The chapter's number, false for chapters without one (oneshots, extras).
+func getChapterNum(chapter *mangodex.Chapter) (float32, bool, error) {
 	chapterNumberStr := chapter.GetChapterNum()
 	if chapterNumberStr == "-" {
-		return 0.01, fmt.Sprintf(chapterNumberFormat, mango.FormattedFloat(0.01)), nil
+		return 0, false, nil
 	}
 
 	chapterNumber, err := strconv.ParseFloat(chapterNumberStr, 32)
 	if err != nil {
-		return 0.0, "", err
+		return 0, false, err
 	}
+	return float32(chapterNumber), true, nil
+}
 
-	chapterTitleNumber := fmt.Sprintf(chapterNumberFormat, mango.FormattedFloat(float32(chapterNumber)))
-	return float32(chapterNumber), chapterTitleNumber, nil
+// numberExtraChapters: Chapters without a number go right after the previous one (in the api's
+// order), untitled ones are named after their number.
+func numberExtraChapters(chapters []mangadata.Chapter, extras map[*mango.Chapter]bool) {
+	var last float32
+	for _, chapter := range chapters {
+		c := chapter.(*mango.Chapter)
+		if extras[c] {
+			c.Number = mango.NextExtraNumber(last)
+		}
+		if c.Title == "" {
+			c.Title = fmt.Sprintf(chapterNumberFormat, mango.FormattedFloat(c.Number))
+		}
+		last = c.Number
+	}
 }
 
 // Get parsed published date or just today's date.

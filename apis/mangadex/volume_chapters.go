@@ -17,6 +17,8 @@ type aggregate struct {
 	chapters    []mangadata.Chapter
 	chaptersMap map[string][]mangadata.Chapter
 	groupsCount map[string]int
+	// extras: chapters without a number
+	extras map[*mango.Chapter]bool
 }
 
 func (d *dex) VolumeChapters(ctx context.Context, store mango.Store, volume mango.Volume) ([]mangadata.Chapter, error) {
@@ -25,6 +27,7 @@ func (d *dex) VolumeChapters(ctx context.Context, store mango.Store, volume mang
 		chapters:    []mangadata.Chapter{},
 		chaptersMap: map[string][]mangadata.Chapter{},
 		groupsCount: map[string]int{},
+		extras:      map[*mango.Chapter]bool{},
 	}
 
 	volumeNumber := volume.Label
@@ -84,6 +87,7 @@ func (d *dex) VolumeChapters(ctx context.Context, store mango.Store, volume mang
 		}
 		offset += limit
 	}
+	numberExtraChapters(agg.chapters, agg.extras)
 
 	// TODO: add option to exclude list of scanlators/prefer list of scanlators
 	var chaptersFiltered []mangadata.Chapter
@@ -133,19 +137,9 @@ func (d *dex) populateChapters(ctx context.Context, agg *aggregate, params url.V
 			continue
 		}
 
-		var chapterTitle string
-		if chapter.GetTitle() != "" {
-			chapterTitle = chapter.GetTitle()
-		}
-
-		chapterNumber, chapterTitleNumber, err := getChapterNum(chapter)
+		chapterNumber, numbered, err := getChapterNum(chapter)
 		if err != nil {
 			return false, err
-		}
-
-		// Use "Chapter #" when no title for the chapter is found
-		if chapterTitle == "" {
-			chapterTitle = chapterTitleNumber
 		}
 
 		chapterID := chapter.ID
@@ -153,7 +147,7 @@ func (d *dex) populateChapters(ctx context.Context, agg *aggregate, params url.V
 		scanlator := d.getScanlator(chapter.Relationships)
 
 		c := mango.Chapter{
-			Title:           chapterTitle,
+			Title:           chapter.GetTitle(),
 			ID:              chapterID,
 			URL:             fmt.Sprintf("%schapter/%s", website, chapterID),
 			Number:          chapterNumber,
@@ -165,8 +159,9 @@ func (d *dex) populateChapters(ctx context.Context, agg *aggregate, params url.V
 
 		// chapters without a number (oneshots, extras) aren't duplicates of each other
 		mapKey := mango.FormattedFloat(chapterNumber)
-		if chapter.GetChapterNum() == "-" {
+		if !numbered {
 			mapKey = chapterID
+			agg.extras[&c] = true
 		}
 		agg.chaptersMap[mapKey] = append(agg.chaptersMap[mapKey], &c)
 		agg.groupsCount[scanlator] += 1

@@ -11,19 +11,41 @@ import (
 func TestGetChapterNum(t *testing.T) {
 	five, half := "5", "12.5"
 	tests := []struct {
-		chapter *string
-		number  float32
-		title   string
+		chapter  *string
+		number   float32
+		numbered bool
 	}{
-		{&five, 5, "Chapter 5"},
-		{&half, 12.5, "Chapter 12.5"},
-		{nil, 0.01, "Chapter 0.01"}, // no number (oneshots, extras)
+		{&five, 5, true},
+		{&half, 12.5, true},
+		{nil, 0, false}, // no number (oneshots, extras)
 	}
 	for _, tt := range tests {
 		chapter := &mangodex.Chapter{Attributes: mangodex.ChapterAttributes{Chapter: tt.chapter}}
-		number, title, err := getChapterNum(chapter)
-		if err != nil || number != tt.number || title != tt.title {
-			t.Errorf("wanted %v, %q; got %v, %q, %v", tt.number, tt.title, number, title, err)
+		number, numbered, err := getChapterNum(chapter)
+		if err != nil || number != tt.number || numbered != tt.numbered {
+			t.Errorf("wanted %v, %v; got %v, %v, %v", tt.number, tt.numbered, number, numbered, err)
+		}
+	}
+}
+
+func TestNumberExtraChapters(t *testing.T) {
+	one, extra, two := &mango.Chapter{Number: 1}, &mango.Chapter{Title: "Side story"}, &mango.Chapter{Number: 2}
+	extra2, extra3 := &mango.Chapter{}, &mango.Chapter{}
+	numberExtraChapters([]mangadata.Chapter{one, extra, two, extra2, extra3}, map[*mango.Chapter]bool{extra: true, extra2: true, extra3: true})
+
+	for _, tt := range []struct {
+		chapter *mango.Chapter
+		number  float32
+		title   string
+	}{
+		{one, 1, "Chapter 1"},
+		{extra, 1.5, "Side story"},
+		{two, 2, "Chapter 2"},
+		{extra2, 2.5, "Chapter 2.5"},
+		{extra3, 2.6, "Chapter 2.6"},
+	} {
+		if tt.chapter.Number != tt.number || tt.chapter.Title != tt.title {
+			t.Errorf("wanted %v %q, got %v %q", tt.number, tt.title, tt.chapter.Number, tt.chapter.Title)
 		}
 	}
 }
