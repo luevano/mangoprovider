@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -21,10 +22,12 @@ type fakeDex struct {
 	requests map[string]int
 	// nodeStatus: How the nodes answer the images.
 	nodeStatus int
+	// total: How many mangas the search says match.
+	total int
 }
 
 func newFakeDex() *fakeDex {
-	return &fakeDex{requests: map[string]int{}, nodeStatus: http.StatusOK}
+	return &fakeDex{requests: map[string]int{}, nodeStatus: http.StatusOK, total: 10000}
 }
 
 func (f *fakeDex) count(path string) int {
@@ -36,7 +39,7 @@ func (f *fakeDex) count(path string) int {
 func (f *fakeDex) RoundTrip(r *http.Request) (*http.Response, error) {
 	f.mu.Lock()
 	f.requests[r.URL.Path]++
-	nodeStatus := f.nodeStatus
+	nodeStatus, total := f.nodeStatus, f.total
 	f.mu.Unlock()
 
 	w := httptest.NewRecorder()
@@ -47,7 +50,7 @@ func (f *fakeDex) RoundTrip(r *http.Request) (*http.Response, error) {
 		for i := range mangas {
 			mangas[i] = `{"id":"m","type":"manga","attributes":{"title":{"en":"A"}}}`
 		}
-		w.WriteString(`{"result":"ok","data":[` + strings.Join(mangas, ",") + `]}`)
+		w.WriteString(`{"result":"ok","data":[` + strings.Join(mangas, ",") + `],"total":` + strconv.Itoa(total) + `}`)
 	case strings.HasPrefix(r.URL.Path, "/at-home/server/"):
 		w.WriteString(`{"result":"ok","baseUrl":"https://node.test","chapter":{"hash":"h","data":["1.png","2.png"]}}`)
 	case r.URL.Host == "node.test":
@@ -90,6 +93,19 @@ func TestSearchPagesCapped(t *testing.T) {
 	}
 	if got := fake.count("/manga"); got != searchPages || len(mangas) != searchPages*100 {
 		t.Errorf("wanted %d pages, got %d requests, %d mangas", searchPages, got, len(mangas))
+	}
+}
+
+func TestSearchStopsAtTotal(t *testing.T) {
+	fake := newFakeDex()
+	fake.total = 200
+	fns := loadFake(t, fake, nil)
+	mangas, err := fns.SearchMangas(context.Background(), mango.Store{}, "a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := fake.count("/manga"); got != 2 || len(mangas) != 200 {
+		t.Errorf("wanted 2 pages, got %d requests, %d mangas", got, len(mangas))
 	}
 }
 

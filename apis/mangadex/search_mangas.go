@@ -81,18 +81,18 @@ func (d *dex) searchMangas(ctx context.Context, mangas *[]mangadata.Manga, param
 			d.log.Progress(ctx, 0, 0, "%d results so far, getting page %d", len(*mangas), page)
 		}
 		params.Set("offset", strconv.Itoa(offset))
-		mangaList, err := d.client.Manga.ListContext(ctx, params)
+		mangaList, total, err := d.client.Manga.ListWithTotalContext(ctx, params)
 		if err != nil {
 			return err
 		}
 		for _, manga := range mangaList {
 			*mangas = append(*mangas, d.dexToMangoManga(manga))
 		}
-		// If received less than the limit, we got them all
-		if len(mangaList) < limit {
+		offset += limit
+		// got them all
+		if len(mangaList) < limit || offset >= total {
 			break
 		}
-		offset += limit
 	}
 	return nil
 }
