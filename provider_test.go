@@ -194,8 +194,13 @@ func TestGenericGetPageImageRetries(t *testing.T) {
 		w.WriteHeader(http.StatusTooManyRequests)
 	}))
 	defer always.Close()
-	if _, err := GenericGetPageImage(context.Background(), always.Client(), Page{URL: always.URL + "/1.png"}); err == nil || calls.Load() != pageRetries+1 {
+	_, err = GenericGetPageImage(context.Background(), always.Client(), Page{URL: always.URL + "/1.png"})
+	if !errors.Is(err, ErrRateLimited) || calls.Load() != pageRetries+1 {
 		t.Errorf("always 429: %v after %d calls", err, calls.Load())
+	}
+	var rateLimit interface{ RetryAfterDuration() time.Duration }
+	if !errors.As(err, &rateLimit) || rateLimit.RetryAfterDuration() <= 0 {
+		t.Errorf("the rate limit should say how long to wait: %v", err)
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()

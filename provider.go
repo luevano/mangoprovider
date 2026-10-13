@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -210,7 +209,15 @@ func GenericGetPageImage(
 	wait := pageRetryWait
 	for retry := 0; ; retry++ {
 		image, after, err := getPageImage(ctx, client, page)
-		if after < 0 || retry == pageRetries {
+		if after < 0 {
+			return image, err
+		}
+		if retry == pageRetries {
+			// the caller may wait longer, as long as the next try here would have
+			var rateLimit *RateLimitError
+			if errors.As(err, &rateLimit) && rateLimit.RetryAfter == 0 {
+				rateLimit.RetryAfter = min(wait, maxRetryWait)
+			}
 			return image, err
 		}
 		if after == 0 {
@@ -251,15 +258,15 @@ func getPageImage(ctx context.Context, client *http.Client, page Page) (image []
 	}
 	defer response.Body.Close()
 
+	if response.StatusCode == http.StatusTooManyRequests {
+		after := retryAfter(response.Header.Get("Retry-After"))
+		return nil, after, fmt.Errorf("GET %s: %w", page.URL, &RateLimitError{RetryAfter: after})
+	}
 	if response.StatusCode != http.StatusOK {
-		err := fmt.Errorf("GET %s: %d %s", page.URL, response.StatusCode, strings.ToLower(http.StatusText(response.StatusCode)))
-		if response.StatusCode == http.StatusTooManyRequests {
-			return nil, retryAfter(response.Header.Get("Retry-After")), err
-		}
-		return nil, -1, err
+		return nil, -1, fmt.Errorf("GET %s: %d %s", page.URL, response.StatusCode, strings.ToLower(http.StatusText(response.StatusCode)))
 	}
 
-	image, err = io.ReadAll(response.Body)
+	image, err = ReadBody(response.Body)
 	if err != nil {
 		return nil, -1, err
 	}
