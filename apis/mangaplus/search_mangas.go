@@ -94,7 +94,10 @@ func (p *plus) searchMangas(ctx context.Context, mangas *[]mangadata.Manga, quer
 		matches = matches[:maxSearchResults]
 	}
 
-	for _, m := range matches {
+	for i, m := range matches {
+		if len(matches) > 1 {
+			p.log.Progress(ctx, i+1, len(matches), "getting the details of the results:")
+		}
 		// Search for the titleDetail details and use that instead (contains more data)
 		titleDetail, err := p.client.Manga.GetContext(ctx, strconv.Itoa(int(m.title.TitleId)))
 		if err != nil {

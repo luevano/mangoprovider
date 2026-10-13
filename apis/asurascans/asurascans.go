@@ -39,6 +39,7 @@ type asura struct {
 	limiter *rate.Limiter
 	// base is the api, a test server in tests
 	base string
+	log  *mango.Logger
 }
 
 func Loader(options mango.Options) libmangal.ProviderLoader {
@@ -52,7 +53,8 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 	return &mango.Loader{
 		ProviderInfo: providerInfo,
 		Options:      options,
-		F: func(context.Context, *mango.Logger) (mango.Functions, error) {
+		F: func(_ context.Context, log *mango.Logger) (mango.Functions, error) {
+			a.log = log
 			return mango.Functions{
 				SearchMangas:   a.SearchMangas,
 				MangaByID:      a.MangaByID,

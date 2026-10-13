@@ -66,6 +66,9 @@ func (a *asura) MangaByID(ctx context.Context, _ mango.Store, id string) (mangad
 func (a *asura) search(ctx context.Context, query string) ([]mangadata.Manga, error) {
 	var mangas []mangadata.Manga
 	for page := 1; page <= searchPages; page++ {
+		if page > 1 {
+			a.log.Progress(ctx, page, searchPages, "%d results so far, search page", len(mangas))
+		}
 		var resp struct {
 			Data []series `json:"data"`
 			Meta struct {

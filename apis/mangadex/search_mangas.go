@@ -72,7 +72,10 @@ func (d *dex) MangaByID(ctx context.Context, store mango.Store, id string) (mang
 // search of mangas by query and populate the list
 func (d *dex) searchMangas(ctx context.Context, mangas *[]mangadata.Manga, params url.Values, limit int) error {
 	offset := 0
-	for {
+	for page := 1; ; page++ {
+		if page > 1 {
+			d.log.Progress(ctx, 0, 0, "%d results so far, getting page %d", len(*mangas), page)
+		}
 		params.Set("offset", strconv.Itoa(offset))
 		mangaList, err := d.client.Manga.ListContext(ctx, params)
 		if err != nil {

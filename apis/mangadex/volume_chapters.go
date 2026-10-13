@@ -69,7 +69,10 @@ func (d *dex) VolumeChapters(ctx context.Context, store mango.Store, volume mang
 	}
 
 	offset := 0
-	for {
+	for page := 1; ; page++ {
+		if page > 1 {
+			d.log.Progress(ctx, 0, 0, "volume %s: %d chapters so far, getting page %d", volume.String(), len(agg.chapters), page)
+		}
 		// The offset is set on each iteration, shouldn't be included in the cacheID.
 		params.Set("offset", strconv.Itoa(offset))
 		ended, err := d.populateChapters(ctx, &agg, params, volume)
