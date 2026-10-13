@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	mango "github.com/luevano/mangoprovider"
 )
 
 var (
@@ -99,7 +100,7 @@ func (t *TransportFlaresolverr) RoundTrip(r *http.Request) (*http.Response, erro
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := mango.ReadBody(resp.Body)
 	if err != nil {
 		return nil, err
 	}
