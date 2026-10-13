@@ -66,12 +66,15 @@ type mangabox struct {
 	// 2 requests per second, like keiyoushi's
 	limiter *rate.Limiter
 	mirrors *mango.Mirrors
+	log     *mango.Logger
 
 	mu sync.Mutex
 	// flaresolverr is created on the first challenge, its session closed with the provider
 	flaresolverr *flaresolverr.TransportFlaresolverr
 	// cdn: the origin of the cdn that served the last image, tried first
 	cdn string
+	// cdnDown: cdns already reported failing, until one of their images works again
+	cdnDown map[string]bool
 }
 
 func loader(info libmangal.ProviderInfo, options mango.Options) libmangal.ProviderLoader {
@@ -86,6 +89,8 @@ func loader(info libmangal.ProviderInfo, options mango.Options) libmangal.Provid
 				headless:  options.Headless,
 				limiter:   rate.NewLimiter(rate.Every(500*time.Millisecond), 2),
 				mirrors:   mango.NewMirrors(info, options.Mirrors[info.ID], log),
+				log:       log,
+				cdnDown:   map[string]bool{},
 			}
 			return mango.Functions{
 				SearchMangas:   m.SearchMangas,
@@ -137,6 +142,7 @@ func (m *mangabox) getFrom(ctx context.Context, url string) ([]byte, error) {
 		if err != nil {
 			return nil, fmt.Errorf("%w: %w", mango.ErrSiteDown, err)
 		}
+		m.log.Status(ctx, "cloudflare challenge on %s, solving with flaresolverr (up to %ds)", mango.Host(url), int(flaresolverrTimeout.Seconds()))
 		ctx, cancel := context.WithTimeout(ctx, flaresolverrTimeout)
 		defer cancel()
 		if body, status, err = m.do(ctx, fs, url); err != nil {

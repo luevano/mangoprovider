@@ -14,7 +14,8 @@ import (
 // served the last image (like keiyoushi's useAltCdnInterceptor).
 func (m *mangabox) GetPageImage(ctx context.Context, client *http.Client, page mango.Page) ([]byte, error) {
 	var errs []error
-	for _, u := range m.cdnOrder(append([]string{page.URL}, page.Fallbacks...)) {
+	urls := m.cdnOrder(append([]string{page.URL}, page.Fallbacks...))
+	for i, u := range urls {
 		page.URL = u
 		image, err := mango.GenericGetPageImage(ctx, client, page)
 		if err == nil {
@@ -23,6 +24,9 @@ func (m *mangabox) GetPageImage(ctx context.Context, client *http.Client, page m
 		}
 		if ctx.Err() != nil {
 			return nil, err
+		}
+		if i+1 < len(urls) && m.cdnFailed(origin(u)) {
+			m.log.Status(ctx, "image cdn %s failed (%s), trying %s", mango.Host(u), mango.Reason(err), mango.Host(urls[i+1]))
 		}
 		errs = append(errs, err)
 	}
@@ -46,6 +50,19 @@ func (m *mangabox) setCDN(cdn string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.cdn = cdn
+	delete(m.cdnDown, cdn)
+}
+
+// cdnFailed marks the cdn as failing, true the first time, so a switch is reported once and
+// not for every page.
+func (m *mangabox) cdnFailed(cdn string) bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.cdnDown[cdn] {
+		return false
+	}
+	m.cdnDown[cdn] = true
+	return true
 }
 
 func origin(rawURL string) string {

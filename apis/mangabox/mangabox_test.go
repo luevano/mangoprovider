@@ -9,9 +9,17 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/luevano/libmangal/progress"
 	mango "github.com/luevano/mangoprovider"
 	"golang.org/x/time/rate"
 )
+
+// reports records the statuses reported through the returned context.
+func reports() (context.Context, *[]string) {
+	var got []string
+	ctx := progress.WithReporter(context.Background(), func(s progress.Status) { got = append(got, s.String()) })
+	return ctx, &got
+}
 
 // trimmed copies of what the sites serve (checked 2026-10-11)
 const (
@@ -46,11 +54,14 @@ func newTest(t *testing.T, flaresolverr bool, pages map[string]string, mirrors .
 	t.Helper()
 	info := MangabatInfo
 	info.Website, info.Mirrors = newServer(t, pages).URL+"/", mirrors
+	log := mango.NewProviderLogger(info)
 	m := &mangabox{
 		info:    info,
+		log:     log,
 		client:  http.DefaultClient,
 		limiter: rate.NewLimiter(rate.Inf, 0),
-		mirrors: mango.NewMirrors(info, "", nil),
+		mirrors: mango.NewMirrors(info, "", log),
+		cdnDown: map[string]bool{},
 	}
 	m.headless.UseFlaresolverr = flaresolverr
 	return m
@@ -120,9 +131,18 @@ func TestSearchAlias(t *testing.T) {
 func TestMirrorFallback(t *testing.T) {
 	mirror := newServer(t, map[string]string{"/search/story/solo_leveling": searchPage, "/manga/nope": "down"})
 	m := newTest(t, false, map[string]string{"/search/story/solo_leveling": "down"}, mirror.URL+"/")
-	mangas, err := m.search(context.Background(), mango.Store{}, "solo leveling")
+	ctx, got := reports()
+	mangas, err := m.search(ctx, mango.Store{}, "solo leveling")
 	if err != nil || len(mangas) != 1 {
 		t.Fatalf("got %v, %v, want the mirror's results", mangas, err)
+	}
+	site, other := mango.Host(m.info.Website), mango.Host(mirror.URL)
+	want := []string{
+		"Mangabat: " + site + " down (503 service unavailable), trying " + other,
+		"Mangabat: using " + other,
+	}
+	if !slices.Equal(*got, want) {
+		t.Errorf("reported %q, want %q", *got, want)
 	}
 
 	// not found isn't the site being down: no fallback
@@ -170,13 +190,14 @@ func TestPageImageFallback(t *testing.T) {
 	t.Cleanup(working.Close)
 
 	m := newTest(t, false, nil)
+	ctx, got := reports()
 	for _, path := range []string{"/1/0.webp", "/1/1.webp"} {
 		page := mango.Page{
 			URL:       broken.URL + path,
 			Fallbacks: []string{working.URL + path},
 			Headers:   map[string]string{"Referer": "https://site/"},
 		}
-		image, err := m.GetPageImage(context.Background(), http.DefaultClient, page)
+		image, err := m.GetPageImage(ctx, http.DefaultClient, page)
 		if err != nil || string(image) != "image "+path {
 			t.Fatalf("%s: got %q, %v", path, image, err)
 		}
@@ -184,6 +205,10 @@ func TestPageImageFallback(t *testing.T) {
 	// the second page went straight to the cdn that worked
 	if brokenHits != 1 {
 		t.Errorf("broken cdn hit %d times, want 1", brokenHits)
+	}
+	want := []string{"Mangabat: image cdn " + mango.Host(broken.URL) + " failed (500 internal server error), trying " + mango.Host(working.URL)}
+	if !slices.Equal(*got, want) {
+		t.Errorf("reported %q, want %q", *got, want)
 	}
 
 	_, err := m.GetPageImage(context.Background(), http.DefaultClient, mango.Page{URL: broken.URL + "/2/0.webp"})
