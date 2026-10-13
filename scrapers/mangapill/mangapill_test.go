@@ -19,3 +19,10 @@ func TestIDs(t *testing.T) {
 		}
 	}
 }
+
+// mangapill has no dates, leaving them empty instead of the day it was scraped
+func TestNoDate(t *testing.T) {
+	if Config(nil).ChapterExtractor.Date != nil {
+		t.Error("chapters shouldn't get a date")
+	}
+}

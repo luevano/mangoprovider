@@ -1,6 +1,11 @@
 package weebcentral
 
-import "testing"
+import (
+	"strings"
+	"testing"
+
+	"github.com/PuerkitoBio/goquery"
+)
 
 func TestIDs(t *testing.T) {
 	config := Config(nil)
@@ -17,5 +22,20 @@ func TestIDs(t *testing.T) {
 		if got := config.ChapterExtractor.ID(tt.url); got != tt.chapter {
 			t.Errorf("chapter id of %q: wanted %q, got %q", tt.url, tt.chapter, got)
 		}
+	}
+}
+
+func TestDate(t *testing.T) {
+	date := Config(nil).ChapterExtractor.Date
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(`<a><time datetime="2024-03-05T10:00:00.000Z"></time></a><a>no date</a>`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	links := doc.Find("a")
+	if got := date(links.First()); got.String() != "2024-03-05" {
+		t.Errorf("wanted 2024-03-05, got %v", got)
+	}
+	if got := date(links.Last()); got.Year != 0 {
+		t.Errorf("wanted no date, got %v", got)
 	}
 }

@@ -8,7 +8,6 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/luevano/libmangal"
-	"github.com/luevano/libmangal/metadata"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/scraper"
 )
@@ -85,12 +84,6 @@ func Config(_ *mango.Logger) *scraper.Configuration {
 			},
 			// id is constructed similar to manga id above, <number>/<chapter-name>
 			ID: pathID,
-			Date: func(_ *goquery.Selection) metadata.Date {
-				// mangapill doesn't provide dates, just use scraping day
-				// else it will just use anilist publication day
-				today := time.Now()
-				return mango.DateOf(today)
-			},
 			ScanlationGroup: func(_ *goquery.Selection) string {
 				return Info.Name
 			},

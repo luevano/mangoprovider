@@ -43,14 +43,12 @@ func numberExtraChapters(chapters []mangadata.Chapter, extras map[*mango.Chapter
 	}
 }
 
-// Get parsed published date or just today's date.
+// getDate: The published date, none if it doesn't parse.
 func (d *dex) getDate(publishAt string) metadata.Date {
 	publishedDate, err := time.Parse(time.RFC3339, publishAt)
 	if err != nil {
-		d.log.Log("failed to parse chapter date, using today")
-		now := time.Now()
-		return mango.DateOf(now)
-
+		d.log.Log("chapter date %q: %s", publishAt, err)
+		return metadata.Date{}
 	}
 	return mango.DateOf(publishedDate)
 }

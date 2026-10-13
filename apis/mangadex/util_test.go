@@ -77,3 +77,14 @@ func TestGetUniqueChapters(t *testing.T) {
 		}
 	}
 }
+
+func TestGetDate(t *testing.T) {
+	d := &dex{}
+	if got := d.getDate("2024-03-05T10:00:00+00:00"); got.String() != "2024-03-05" {
+		t.Errorf("wanted 2024-03-05, got %v", got)
+	}
+	// unknown stays unknown, not today
+	if got := d.getDate(""); got.Year != 0 {
+		t.Errorf("wanted no date, got %v", got)
+	}
+}

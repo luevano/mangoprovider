@@ -103,8 +103,8 @@ func Config(log *mango.Logger) *scraper.Configuration {
 			Date: func(selection *goquery.Selection) metadata.Date {
 				date, err := time.Parse(time.RFC3339, selection.Find("time").AttrOr("datetime", ""))
 				if err != nil {
-					log.Log("chapter %q has no valid date, using today", selection.Text())
-					date = time.Now()
+					log.Log("chapter %q has no valid date", mango.CleanString(selection.Text()))
+					return metadata.Date{}
 				}
 				return mango.DateOf(date)
 			},
