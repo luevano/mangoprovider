@@ -2,6 +2,8 @@ package mangadex
 
 import (
 	"context"
+	"sync"
+
 	"github.com/luevano/libmangal"
 	"github.com/luevano/mangodex"
 	mango "github.com/luevano/mangoprovider"
@@ -22,21 +24,21 @@ type dex struct {
 	filter  mango.FilterOptions
 	options mango.MangaDexOptions
 	log     *mango.Logger
+
+	// atHomeMu guards the chapters' AtHome, shared by their pages
+	atHomeMu sync.Mutex
+	// atHomeRefreshed: the last MangaDex@Home server fetched again for a chapter, by its id
+	atHomeRefreshed map[string]*mangodex.AtHomeServer
 }
 
 func Loader(options mango.Options) libmangal.ProviderLoader {
 	// Not using options.UserAgent, MangaDex doesn't allow spoofed (browser) user agents
 	o := options.MangaDex
-	d := dex{
-		filter:  options.Filter,
-		options: o,
-	}
 
 	return &mango.Loader{
 		ProviderInfo: providerInfo,
 		Options:      options,
 		F: func(_ context.Context, log *mango.Logger) (mango.Functions, error) {
-			d.log = log
 			dexOptions := o.Options
 			if dexOptions.HTTPClient == nil {
 				dexOptions.HTTPClient = options.HTTPClient
@@ -45,7 +47,14 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 			if err != nil {
 				return mango.Functions{}, err
 			}
-			d.client = client
+			d := &dex{
+				client:  client,
+				filter:  options.Filter,
+				options: o,
+				log:     log,
+
+				atHomeRefreshed: map[string]*mangodex.AtHomeServer{},
+			}
 
 			return mango.Functions{
 				SearchMangas:   d.SearchMangas,

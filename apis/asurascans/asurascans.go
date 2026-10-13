@@ -43,18 +43,19 @@ type asura struct {
 }
 
 func Loader(options mango.Options) libmangal.ProviderLoader {
-	a := asura{
-		client:    options.HTTPClient,
-		userAgent: options.UserAgent,
-		filter:    options.Filter,
-		limiter:   rate.NewLimiter(rate.Every(time.Second), 2),
-		base:      api,
-	}
+	limiter := rate.NewLimiter(rate.Every(time.Second), 2)
 	return &mango.Loader{
 		ProviderInfo: providerInfo,
 		Options:      options,
 		F: func(_ context.Context, log *mango.Logger) (mango.Functions, error) {
-			a.log = log
+			a := &asura{
+				client:    options.HTTPClient,
+				userAgent: options.UserAgent,
+				filter:    options.Filter,
+				limiter:   limiter,
+				base:      api,
+				log:       log,
+			}
 			return mango.Functions{
 				SearchMangas:   a.SearchMangas,
 				MangaByID:      a.MangaByID,

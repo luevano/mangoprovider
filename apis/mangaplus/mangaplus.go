@@ -27,17 +27,12 @@ type plus struct {
 func Loader(options mango.Options) libmangal.ProviderLoader {
 	// Not using options.UserAgent, the API only accepts the one from the Android app
 	o := options.MangaPlus
-	p := plus{
-		filter:  options.Filter,
-		options: o,
-	}
 
 	return &mango.Loader{
 		ProviderInfo: providerInfo,
 		Options:      options,
 		Account:      true,
 		F: func(_ context.Context, log *mango.Logger) (mango.Functions, error) {
-			p.log = log
 			plusOptions := o.Options
 			if plusOptions.HTTPClient == nil {
 				plusOptions.HTTPClient = options.HTTPClient
@@ -46,7 +41,12 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 			if err != nil {
 				return mango.Functions{}, err
 			}
-			p.client = client
+			p := &plus{
+				client:  client,
+				filter:  options.Filter,
+				options: o,
+				log:     log,
+			}
 
 			return mango.Functions{
 				SearchMangas:   p.SearchMangas,

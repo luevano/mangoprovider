@@ -28,16 +28,11 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 	// Update the user agent with the actual one from the options
 	o := options.MangaPlusCreators
 	o.UserAgent = options.UserAgent
-	c := mpc{
-		filter:  options.Filter,
-		options: o,
-	}
 
 	return &mango.Loader{
 		ProviderInfo: providerInfo,
 		Options:      options,
 		F: func(_ context.Context, log *mango.Logger) (mango.Functions, error) {
-			c.log = log
 			mpcOptions := o.Options
 			if mpcOptions.HTTPClient == nil {
 				mpcOptions.HTTPClient = options.HTTPClient
@@ -46,7 +41,12 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 			if err != nil {
 				return mango.Functions{}, err
 			}
-			c.client = client
+			c := &mpc{
+				client:  client,
+				filter:  options.Filter,
+				options: o,
+				log:     log,
+			}
 
 			return mango.Functions{
 				SearchMangas:   c.SearchMangas,
