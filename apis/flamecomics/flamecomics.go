@@ -8,9 +8,11 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"time"
 
 	"github.com/luevano/libmangal"
 	mango "github.com/luevano/mangoprovider"
+	"golang.org/x/time/rate"
 )
 
 const (
@@ -31,12 +33,20 @@ var nextData = regexp.MustCompile(`(?s)<script id="__NEXT_DATA__" type="applicat
 type flame struct {
 	client    *http.Client
 	userAgent string
+	// limiter keeps to ~2 pages a second, across loads: every call is a full next.js page (the
+	// search one lists the whole catalog), the cdn's images aren't limited
+	limiter *rate.Limiter
 	// base is the website, a test server in tests
 	base string
 }
 
 func Loader(options mango.Options) libmangal.ProviderLoader {
-	f := flame{client: options.HTTPClient, userAgent: options.UserAgent, base: website}
+	f := flame{
+		client:    options.HTTPClient,
+		userAgent: options.UserAgent,
+		limiter:   rate.NewLimiter(rate.Every(500*time.Millisecond), 2),
+		base:      website,
+	}
 	return &mango.Loader{
 		ProviderInfo: providerInfo,
 		Options:      options,
@@ -54,7 +64,7 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 
 // page gets a page of the site and decodes the props it embeds into v.
 func (f *flame) page(ctx context.Context, path string, v any) error {
-	body, resp, err := mango.Fetch(ctx, f.client, nil, f.userAgent, f.base+path)
+	body, resp, err := mango.Fetch(ctx, f.client, f.limiter, f.userAgent, f.base+path)
 	if err != nil {
 		return err
 	}

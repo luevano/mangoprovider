@@ -7,8 +7,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	mango "github.com/luevano/mangoprovider"
+	"golang.org/x/time/rate"
 )
 
 // pages are trimmed copies of what the site embeds (checked 2026-10-10).
@@ -97,5 +99,20 @@ func TestPageStatusErrors(t *testing.T) {
 	}
 	if err := f.page(context.Background(), "down", &v); !errors.Is(err, mango.ErrSiteDown) {
 		t.Errorf("502: %v", err)
+	}
+}
+
+func TestThrottle(t *testing.T) {
+	f := newTest(t)
+	f.limiter = rate.NewLimiter(rate.Every(100*time.Millisecond), 2)
+	start := time.Now()
+	for range 4 {
+		if _, _, err := f.MangaByID(context.Background(), mango.Store{}, "2"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// 2 right away, then one every 100ms
+	if took := time.Since(start); took < 200*time.Millisecond {
+		t.Errorf("4 requests took %v, want at least 200ms", took)
 	}
 }
