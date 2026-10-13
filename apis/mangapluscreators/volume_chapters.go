@@ -22,7 +22,7 @@ func (c *mpc) VolumeChapters(ctx context.Context, store mango.Store, volume mang
 		return chapters, nil
 	}
 
-	err = c.searchChapters(ctx, &chapters, volume, mangaID)
+	err = c.searchChapters(ctx, &chapters, volume)
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +35,7 @@ func (c *mpc) VolumeChapters(ctx context.Context, store mango.Store, volume mang
 	return chapters, nil
 }
 
-func (c *mpc) searchChapters(ctx context.Context, chapters *[]mangadata.Chapter, volume mango.Volume, id string) error {
+func (c *mpc) searchChapters(ctx context.Context, chapters *[]mangadata.Chapter, volume mango.Volume) error {
 	page := 1
 	for {
 		chaptersDTO, err := c.client.Chapter.ListContext(ctx, volume.Manga_.ID, page)
@@ -43,11 +43,9 @@ func (c *mpc) searchChapters(ctx context.Context, chapters *[]mangadata.Chapter,
 			return err
 		}
 
-		pagination := chaptersDTO.Pagination
-		if pagination == nil {
-			return fmt.Errorf("list chapters for manga %q (page %d): no pagination in response", id, page)
+		if chaptersDTO.EpisodeList == nil || len(*chaptersDTO.EpisodeList) == 0 {
+			break
 		}
-
 		// All chapters are assumed to come in order, there is no other way to deal
 		// with extra/bonus chapters (if they don't come with a number)
 		for _, chapter := range *chaptersDTO.EpisodeList {
@@ -62,16 +60,19 @@ func (c *mpc) searchChapters(ctx context.Context, chapters *[]mangadata.Chapter,
 			}
 			*chapters = append(*chapters, &c)
 		}
-		if !pagination.HasNextPage() {
+		if chaptersDTO.Pagination == nil || !chaptersDTO.Pagination.HasNextPage() {
 			break
 		}
-		// TODO: need to double check this
-		page += 1
+		page++
 	}
 	return nil
 }
 
+// parseTSMilli: The date of the timestamp, none for 0 (not given).
 func parseTSMilli(timestamp int64) metadata.Date {
+	if timestamp == 0 {
+		return metadata.Date{}
+	}
 	ts := time.UnixMilli(timestamp)
 	return mango.DateOf(ts)
 }

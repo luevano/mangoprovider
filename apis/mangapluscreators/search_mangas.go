@@ -13,10 +13,10 @@ import (
 func (c *mpc) SearchMangas(ctx context.Context, store mango.Store, query string) ([]mangadata.Manga, error) {
 	var mangas []mangadata.Manga
 
-	matchGroups := mango.ReNamedGroups(mango.MangaQueryIDRegex, query)
-	_, byID := matchGroups[mango.MangaQueryID]
-	if byID {
-		return nil, fmt.Errorf("search by id: %w", mango.ErrNotSupported)
+	// the api has no title lookup, an id finds nothing like an unknown one elsewhere
+	if _, byID := mango.ReNamedGroups(mango.MangaQueryIDRegex, query)[mango.MangaQueryID]; byID {
+		c.log.Log("search by id isn't supported, no results for %q", query)
+		return nil, nil
 	}
 
 	cacheID := fmt.Sprintf("%s-%s", query, c.filter.Language)
@@ -49,19 +49,17 @@ func (c *mpc) searchMangas(ctx context.Context, mangas *[]mangadata.Manga, query
 		if err != nil {
 			return err
 		}
-		pagination := titlesDTO.Pagination
-		if pagination == nil {
-			return fmt.Errorf("search %q (page %d): no pagination in response", query, page)
+		// no results may come without a list or pagination
+		if titlesDTO.TitleList == nil || len(*titlesDTO.TitleList) == 0 {
+			break
 		}
-
 		for _, title := range *titlesDTO.TitleList {
 			*mangas = append(*mangas, c.mpcToMangoManga(title))
 		}
-		if !pagination.HasNextPage() {
+		if titlesDTO.Pagination == nil || !titlesDTO.Pagination.HasNextPage() {
 			break
 		}
-		// TODO: need to double check this
-		page += 1
+		page++
 	}
 	return nil
 }
