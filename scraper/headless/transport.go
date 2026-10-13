@@ -31,7 +31,7 @@ func NewTransport(
 		if flaresolverrReachable(ctx, options.FlaresolverrURL) {
 			return flaresolverr.NewTransport(options.FlaresolverrURL)
 		}
-		log.Log("couldn't connect to flaresolverr, falling back to rod")
+		log.Status(ctx, "couldn't connect to flaresolverr, falling back to rod")
 	}
 	return rod.NewTransport(loadWait, localStorage, actions, log)
 }

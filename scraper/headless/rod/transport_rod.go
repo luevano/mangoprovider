@@ -1,6 +1,7 @@
 package rod
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/launcher"
+	"github.com/go-rod/rod/lib/launcher/flags"
 	"github.com/go-rod/rod/lib/proto"
 	mango "github.com/luevano/mangoprovider"
 )
@@ -54,9 +56,25 @@ func NewTransport(
 }
 
 // launch: Starts the browser once, on the first request.
-func (t *TransportRod) launch() (*rod.Browser, error) {
+func (t *TransportRod) launch(ctx context.Context) (*rod.Browser, error) {
 	t.launchOnce.Do(func() {
-		u, err := launcher.New().Leakless(runtime.GOOS == "linux").Launch()
+		l := launcher.New().Leakless(runtime.GOOS == "linux")
+		if l.Get(flags.Bin) == "" {
+			// rod's own download logs to stdout, which must stay clean (e.g. --json)
+			b := launcher.NewBrowser()
+			b.Logger = logger{t.log}
+			if b.Validate() != nil {
+				t.log.Status(ctx, "downloading chromium for the headless browser")
+			}
+			bin, err := b.Get()
+			if err != nil {
+				t.launchErr = fmt.Errorf("download browser: %w", err)
+				return
+			}
+			l = l.Bin(bin)
+		}
+		t.log.Status(ctx, "starting the headless browser")
+		u, err := l.Launch()
 		if err != nil {
 			t.launchErr = fmt.Errorf("launch browser: %w", err)
 			return
@@ -73,7 +91,7 @@ func (t *TransportRod) launch() (*rod.Browser, error) {
 
 // RoundTrip gets called on each colly request.
 func (t *TransportRod) RoundTrip(r *http.Request) (*http.Response, error) {
-	browser, err := t.launch()
+	browser, err := t.launch(r.Context())
 	if err != nil {
 		return nil, err
 	}
@@ -158,4 +176,11 @@ func (t *TransportRod) RoundTrip(r *http.Request) (*http.Response, error) {
 		StatusCode: 200,
 		Header:     map[string][]string{"Content-Type": {"text/html"}},
 	}, nil
+}
+
+// logger sends rod's browser download messages to the provider's log.
+type logger struct{ log *mango.Logger }
+
+func (l logger) Println(vs ...any) {
+	l.log.Log("%s", strings.TrimSpace(fmt.Sprintln(vs...)))
 }
