@@ -1,6 +1,10 @@
 package mangoprovider
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/luevano/libmangal/metadata"
+)
 
 var matchingTests = []struct {
 	original string
@@ -185,5 +189,21 @@ func TestImageExtension(t *testing.T) {
 func TestEscapePath(t *testing.T) {
 	if got := EscapePath("1/one piece?x#y"); got != "1/one%20piece%3Fx%23y" {
 		t.Errorf("got %q", got)
+	}
+}
+
+func TestParseStatus(t *testing.T) {
+	for status, want := range map[string]metadata.Status{
+		"Ongoing":     metadata.StatusReleasing,
+		"COMPLETED":   metadata.StatusFinished,
+		"Hiatus":      metadata.StatusHiatus,
+		"Dropped":     metadata.StatusCancelled,
+		"cancelled":   metadata.StatusCancelled,
+		"Coming Soon": metadata.StatusNotYetReleased,
+		"Season End":  metadata.Status("UNKNOWN"),
+	} {
+		if got := ParseStatus(status); got != want {
+			t.Errorf("%q: wanted %q, got %q", status, want, got)
+		}
 	}
 }

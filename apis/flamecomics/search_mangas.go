@@ -83,19 +83,6 @@ func toManga(s series) *mango.Manga {
 	if s.Cover != "" {
 		cover = cdn + id + "/" + s.Cover
 	}
-	status := metadata.Status("UNKNOWN")
-	switch strings.ToLower(s.Status) {
-	case "ongoing":
-		status = metadata.StatusReleasing
-	case "completed":
-		status = metadata.StatusFinished
-	case "hiatus":
-		status = metadata.StatusHiatus
-	case "dropped", "cancelled":
-		status = metadata.StatusCancelled
-	case "coming soon":
-		status = metadata.StatusNotYetReleased
-	}
 	var alt []string
 	for _, t := range s.AltTitles {
 		if t = strings.TrimSpace(t); t != "" {
@@ -112,7 +99,7 @@ func toManga(s series) *mango.Manga {
 		ArtistList:        s.Artist,
 		GenreList:         s.Categories,
 		DateStart:         metadata.Date{Year: s.Year},
-		PublicationStatus: status,
+		PublicationStatus: mango.ParseStatus(s.Status),
 		CountryOfOrigin:   s.Country,
 		SourceURL:         website + "series/" + id,
 		ProviderID:        id,

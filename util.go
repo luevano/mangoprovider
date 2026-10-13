@@ -140,6 +140,24 @@ func EscapePath(p string) string {
 }
 
 // DateOf converts t to a metadata.Date.
+// ParseStatus maps the status the scanlation sites show (asurascans, flamecomics) to the
+// metadata one, "UNKNOWN" if it isn't one of them.
+func ParseStatus(status string) metadata.Status {
+	switch strings.ToLower(strings.TrimSpace(status)) {
+	case "ongoing":
+		return metadata.StatusReleasing
+	case "completed":
+		return metadata.StatusFinished
+	case "hiatus":
+		return metadata.StatusHiatus
+	case "dropped", "cancelled":
+		return metadata.StatusCancelled
+	case "coming soon":
+		return metadata.StatusNotYetReleased
+	}
+	return metadata.Status("UNKNOWN")
+}
+
 func DateOf(t time.Time) metadata.Date {
 	return metadata.Date{Year: t.Year(), Month: int(t.Month()), Day: t.Day()}
 }

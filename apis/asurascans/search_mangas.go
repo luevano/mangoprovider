@@ -91,19 +91,6 @@ func (a *asura) search(ctx context.Context, query string) ([]mangadata.Manga, er
 }
 
 func toManga(s series) *mango.Manga {
-	status := metadata.Status("UNKNOWN")
-	switch strings.ToLower(s.Status) {
-	case "ongoing":
-		status = metadata.StatusReleasing
-	case "completed":
-		status = metadata.StatusFinished
-	case "hiatus":
-		status = metadata.StatusHiatus
-	case "dropped", "cancelled":
-		status = metadata.StatusCancelled
-	case "coming soon":
-		status = metadata.StatusNotYetReleased
-	}
 	country := ""
 	switch strings.ToLower(s.Type) {
 	case "manhwa":
@@ -145,7 +132,7 @@ func toManga(s series) *mango.Manga {
 		AuthorList:        authors,
 		ArtistList:        artists,
 		GenreList:         genres,
-		PublicationStatus: status,
+		PublicationStatus: mango.ParseStatus(s.Status),
 		CountryOfOrigin:   country,
 		SourceURL:         mangaURL,
 		ProviderID:        s.Slug,
