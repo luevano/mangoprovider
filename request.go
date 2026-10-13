@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/luevano/libmangal/netutil"
 	"golang.org/x/time/rate"
 )
 
@@ -59,7 +60,7 @@ func StatusError(status int, header http.Header) error {
 	case status == http.StatusNotFound:
 		return fmt.Errorf("%d %w", status, ErrNotFound)
 	case status == http.StatusTooManyRequests:
-		return &RateLimitError{RetryAfter: retryAfter(header.Get("Retry-After"))}
+		return &RateLimitError{RetryAfter: netutil.RetryAfter(header.Get("Retry-After"))}
 	case status >= 500:
 		return fmt.Errorf("%w: %d %s", ErrSiteDown, status, text)
 	}

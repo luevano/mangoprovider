@@ -43,7 +43,7 @@ func (l *Loader) Load(ctx context.Context) (libmangal.Provider, error) {
 
 	f, err := l.F(ctx, log)
 	if err != nil {
-		return nil, errors.Join(fmt.Errorf("load %s: %w", l.ProviderInfo.Name, err), store.Close())
+		return nil, errors.Join(fmt.Errorf("load %s: %w", l.ProviderInfo.Name, shared(err)), store.Close())
 	}
 
 	return &Provider{

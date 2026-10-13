@@ -26,6 +26,11 @@ func TestStatusError(t *testing.T) {
 	if !errors.Is(err, ErrRateLimited) || !errors.As(err, &rateLimit) || rateLimit.RetryAfterDuration() != 7*time.Second {
 		t.Errorf("429: %v", err)
 	}
+	date := time.Now().Add(time.Minute).UTC().Format(http.TimeFormat)
+	err = StatusError(http.StatusTooManyRequests, http.Header{"Retry-After": {date}})
+	if !errors.As(err, &rateLimit) || rateLimit.RetryAfter <= 50*time.Second || rateLimit.RetryAfter > time.Minute {
+		t.Errorf("429 with a date: %v", err)
+	}
 }
 
 func TestReadBodyCapped(t *testing.T) {

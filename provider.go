@@ -5,13 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/luevano/libmangal"
 	"github.com/luevano/libmangal/logger"
 	"github.com/luevano/libmangal/mangadata"
+	"github.com/luevano/libmangal/netutil"
 )
 
 var (
@@ -63,7 +63,7 @@ func (p *Provider) Account(ctx context.Context) (libmangal.Account, bool, error)
 	}
 	account, found, err := p.F.Account(ctx)
 	if err != nil {
-		return account, found, fmt.Errorf("%s: account: %w", p.ProviderInfo.ID, err)
+		return account, found, fmt.Errorf("%s: account: %w", p.ProviderInfo.ID, shared(err))
 	}
 	return account, found, nil
 }
@@ -84,7 +84,7 @@ func (p *Provider) SearchMangas(
 
 	mangas, err := p.F.SearchMangas(ctx, p.store, query)
 	if err != nil {
-		return nil, fmt.Errorf("%s: search %q: %w", p.ProviderInfo.ID, query, err)
+		return nil, fmt.Errorf("%s: search %q: %w", p.ProviderInfo.ID, query, shared(err))
 	}
 	return mangas, nil
 }
@@ -98,7 +98,7 @@ func (p *Provider) MangaByID(ctx context.Context, id string) (mangadata.Manga, b
 	p.log.Log("getting manga with id %q", id)
 	manga, found, err := p.F.MangaByID(ctx, p.store, id)
 	if err != nil {
-		return nil, false, fmt.Errorf("%s: manga %q: %w", p.ProviderInfo.ID, id, err)
+		return nil, false, fmt.Errorf("%s: manga %q: %w", p.ProviderInfo.ID, id, shared(err))
 	}
 	if !found || manga == nil {
 		return nil, false, nil
@@ -126,7 +126,7 @@ func (p *Provider) MangaVolumes(
 	p.log.Log("fetching volumes for manga %q", m)
 	volumes, err := p.F.MangaVolumes(ctx, p.store, *m)
 	if err != nil {
-		return nil, fmt.Errorf("%s: volumes of %q: %w", p.ProviderInfo.ID, m, err)
+		return nil, fmt.Errorf("%s: volumes of %q: %w", p.ProviderInfo.ID, m, shared(err))
 	}
 	return volumes, nil
 }
@@ -143,7 +143,7 @@ func (p *Provider) VolumeChapters(
 	p.log.Log("fetching chapters for volume %s", v.String())
 	chapters, err := p.F.VolumeChapters(ctx, p.store, *v)
 	if err != nil {
-		return nil, fmt.Errorf("%s: chapters of %q vol %s: %w", p.ProviderInfo.ID, v.Manga_, v, err)
+		return nil, fmt.Errorf("%s: chapters of %q vol %s: %w", p.ProviderInfo.ID, v.Manga_, v, shared(err))
 	}
 	return chapters, nil
 }
@@ -160,7 +160,7 @@ func (p *Provider) ChapterPages(
 	p.log.Log("fetching pages for chapter %q", c)
 	pages, err := p.F.ChapterPages(ctx, p.store, *c)
 	if err != nil {
-		return nil, fmt.Errorf("%s: pages of chapter %q: %w", p.ProviderInfo.ID, c, err)
+		return nil, fmt.Errorf("%s: pages of chapter %q: %w", p.ProviderInfo.ID, c, shared(err))
 	}
 	return pages, nil
 }
@@ -183,7 +183,7 @@ func (p *Provider) GetPageImage(
 	})
 	image, err := getPageImage(ctx, p.client, *page_)
 	if err != nil {
-		return nil, fmt.Errorf("%s: image for chapter %q: %w", p.ProviderInfo.ID, page_.Chapter_, err)
+		return nil, fmt.Errorf("%s: image for chapter %q: %w", p.ProviderInfo.ID, page_.Chapter_, shared(err))
 	}
 	return image, nil
 }
@@ -259,7 +259,7 @@ func getPageImage(ctx context.Context, client *http.Client, page Page) (image []
 	defer response.Body.Close()
 
 	if response.StatusCode == http.StatusTooManyRequests {
-		after := retryAfter(response.Header.Get("Retry-After"))
+		after := netutil.RetryAfter(response.Header.Get("Retry-After"))
 		return nil, after, fmt.Errorf("GET %s: %w", page.URL, &RateLimitError{RetryAfter: after})
 	}
 	if response.StatusCode != http.StatusOK {
@@ -272,15 +272,4 @@ func getPageImage(ctx context.Context, client *http.Client, page Page) (image []
 	}
 
 	return image, -1, nil
-}
-
-// retryAfter is the wait a Retry-After header asks for (seconds or a date), 0 if none.
-func retryAfter(v string) time.Duration {
-	if secs, err := strconv.Atoi(v); err == nil && secs > 0 {
-		return time.Duration(secs) * time.Second
-	}
-	if t, err := http.ParseTime(v); err == nil {
-		return max(time.Until(t), 0)
-	}
-	return 0
 }
