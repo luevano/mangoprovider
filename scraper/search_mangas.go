@@ -56,7 +56,7 @@ func (s *Scraper) MangaByID(ctx context.Context, store mango.Store, id string) (
 	if s.config.MangaByIDExtractor == nil {
 		return nil, false, fmt.Errorf("search by id: %w (no MangaByIDExtractor)", mango.ErrNotSupported)
 	}
-	mangaURL, err := s.config.GenerateSearchByIDURL(s.config.BaseURL, id)
+	mangaURL, err := s.config.GenerateSearchByIDURL(s.config.BaseURL, mango.EscapePath(id))
 	if err != nil {
 		return nil, false, err
 	}

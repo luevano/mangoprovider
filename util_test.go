@@ -181,3 +181,9 @@ func TestImageExtension(t *testing.T) {
 		t.Error("an url without an extension should be an error")
 	}
 }
+
+func TestEscapePath(t *testing.T) {
+	if got := EscapePath("1/one piece?x#y"); got != "1/one%20piece%3Fx%23y" {
+		t.Errorf("got %q", got)
+	}
+}

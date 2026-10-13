@@ -162,7 +162,8 @@ func TestMangaByID(t *testing.T) {
 	if info := manga.Info(); info.Title != "One Piece" || info.ID != "1/one-piece" || info.Cover != "cover.jpg" {
 		t.Errorf("got %+v", info)
 	}
-	for _, id := range []string{"3/nope", "4/gone"} {
+	// a query or fragment in the id stays in the path
+	for _, id := range []string{"3/nope", "4/gone", "1/one-piece?page=2", "1/one-piece#x"} {
 		if manga, found, err := s.MangaByID(ctx, mango.Store{}, id); err != nil || found {
 			t.Errorf("%s: %v, %v, %v, want not found", id, manga, found, err)
 		}

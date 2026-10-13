@@ -129,6 +129,16 @@ func NextExtraNumber(last float32) float32 {
 	return float32((float64(last*10) + 1) / 10)
 }
 
+// EscapePath escapes each "/"-separated part of p, e.g. an id given by the user that goes in a
+// url's path.
+func EscapePath(p string) string {
+	parts := strings.Split(p, "/")
+	for i, part := range parts {
+		parts[i] = url.PathEscape(part)
+	}
+	return strings.Join(parts, "/")
+}
+
 // DateOf converts t to a metadata.Date.
 func DateOf(t time.Time) metadata.Date {
 	return metadata.Date{Year: t.Year(), Month: int(t.Month()), Day: t.Day()}

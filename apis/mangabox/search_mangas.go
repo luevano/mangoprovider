@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"net/url"
 	"regexp"
 	"strings"
 
@@ -54,7 +55,7 @@ func (m *mangabox) search(ctx context.Context, store mango.Store, query string) 
 
 // MangaByID gets the manga by its slug (/manga/<slug>).
 func (m *mangabox) MangaByID(ctx context.Context, store mango.Store, id string) (mangadata.Manga, bool, error) {
-	manga, err := m.manga(ctx, store, id)
+	manga, err := m.manga(ctx, store, url.PathEscape(id))
 	if errors.Is(err, mango.ErrNotFound) {
 		return nil, false, nil
 	}
