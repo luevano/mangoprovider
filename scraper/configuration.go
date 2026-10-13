@@ -31,8 +31,6 @@ type Configuration struct {
 
 	// BaseURL: Base URL of the source.
 	BaseURL string
-	// TODO: remove unnecessary baseUrl in these generate methods
-	//
 	// GenerateSearchURL: Create search URL from the query.
 	// E.g. "one piece" -> "https://manganelo.com/search/story/one_piece"
 	GenerateSearchURL func(baseUrl, query string) (string, error)

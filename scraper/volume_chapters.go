@@ -35,8 +35,6 @@ func (s *Scraper) VolumeChapters(ctx context.Context, store mango.Store, volume 
 	data.Put("volume", volume)
 	data.Put("chapters", &chapters)
 
-	// TODO: check if using this URL is good enough, only works for sources that
-	// don't provide volumes and thus everything is in the manga url
 	chaptersURL := volume.Manga_.URL
 	if s.config.ChaptersURL != nil {
 		chaptersURL = s.config.ChaptersURL(*volume.Manga_)

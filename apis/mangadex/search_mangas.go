@@ -140,7 +140,6 @@ func (d *dex) dexToMangoManga(manga *mangodex.Manga) *mango.Manga {
 	}
 }
 
-// TODO: remove fallback (for filtered language) for tags/genres/descriptions?
 func (d *dex) dexToMetadata(manga *mangodex.Manga) *mangadata.Metadata {
 	// romaji/native depend on the original language, e.g. "ko-ro"/"ko" for manhwa
 	original := manga.Attributes.OriginalLanguage

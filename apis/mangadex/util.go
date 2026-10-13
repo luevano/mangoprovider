@@ -11,7 +11,6 @@ import (
 	mango "github.com/luevano/mangoprovider"
 )
 
-// TODO: make this configurable?
 const chapterNumberFormat = "Chapter %s"
 
 // getChapterNum: The chapter's number, false for chapters without one (oneshots, extras).
