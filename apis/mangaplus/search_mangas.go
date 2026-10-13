@@ -59,7 +59,10 @@ func (p *plus) MangaByID(ctx context.Context, store mango.Store, id string) (man
 	if err != nil {
 		return nil, false, err
 	}
-	m := p.plusToMangoManga(titleDetail)
+	m, err := p.plusToMangoManga(titleDetail)
+	if err != nil {
+		return nil, false, fmt.Errorf("title %s: %w", id, err)
+	}
 	return m, true, store.SetMangas(cacheID, []mangadata.Manga{m})
 }
 
@@ -103,26 +106,36 @@ func (p *plus) searchMangas(ctx context.Context, mangas *[]mangadata.Manga, quer
 		if err != nil {
 			return err
 		}
-		*mangas = append(*mangas, p.plusToMangoManga(titleDetail))
+		if titleDetail.GetTitle() == nil {
+			titleDetail.Title = m.title
+		}
+		manga, err := p.plusToMangoManga(titleDetail)
+		if err != nil {
+			return fmt.Errorf("title %d: %w", m.title.GetTitleId(), err)
+		}
+		*mangas = append(*mangas, manga)
 	}
 	return nil
 }
 
-func (p *plus) plusToMangoManga(titleDetail *mangoplus.TitleDetailView) *mango.Manga {
+func (p *plus) plusToMangoManga(titleDetail *mangoplus.TitleDetailView) (*mango.Manga, error) {
+	if titleDetail.GetTitle() == nil {
+		return nil, errors.New("no title in the details")
+	}
 	meta := p.plusToMetadata(titleDetail)
 	var m metadata.Metadata = meta
 	return &mango.Manga{
 		Title:     meta.Title(),
 		URL:       meta.URL(),
-		ID:        strconv.Itoa(int(titleDetail.Title.TitleId)),
+		ID:        strconv.Itoa(int(titleDetail.GetTitle().GetTitleId())),
 		Cover:     meta.Cover(),
 		Banner:    meta.Banner(),
 		Metadata_: &m,
-	}
+	}, nil
 }
 
 func (p *plus) plusToMetadata(titleDetail *mangoplus.TitleDetailView) *mangadata.Metadata {
-	title := titleDetail.Title
+	title := titleDetail.GetTitle()
 
 	var status metadata.Status
 	switch titleDetail.GetTitleLabels().GetReleaseSchedule() {
@@ -139,23 +152,23 @@ func (p *plus) plusToMetadata(titleDetail *mangoplus.TitleDetailView) *mangadata
 	// but there is no guarantee that the date of the first chapter is that of the
 	// manga start date, as the chapter could've been released much later in time
 	var date metadata.Date
-	if len(titleDetail.ChapterListV2) != 0 {
-		date = parseTSSecs(titleDetail.ChapterListV2[0].StartTimeStamp)
+	if chapters := titleDetail.GetChapterListV2(); len(chapters) != 0 {
+		date = parseTSSecs(chapters[0].GetStartTimeStamp())
 	}
 
 	// Assume it is in english, there are no alternate titles (unless many other requests where to be performed).
 	// Also using author as aritsts too, not much data provided, and there is no tag/genre data
 	return &mangadata.Metadata{
-		EnglishTitle:      title.Name,
-		Summary:           titleDetail.Overview,
-		CoverImage:        title.PortraitImageUrl,
-		BannerImage:       titleDetail.TitleImageUrl,
-		AuthorList:        []string{title.Author},
-		ArtistList:        []string{title.Author},
+		EnglishTitle:      title.GetName(),
+		Summary:           titleDetail.GetOverview(),
+		CoverImage:        title.GetPortraitImageUrl(),
+		BannerImage:       titleDetail.GetTitleImageUrl(),
+		AuthorList:        []string{title.GetAuthor()},
+		ArtistList:        []string{title.GetAuthor()},
 		DateStart:         date,
 		PublicationStatus: status,
-		SourceURL:         fmt.Sprintf("%stitles/%d", website, title.TitleId),
-		ProviderID:        strconv.Itoa(int(title.TitleId)),
+		SourceURL:         fmt.Sprintf("%stitles/%d", website, title.GetTitleId()),
+		ProviderID:        strconv.Itoa(int(title.GetTitleId())),
 		ProviderIDCode:    "mp",
 	}
 }
