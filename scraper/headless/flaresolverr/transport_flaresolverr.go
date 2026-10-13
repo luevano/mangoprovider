@@ -15,6 +15,13 @@ import (
 	"github.com/google/uuid"
 )
 
+var (
+	// defaultMaxTimeout: flaresolverr's maxTimeout when the request has no deadline.
+	defaultMaxTimeout = 30 * time.Second
+	// requestMargin: How long past maxTimeout to wait for flaresolverr's answer.
+	requestMargin = 30 * time.Second
+)
+
 var _ http.RoundTripper = (*TransportFlaresolverr)(nil)
 
 // TransportFlaresolverr implementation of Transport used for colly.
@@ -47,7 +54,7 @@ func (t *TransportFlaresolverr) RoundTrip(r *http.Request) (*http.Response, erro
 	if ok {
 		timeout = int(deadline.Sub(time.Now()).Milliseconds()) - 1000
 	} else {
-		timeout = 30000
+		timeout = int(defaultMaxTimeout.Milliseconds())
 	}
 
 	switch r.Method {
@@ -77,7 +84,10 @@ func (t *TransportFlaresolverr) RoundTrip(r *http.Request) (*http.Response, erro
 		return nil, err
 	}
 
-	request, err := http.NewRequestWithContext(r.Context(), http.MethodPost, t.url, bytes.NewBuffer(req))
+	// flaresolverr answers within maxTimeout, the margin covers its own overhead
+	ctx, cancel := context.WithTimeout(r.Context(), time.Duration(timeout)*time.Millisecond+requestMargin)
+	defer cancel()
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost, t.url, bytes.NewBuffer(req))
 	if err != nil {
 		return nil, err
 	}
