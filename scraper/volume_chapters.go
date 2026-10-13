@@ -39,7 +39,7 @@ func (s *Scraper) VolumeChapters(ctx context.Context, store mango.Store, volume 
 		chaptersURL = s.config.ChaptersURL(*volume.Manga_)
 	}
 	collector := s.getChaptersCollector()
-	if err := scrape(ctx, collector, chaptersURL, data); err != nil {
+	if err := s.scrape(ctx, collector, chaptersURL, data); err != nil {
 		return nil, err
 	}
 

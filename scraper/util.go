@@ -76,11 +76,14 @@ func setBaseURLOnRedirect(ctx context.Context, config *Configuration, httpClient
 
 const scrapeErrorKey = "scrape_error"
 
-// scrape: Requests the url with the collector and waits for its callbacks to finish.
+// scrape: Requests the url (throttled) with the collector and waits for its callbacks to finish.
 //
 // The collector is async, so colly only passes request errors (including 4xx/5xx) to OnError,
 // they're collected here and returned along with panics in the callbacks (see recoverScrape).
-func scrape(ctx context.Context, collector *colly.Collector, url string, data *colly.Context) error {
+func (s *Scraper) scrape(ctx context.Context, collector *colly.Collector, url string, data *colly.Context) error {
+	if err := s.limiter.Wait(ctx); err != nil {
+		return err
+	}
 	collector.Context = ctx
 	collector.OnError(func(r *colly.Response, err error) {
 		switch {

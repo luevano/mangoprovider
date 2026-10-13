@@ -135,7 +135,7 @@ type Options struct {
 	// CacheStore returns a gokv.Store implementation for use as a cache storage.
 	CacheStore func(dbName, bucketName string) (gokv.Store, error)
 
-	// Parallelism to use when making HTTP requests.
+	// Parallelism: How many html requests the scrapers make at once, at most 4.
 	Parallelism uint8
 
 	// Filter options.
@@ -164,7 +164,7 @@ func DefaultOptions() Options {
 		CacheStore: func(dbName, bucketName string) (gokv.Store, error) {
 			return syncmap.NewStore(syncmap.Options{Codec: encoding.Gob}), nil
 		},
-		Parallelism:       uint8(15),
+		Parallelism:       uint8(4),
 		Filter:            DefaultFilterOptions(),
 		Headless:          DefaultHeadlessOptions(),
 		MangaDex:          DefaultMangaDexOptions(),

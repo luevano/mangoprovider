@@ -225,3 +225,41 @@ func TestChapterPagesAbsoluteURL(t *testing.T) {
 		}
 	}
 }
+
+func TestThrottle(t *testing.T) {
+	s, url := newTestScraper(t, http.StatusOK, `<html><body><img src="1.png"></body></html>`, &PageExtractor{
+		Selector: "img",
+		URL:      func(s *goquery.Selection) string { return s.AttrOr("src", "") },
+	})
+	start := time.Now()
+	for range requestBurst + 2 {
+		if _, err := s.ChapterPages(context.Background(), mango.Store{}, mango.Chapter{URL: url}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if took, want := time.Since(start), 2*requestInterval; took < want {
+		t.Errorf("%d requests took %v, want at least %v", requestBurst+2, took, want)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, err := s.ChapterPages(ctx, mango.Store{}, mango.Chapter{URL: url}); !errors.Is(err, context.Canceled) {
+		t.Errorf("cancelled while throttled: wanted the context error, got %v", err)
+	}
+}
+
+func TestParallelism(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	defer server.Close()
+	for _, tt := range []struct{ option, want uint8 }{{15, maxParallelism}, {2, 2}} {
+		options := mango.DefaultOptions()
+		options.Parallelism = tt.option
+		config := &Configuration{Name: "test", BaseURL: server.URL}
+		if _, err := NewScraper(context.Background(), config, options, nil); err != nil {
+			t.Fatal(err)
+		}
+		if config.Parallelism != tt.want {
+			t.Errorf("option %d: wanted %d, got %d", tt.option, tt.want, config.Parallelism)
+		}
+	}
+}

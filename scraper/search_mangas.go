@@ -35,7 +35,7 @@ func (s *Scraper) SearchMangas(ctx context.Context, store mango.Store, query str
 	// data shared with the collector callbacks
 	data := colly.NewContext()
 	data.Put("mangas", &mangas)
-	if err := scrape(ctx, s.getMangasCollector(), searchURL, data); err != nil {
+	if err := s.scrape(ctx, s.getMangasCollector(), searchURL, data); err != nil {
 		return nil, err
 	}
 
@@ -71,7 +71,7 @@ func (s *Scraper) MangaByID(ctx context.Context, store mango.Store, id string) (
 	mangas = nil
 	data := colly.NewContext()
 	data.Put("mangas", &mangas)
-	if err := scrape(ctx, s.getMangaCollector(id), mangaURL, data); err != nil {
+	if err := s.scrape(ctx, s.getMangaCollector(id), mangaURL, data); err != nil {
 		if errors.Is(err, mango.ErrNotFound) {
 			return nil, false, nil
 		}

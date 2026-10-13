@@ -31,7 +31,7 @@ func (s *Scraper) MangaVolumes(ctx context.Context, store mango.Store, manga man
 	data.Put("volumes", &volumes)
 
 	collector := s.getVolumesCollector()
-	if err := scrape(ctx, collector, manga.URL, data); err != nil {
+	if err := s.scrape(ctx, collector, manga.URL, data); err != nil {
 		return nil, err
 	}
 
