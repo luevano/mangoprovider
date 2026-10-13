@@ -45,8 +45,8 @@ github.com/kennygrant/sanitize v1.2.4 h1:gN25/otpP5vAsO2djbMhF/LQX6R7+O1TB4yv8Nz
 github.com/kennygrant/sanitize v1.2.4/go.mod h1:LGsjYYtgxbetdg5owWB2mpgUL6e2nfw2eObZ0u0qvak=
 github.com/lithammer/fuzzysearch v1.1.8 h1:/HIuJnjHuXS8bKaiTMeeDlW2/AyIWk2brx1V8LFgLN4=
 github.com/lithammer/fuzzysearch v1.1.8/go.mod h1:IdqeyBClc3FFqSzYq/MXESsS4S0FsZ5ajtkr5xPLts4=
-github.com/luevano/libmangal v0.28.0 h1:hBGAF8M9nVEmbYBqeL9swu/YSuKRXEv5+XD/Hf011m8=
-github.com/luevano/libmangal v0.28.0/go.mod h1:0mbcy0DyzzNm5ZDguAYn5hB6zZgsUzEoief4y3CDht8=
+github.com/luevano/libmangal v0.29.0 h1:xQUwX1GFhKOIWJU4BG/zoEfMkvMAwTcLw0SDufjaqbg=
+github.com/luevano/libmangal v0.29.0/go.mod h1:0mbcy0DyzzNm5ZDguAYn5hB6zZgsUzEoief4y3CDht8=
 github.com/luevano/mangodex v0.5.0 h1:Infr5+wIQsHVVDyO16gzRlSTcdIMrAAIEedUHBYkxsM=
 github.com/luevano/mangodex v0.5.0/go.mod h1:bwW0qRsuLCaOzYRd5yf1sHy5ymO+nG6/R2+qsYjRIGA=
 github.com/luevano/mangoplus v0.7.2 h1:hPpesHeNagVQOqr6aT37ghX3q7uCulSWS2HaHUK3ozA=
