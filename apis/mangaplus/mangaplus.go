@@ -38,7 +38,11 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 		Account:      true,
 		F: func(_ context.Context, log *mango.Logger) (mango.Functions, error) {
 			p.log = log
-			client, err := mangoplus.NewPlusClient(o.Options)
+			plusOptions := o.Options
+			if plusOptions.HTTPClient == nil {
+				plusOptions.HTTPClient = options.HTTPClient
+			}
+			client, err := mangoplus.NewPlusClient(plusOptions)
 			if err != nil {
 				return mango.Functions{}, err
 			}

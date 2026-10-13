@@ -3,6 +3,7 @@ package mangoprovider
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/luevano/mangodex"
 	"github.com/luevano/mangoplus"
@@ -158,7 +159,7 @@ type Options struct {
 
 func DefaultOptions() Options {
 	return Options{
-		HTTPClient: &http.Client{},
+		HTTPClient: &http.Client{Timeout: time.Minute},
 		UserAgent:  defaultUserAgent,
 		CacheStore: func(dbName, bucketName string) (gokv.Store, error) {
 			return syncmap.NewStore(syncmap.Options{Codec: encoding.Gob}), nil

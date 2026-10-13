@@ -37,7 +37,11 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 		Options:      options,
 		F: func(_ context.Context, log *mango.Logger) (mango.Functions, error) {
 			d.log = log
-			client, err := mangodex.NewDexClient(o.Options)
+			dexOptions := o.Options
+			if dexOptions.HTTPClient == nil {
+				dexOptions.HTTPClient = options.HTTPClient
+			}
+			client, err := mangodex.NewDexClient(dexOptions)
 			if err != nil {
 				return mango.Functions{}, err
 			}
