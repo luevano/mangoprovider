@@ -76,6 +76,6 @@ func parseChapterNumber(s string, lastNumber float32) float32 {
 }
 
 func parseTSSecs(timestamp int64) metadata.Date {
-	ts := time.Unix(timestamp, 0)
+	ts := time.Unix(timestamp, 0).UTC()
 	return mango.DateOf(ts)
 }
