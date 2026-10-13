@@ -134,11 +134,16 @@ func (s *Scraper) getMangasCollector() *colly.Collector {
 		elements.Each(func(_ int, selection *goquery.Selection) {
 			link := s.config.MangaExtractor.URL(selection)
 			url := e.Request.AbsoluteURL(link)
+			id := s.config.MangaExtractor.ID(url)
+			if id == "" {
+				s.log.Log("skipping manga %q: no id in %q", mango.CleanString(selection.Text()), url)
+				return
+			}
 			var meta metadata.Metadata = &mangadata.Metadata{}
 			m := mango.Manga{
 				Title:     mango.CleanString(s.config.MangaExtractor.Title(selection)),
 				URL:       url,
-				ID:        s.config.MangaExtractor.ID(url),
+				ID:        id,
 				Cover:     s.config.MangaExtractor.Cover(selection),
 				Metadata_: &meta,
 			}

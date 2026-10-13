@@ -1,7 +1,6 @@
 package weebcentral
 
 import (
-	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
@@ -77,7 +76,8 @@ func Config(log *mango.Logger) *scraper.Configuration {
 			},
 			// e.g. https://weebcentral.com/series/01J76XY7EF75DJNQCV04HTPDZK/Berserk
 			ID: func(_url string) string {
-				return pathAfter(_url, "series")
+				id, _ := pathAfter(_url, "series")
+				return id
 			},
 		},
 		VolumeExtractor: &scraper.VolumeExtractor{
@@ -96,7 +96,8 @@ func Config(log *mango.Logger) *scraper.Configuration {
 			},
 			// e.g. https://weebcentral.com/chapters/01KX4BFP5E3FEZ50TRS752CT9V
 			ID: func(_url string) string {
-				return pathAfter(_url, "chapters")
+				id, _ := pathAfter(_url, "chapters")
+				return id
 			},
 			Number: chapterNumber,
 			Date: func(selection *goquery.Selection) metadata.Date {
@@ -131,12 +132,12 @@ func chapterNumber(title string) (float32, bool) {
 }
 
 // pathAfter: The path segment after the given one, e.g. the id after "series".
-func pathAfter(_url, segment string) string {
-	parts := strings.Split(strings.TrimRight(_url, "/"), "/")
-	for i, part := range parts[:len(parts)-1] {
-		if part == segment {
-			return parts[i+1]
+func pathAfter(_url, segment string) (string, bool) {
+	parts := scraper.PathParts(_url)
+	for i := 0; i+1 < len(parts); i++ {
+		if parts[i] == segment {
+			return parts[i+1], true
 		}
 	}
-	panic(fmt.Sprintf("no %s id in %s", segment, _url))
+	return "", false
 }

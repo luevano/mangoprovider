@@ -64,8 +64,12 @@ func Config(_ *mango.Logger) *scraper.Configuration {
 			Cover: func(selection *goquery.Selection) string {
 				return selection.Find("img").AttrOr("data-src", "")
 			},
+			// e.g. https://toonily.com/webtoon/<slug>/
 			ID: func(_url string) string {
-				return strings.Split(_url, "/")[4]
+				if parts := scraper.PathParts(_url); len(parts) >= 2 {
+					return parts[1]
+				}
+				return ""
 			},
 		},
 		VolumeExtractor: &scraper.VolumeExtractor{
@@ -84,8 +88,12 @@ func Config(_ *mango.Logger) *scraper.Configuration {
 			URL: func(selection *goquery.Selection) string {
 				return selection.Find("a").AttrOr("href", "")
 			},
+			// e.g. https://toonily.com/webtoon/<slug>/chapter-1/
 			ID: func(_url string) string {
-				return strings.Split(_url, "/")[5]
+				if parts := scraper.PathParts(_url); len(parts) >= 3 {
+					return parts[2]
+				}
+				return ""
 			},
 			Date: func(selection *goquery.Selection) metadata.Date {
 				layout := "Jan 02, 06"

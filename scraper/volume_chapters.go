@@ -77,6 +77,11 @@ func (s *Scraper) getChaptersCollector() *colly.Collector {
 			link := s.config.ChapterExtractor.URL(selection)
 			url := e.Request.AbsoluteURL(link)
 			title := strings.TrimSpace(mango.CleanString(s.config.ChapterExtractor.Title(selection)))
+			id := s.config.ChapterExtractor.ID(url)
+			if id == "" {
+				s.log.Log("skipping chapter %q: no id in %q", title, url)
+				return
+			}
 
 			parseNumber := mango.ParseChapterNumber
 			if s.config.ChapterExtractor.Number != nil {
@@ -100,7 +105,7 @@ func (s *Scraper) getChaptersCollector() *colly.Collector {
 
 			c := mango.Chapter{
 				Title:           mango.ParseChapterTitle(title),
-				ID:              s.config.ChapterExtractor.ID(url),
+				ID:              id,
 				URL:             url,
 				Number:          chapterNumber,
 				Date:            chapterDate,

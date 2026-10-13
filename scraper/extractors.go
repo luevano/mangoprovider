@@ -1,6 +1,9 @@
 package scraper
 
 import (
+	"net/url"
+	"strings"
+
 	"github.com/PuerkitoBio/goquery"
 	"github.com/luevano/libmangal/metadata"
 )
@@ -26,7 +29,7 @@ type MangaExtractor struct {
 	Title func(*goquery.Selection) string
 	// URL: Get URL from element found by selector.
 	URL func(*goquery.Selection) string
-	// ID: Get id from parsed url string.
+	// ID: Get id from parsed url string, empty skips the manga (e.g. an odd url).
 	ID func(string) string
 	// Cover: Get cover from element found by selector.
 	Cover func(*goquery.Selection) string
@@ -48,7 +51,7 @@ type ChapterExtractor struct {
 	Title func(*goquery.Selection) string
 	// URL: Get URL from element found by selector.
 	URL func(*goquery.Selection) string
-	// ID: Get id from parsed url string.
+	// ID: Get id from parsed url string, empty skips the chapter (e.g. an odd url).
 	ID func(string) string
 	// Number: Optional, get the number from the title, mango.ParseChapterNumber if nil.
 	// Not ok means the chapter has none, it goes right after the previous one.
@@ -67,4 +70,18 @@ type PageExtractor struct {
 	URL func(*goquery.Selection) string
 	// URLs: Get all URLs from element found by selector.
 	URLs func(*goquery.Selection) []string
+}
+
+// PathParts: The parts of the url's path, e.g. ["manga", "1", "one-piece"] for
+// https://site/manga/1/one-piece/, none if it doesn't parse.
+func PathParts(rawURL string) []string {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return nil
+	}
+	p := strings.Trim(u.Path, "/")
+	if p == "" {
+		return nil
+	}
+	return strings.Split(p, "/")
 }

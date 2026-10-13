@@ -263,3 +263,52 @@ func TestParallelism(t *testing.T) {
 		}
 	}
 }
+
+func TestSkipNoID(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`<html><body><a href="/manga/1">One</a><a href="/odd">Odd</a><a href="/manga/2">Two</a></body></html>`))
+	}))
+	defer server.Close()
+
+	id := func(u string) string {
+		if _, id, ok := strings.Cut(u, "/manga/"); ok {
+			return id
+		}
+		return ""
+	}
+	config := &Configuration{
+		Name:        "test",
+		BaseURL:     server.URL + "/",
+		Parallelism: 1,
+		GenerateSearchURL: func(baseUrl, query string) (string, error) {
+			return baseUrl + "search", nil
+		},
+		MangaExtractor: &MangaExtractor{
+			Selector: "a",
+			Title:    func(s *goquery.Selection) string { return s.Text() },
+			URL:      func(s *goquery.Selection) string { return s.AttrOr("href", "") },
+			ID:       id,
+			Cover:    func(*goquery.Selection) string { return "" },
+		},
+		ChapterExtractor: &ChapterExtractor{
+			Selector: "a",
+			Title:    func(s *goquery.Selection) string { return s.Text() },
+			URL:      func(s *goquery.Selection) string { return s.AttrOr("href", "") },
+			ID:       id,
+		},
+	}
+	s, err := NewScraper(context.Background(), config, mango.DefaultOptions(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mangas, err := s.SearchMangas(context.Background(), mango.Store{}, "x")
+	if err != nil || len(mangas) != 2 || mangas[1].Info().ID != "2" {
+		t.Errorf("wanted the odd manga skipped, got %v, %v", mangas, err)
+	}
+	volume := mango.Volume{Number: 1, Manga_: &mango.Manga{URL: server.URL + "/manga/1"}}
+	chapters, err := s.VolumeChapters(context.Background(), mango.Store{}, volume)
+	if err != nil || len(chapters) != 2 {
+		t.Errorf("wanted the odd chapter skipped, got %v, %v", chapters, err)
+	}
+}

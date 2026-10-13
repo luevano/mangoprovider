@@ -66,9 +66,7 @@ func Config(_ *mango.Logger) *scraper.Configuration {
 			},
 			// the id is in the form <number>/<manga-name> as with just <number>
 			// the url returns 404 (in case it's needed)
-			ID: func(_url string) string {
-				return strings.Join(strings.Split(_url, "/")[4:], "/")
-			},
+			ID: pathID,
 		},
 		VolumeExtractor: &scraper.VolumeExtractor{
 			// selector that points to only 1 element ("Chapters" header)
@@ -86,9 +84,7 @@ func Config(_ *mango.Logger) *scraper.Configuration {
 				return selection.AttrOr("href", "")
 			},
 			// id is constructed similar to manga id above, <number>/<chapter-name>
-			ID: func(_url string) string {
-				return strings.Join(strings.Split(_url, "/")[4:], "/")
-			},
+			ID: pathID,
 			Date: func(_ *goquery.Selection) metadata.Date {
 				// mangapill doesn't provide dates, just use scraping day
 				// else it will just use anilist publication day
@@ -106,4 +102,12 @@ func Config(_ *mango.Logger) *scraper.Configuration {
 			},
 		},
 	}
+}
+
+// pathID: The path after its first part, e.g. "<number>/<name>" for /manga/<number>/<name>.
+func pathID(_url string) string {
+	if parts := scraper.PathParts(_url); len(parts) >= 2 {
+		return strings.Join(parts[1:], "/")
+	}
+	return ""
 }
