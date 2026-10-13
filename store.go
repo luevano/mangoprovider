@@ -115,10 +115,16 @@ func (s Store) GetMangas(cacheID string, query string, mangas *[]mangadata.Manga
 }
 
 func (s Store) SetVolumes(cacheID string, volumes []mangadata.Volume) error {
+	if s.volumes == nil {
+		return nil
+	}
 	return s.volumes.Set(cacheID, volumes)
 }
 
 func (s Store) GetVolumes(cacheID string, manga Manga, volumes *[]mangadata.Volume) (bool, error) {
+	if s.volumes == nil {
+		return false, nil
+	}
 	var foundVolumes []mangadata.Volume
 	found, err := s.volumes.Get(cacheID, &foundVolumes)
 	if err != nil {
@@ -144,10 +150,16 @@ func (s Store) GetVolumes(cacheID string, manga Manga, volumes *[]mangadata.Volu
 }
 
 func (s Store) SetChapters(cacheID string, chapters []mangadata.Chapter) error {
+	if s.chapters == nil {
+		return nil
+	}
 	return s.chapters.Set(cacheID, chapters)
 }
 
 func (s Store) GetChapters(cacheID string, volume Volume, chapters *[]mangadata.Chapter) (bool, error) {
+	if s.chapters == nil {
+		return false, nil
+	}
 	var foundChapters []mangadata.Chapter
 	found, err := s.chapters.Get(cacheID, &foundChapters)
 	if err != nil {
