@@ -8,19 +8,28 @@ import (
 
 	"github.com/gocolly/colly/v2"
 	mango "github.com/luevano/mangoprovider"
-	"github.com/luevano/mangoprovider/scraper/headless/rod"
+)
+
+// requestKind: What a collector requests, for its Referer.
+type requestKind int
+
+const (
+	requestManga requestKind = iota
+	requestVolume
+	requestChapter
+	requestPage
 )
 
 // Sets request headers via OnRequest callback for the collector.
-func (s *Scraper) setCollectorOnRequest(collector *colly.Collector, collectorType rod.ActionType) {
+func (s *Scraper) setCollectorOnRequest(collector *colly.Collector, kind requestKind) {
 	collector.OnRequest(func(r *colly.Request) {
 		var referer string
-		switch collectorType {
-		case rod.ActionVolume:
+		switch kind {
+		case requestVolume:
 			referer = r.Ctx.GetAny("manga").(mango.Manga).URL
-		case rod.ActionChapter:
+		case requestChapter:
 			referer = r.Ctx.GetAny("volume").(mango.Volume).Manga_.URL
-		case rod.ActionPage:
+		case requestPage:
 			referer = r.Ctx.GetAny("chapter").(mango.Chapter).URL
 		default:
 			referer = s.config.BaseURL
@@ -34,9 +43,6 @@ func (s *Scraper) setCollectorOnRequest(collector *colly.Collector, collectorTyp
 		for k, v := range s.config.Headers {
 			r.Headers.Set(k, v)
 		}
-
-		// Used to call the corresponding rod.Action.
-		r.Headers.Set(rod.ActionTypeHeader, string(collectorType))
 	})
 }
 

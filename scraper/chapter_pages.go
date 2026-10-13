@@ -8,7 +8,6 @@ import (
 	"github.com/gocolly/colly/v2"
 	"github.com/luevano/libmangal/mangadata"
 	mango "github.com/luevano/mangoprovider"
-	"github.com/luevano/mangoprovider/scraper/headless/rod"
 )
 
 func (s *Scraper) ChapterPages(ctx context.Context, store mango.Store, chapter mango.Chapter) ([]mangadata.Page, error) {
@@ -37,7 +36,7 @@ func (s *Scraper) ChapterPages(ctx context.Context, store mango.Store, chapter m
 // Get the pages collector, the actual scraping logic is defined here.
 func (s *Scraper) getPagesCollector() *colly.Collector {
 	collector := s.collector.Clone()
-	s.setCollectorOnRequest(collector, rod.ActionPage)
+	s.setCollectorOnRequest(collector, requestPage)
 	collector.OnHTML("html", func(e *colly.HTMLElement) {
 		defer recoverScrape(e)
 		elements := e.DOM.Find(s.config.PageExtractor.Selector)

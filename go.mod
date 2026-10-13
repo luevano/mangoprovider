@@ -4,7 +4,6 @@ go 1.27.0
 
 require (
 	github.com/PuerkitoBio/goquery v1.13.0
-	github.com/go-rod/rod v0.116.2
 	github.com/gocolly/colly/v2 v2.3.0
 	github.com/google/uuid v1.6.0
 	github.com/lithammer/fuzzysearch v1.1.8
@@ -38,11 +37,6 @@ require (
 	github.com/spf13/afero v1.15.0 // indirect
 	github.com/stretchr/testify v1.8.4 // indirect
 	github.com/temoto/robotstxt v1.1.2 // indirect
-	github.com/ysmood/fetchup v0.2.4 // indirect
-	github.com/ysmood/goob v0.4.0 // indirect
-	github.com/ysmood/got v0.40.0 // indirect
-	github.com/ysmood/gson v0.7.3 // indirect
-	github.com/ysmood/leakless v0.9.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/crypto v0.58.0 // indirect
 	golang.org/x/image v0.47.0 // indirect

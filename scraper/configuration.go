@@ -4,7 +4,6 @@ import (
 	"time"
 
 	mango "github.com/luevano/mangoprovider"
-	"github.com/luevano/mangoprovider/scraper/headless/rod"
 )
 
 // Configuration: Defines behavior of the scraper.
@@ -13,19 +12,12 @@ type Configuration struct {
 	Name string
 	// Delay: Delay between requests.
 	Delay time.Duration
-	// LoadWait: Wait time for the page to load
-	// (for headless requests where the HTML is loading dynamically for example).
-	LoadWait time.Duration
 	// Parallelism: Parallelism of the scraper.
 	Parallelism uint8
 
 	// ReverseChapters: If chapters should be shown in reverse order.
 	ReverseChapters bool
 
-	// NeedsHeadlessBrowser: If a headless browser should be used to proxy any request.
-	NeedsHeadlessBrowser bool
-	// LocalStorage: local storage values to set before the requests.
-	LocalStorage map[string]string
 	// Headers: Custom headers to pass to the request.
 	Headers map[string]string
 
@@ -55,14 +47,4 @@ type Configuration struct {
 	ChapterExtractor *ChapterExtractor
 	// PageExtractor: Responsible for finding page elements and extracting required the data.
 	PageExtractor *PageExtractor
-}
-
-// Get the extractor Actions.
-func (c *Configuration) GetActions() map[rod.ActionType]rod.Action {
-	return map[rod.ActionType]rod.Action{
-		rod.ActionManga:   c.MangaExtractor.Action,
-		rod.ActionVolume:  c.VolumeExtractor.Action,
-		rod.ActionChapter: c.ChapterExtractor.Action,
-		rod.ActionPage:    c.PageExtractor.Action,
-	}
 }

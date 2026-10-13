@@ -12,7 +12,6 @@ import (
 	"github.com/luevano/libmangal/mangadata"
 	"github.com/luevano/libmangal/metadata"
 	mango "github.com/luevano/mangoprovider"
-	"github.com/luevano/mangoprovider/scraper/headless/rod"
 )
 
 func (s *Scraper) SearchMangas(ctx context.Context, store mango.Store, query string) ([]mangadata.Manga, error) {
@@ -95,7 +94,7 @@ var errorPagePath = regexp.MustCompile(`^/(400|404)/?$`)
 // Get the manga collector, the actual scraping logic is defined here.
 func (s *Scraper) getMangaCollector(id string) *colly.Collector {
 	collector := s.collector.Clone()
-	s.setCollectorOnRequest(collector, rod.ActionManga)
+	s.setCollectorOnRequest(collector, requestManga)
 	collector.OnHTML("html", func(e *colly.HTMLElement) {
 		defer recoverScrape(e)
 		// some sites (weebcentral) redirect unknown mangas to an error page that answers 200
@@ -126,7 +125,7 @@ func (s *Scraper) getMangaCollector(id string) *colly.Collector {
 // Get the mangas collector, the actual scraping logic is defined here.
 func (s *Scraper) getMangasCollector() *colly.Collector {
 	collector := s.collector.Clone()
-	s.setCollectorOnRequest(collector, rod.ActionManga)
+	s.setCollectorOnRequest(collector, requestManga)
 	collector.OnHTML("html", func(e *colly.HTMLElement) {
 		defer recoverScrape(e)
 		elements := e.DOM.Find(s.config.MangaExtractor.Selector)

@@ -12,7 +12,6 @@ import (
 	"github.com/luevano/libmangal/mangadata"
 	"github.com/luevano/libmangal/metadata"
 	mango "github.com/luevano/mangoprovider"
-	"github.com/luevano/mangoprovider/scraper/headless/rod"
 )
 
 func (s *Scraper) VolumeChapters(ctx context.Context, store mango.Store, volume mango.Volume) ([]mangadata.Chapter, error) {
@@ -67,7 +66,7 @@ func (s *Scraper) VolumeChapters(ctx context.Context, store mango.Store, volume 
 
 func (s *Scraper) getChaptersCollector() *colly.Collector {
 	collector := s.collector.Clone()
-	s.setCollectorOnRequest(collector, rod.ActionChapter)
+	s.setCollectorOnRequest(collector, requestChapter)
 	collector.OnHTML("html", func(e *colly.HTMLElement) {
 		defer recoverScrape(e)
 		elements := e.DOM.Find(s.config.ChapterExtractor.Selector)
