@@ -33,7 +33,7 @@ func (l *Loader) Info() libmangal.ProviderInfo {
 }
 
 func (l *Loader) Load(ctx context.Context) (libmangal.Provider, error) {
-	log := NewLogger(l.ProviderInfo.ID + ": ")
+	log := NewProviderLogger(l.ProviderInfo)
 	store, err := openStore(func(bucketName string) (gokv.Store, error) {
 		return l.Options.CacheStore(l.ProviderInfo.ID, bucketName)
 	}, log)
