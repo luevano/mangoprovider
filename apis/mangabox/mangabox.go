@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 	"sync"
@@ -133,11 +132,11 @@ func (m *mangabox) getFrom(ctx context.Context, url string) ([]byte, error) {
 	if err := m.limiter.Wait(ctx); err != nil {
 		return nil, err
 	}
-	body, status, err := m.do(ctx, m.client, url)
+	body, resp, err := mango.Fetch(ctx, m.client, nil, m.userAgent, url)
 	if err != nil {
 		return nil, down(ctx, err)
 	}
-	if challenged(status, body) {
+	if challenged(resp.StatusCode, body) {
 		fs, err := m.flaresolverrClient()
 		if err != nil {
 			return nil, fmt.Errorf("%w: %w", mango.ErrSiteDown, err)
@@ -145,17 +144,12 @@ func (m *mangabox) getFrom(ctx context.Context, url string) ([]byte, error) {
 		m.log.Status(ctx, "cloudflare challenge on %s, solving with flaresolverr (up to %ds)", mango.Host(url), int(flaresolverrTimeout.Seconds()))
 		ctx, cancel := context.WithTimeout(ctx, flaresolverrTimeout)
 		defer cancel()
-		if body, status, err = m.do(ctx, fs, url); err != nil {
+		if body, resp, err = mango.Fetch(ctx, fs, nil, m.userAgent, url); err != nil {
 			return nil, down(ctx, err)
 		}
 	}
-	switch {
-	case status == http.StatusNotFound:
-		return nil, mango.ErrNotFound
-	case status >= 500:
-		return nil, fmt.Errorf("%w: %d %s", mango.ErrSiteDown, status, strings.ToLower(http.StatusText(status)))
-	case status != http.StatusOK:
-		return nil, fmt.Errorf("%d %s", status, strings.ToLower(http.StatusText(status)))
+	if err := mango.StatusError(resp.StatusCode, resp.Header); err != nil {
+		return nil, err
 	}
 	return body, nil
 }
@@ -166,21 +160,6 @@ func down(ctx context.Context, err error) error {
 		return err
 	}
 	return fmt.Errorf("%w: %w", mango.ErrSiteDown, err)
-}
-
-func (m *mangabox) do(ctx context.Context, client *http.Client, url string) ([]byte, int, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		return nil, 0, err
-	}
-	req.Header.Set("User-Agent", m.userAgent)
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, 0, err
-	}
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
-	return body, resp.StatusCode, err
 }
 
 func (m *mangabox) flaresolverrClient() (*http.Client, error) {

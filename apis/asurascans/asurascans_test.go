@@ -2,6 +2,7 @@ package asurascans
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -23,6 +24,11 @@ var responses = map[string]string{
 func newTest(t *testing.T) *asura {
 	t.Helper()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/limited" {
+			w.Header().Set("Retry-After", "3")
+			w.WriteHeader(http.StatusTooManyRequests)
+			return
+		}
 		body, ok := responses[r.URL.Path]
 		if !ok {
 			http.Error(w, `{"error":"not found"}`, http.StatusNotFound)
@@ -129,5 +135,15 @@ func TestChapterPages(t *testing.T) {
 
 	if _, err := a.ChapterPages(context.Background(), mango.Store{}, mango.Chapter{ID: "146", Volume_: volume}); err == nil {
 		t.Error("locked chapter: no error")
+	}
+}
+
+func TestGetRateLimited(t *testing.T) {
+	a := newTest(t)
+	var v any
+	err := a.get(context.Background(), "limited", &v)
+	var rateLimit *mango.RateLimitError
+	if !errors.As(err, &rateLimit) || rateLimit.RetryAfter != 3*time.Second {
+		t.Errorf("wanted a rate limit error, got %v", err)
 	}
 }

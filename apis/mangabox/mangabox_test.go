@@ -42,6 +42,8 @@ func newServer(t *testing.T, pages map[string]string) *httptest.Server {
 			w.Write([]byte(body))
 		case body == "down":
 			w.WriteHeader(http.StatusServiceUnavailable)
+		case body == "limited":
+			w.WriteHeader(http.StatusTooManyRequests)
 		default:
 			w.Write([]byte(body))
 		}
@@ -229,5 +231,13 @@ func TestMangaByID(t *testing.T) {
 	}
 	if mangas, err := m.SearchMangas(context.Background(), mango.Store{}, "mid:solo-leveling"); err != nil || len(mangas) != 1 {
 		t.Errorf("search by id: %v, %v", mangas, err)
+	}
+}
+
+func TestGetRateLimited(t *testing.T) {
+	m := newTest(t, false, map[string]string{"/manga/x": "limited"})
+	_, _, err := m.get(context.Background(), mango.Store{}, "/manga/x")
+	if !errors.Is(err, mango.ErrRateLimited) {
+		t.Errorf("wanted a rate limit, got %v", err)
 	}
 }

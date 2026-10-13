@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/luevano/libmangal"
@@ -78,26 +77,14 @@ func (a *asura) GetPageImage(ctx context.Context, client *http.Client, page mang
 
 // get decodes the api response at path into v.
 func (a *asura) get(ctx context.Context, path string, v any) error {
-	if err := a.limiter.Wait(ctx); err != nil {
-		return err
-	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, a.base+path, nil)
+	body, resp, err := mango.Fetch(ctx, a.client, a.limiter, a.userAgent, a.base+path)
 	if err != nil {
 		return err
 	}
-	req.Header.Set("User-Agent", a.userAgent)
-	resp, err := a.client.Do(req)
-	if err != nil {
-		return err
+	if err := mango.StatusError(resp.StatusCode, resp.Header); err != nil {
+		return fmt.Errorf("GET /%s: %w", path, err)
 	}
-	defer resp.Body.Close()
-	if resp.StatusCode == http.StatusNotFound {
-		return fmt.Errorf("GET /%s: %w", path, mango.ErrNotFound)
-	}
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("GET /%s: %d %s", path, resp.StatusCode, strings.ToLower(http.StatusText(resp.StatusCode)))
-	}
-	if err := json.NewDecoder(resp.Body).Decode(v); err != nil {
+	if err := json.Unmarshal(body, v); err != nil {
 		return fmt.Errorf("GET /%s: %w", path, err)
 	}
 	return nil

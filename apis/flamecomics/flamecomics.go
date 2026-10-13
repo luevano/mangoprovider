@@ -6,10 +6,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"regexp"
-	"strings"
 
 	"github.com/luevano/libmangal"
 	mango "github.com/luevano/mangoprovider"
@@ -56,25 +54,12 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 
 // page gets a page of the site and decodes the props it embeds into v.
 func (f *flame) page(ctx context.Context, path string, v any) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, f.base+path, nil)
+	body, resp, err := mango.Fetch(ctx, f.client, nil, f.userAgent, f.base+path)
 	if err != nil {
 		return err
 	}
-	req.Header.Set("User-Agent", f.userAgent)
-	resp, err := f.client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode == http.StatusNotFound {
-		return fmt.Errorf("GET /%s: %w", path, mango.ErrNotFound)
-	}
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("GET /%s: %d %s", path, resp.StatusCode, strings.ToLower(http.StatusText(resp.StatusCode)))
-	}
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return err
+	if err := mango.StatusError(resp.StatusCode, resp.Header); err != nil {
+		return fmt.Errorf("GET /%s: %w", path, err)
 	}
 	m := nextData.FindSubmatch(body)
 	if m == nil {

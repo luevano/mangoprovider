@@ -2,6 +2,7 @@ package flamecomics
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -19,6 +20,14 @@ var pages = map[string]string{
 func newTest(t *testing.T) *flame {
 	t.Helper()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/limited":
+			w.WriteHeader(http.StatusTooManyRequests)
+			return
+		case "/down":
+			w.WriteHeader(http.StatusBadGateway)
+			return
+		}
 		props, ok := pages[r.URL.Path]
 		if !ok {
 			http.NotFound(w, r)
@@ -77,5 +86,16 @@ func TestChapterPages(t *testing.T) {
 		if url := got[i].(*mango.Page).URL; url != cdn+"2/aaa/"+name {
 			t.Errorf("page %d: %s, want %s", i, url, name)
 		}
+	}
+}
+
+func TestPageStatusErrors(t *testing.T) {
+	f := newTest(t)
+	var v any
+	if err := f.page(context.Background(), "limited", &v); !errors.Is(err, mango.ErrRateLimited) {
+		t.Errorf("429: %v", err)
+	}
+	if err := f.page(context.Background(), "down", &v); !errors.Is(err, mango.ErrSiteDown) {
+		t.Errorf("502: %v", err)
 	}
 }
