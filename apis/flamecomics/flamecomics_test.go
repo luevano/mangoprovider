@@ -116,3 +116,29 @@ func TestThrottle(t *testing.T) {
 		t.Errorf("4 requests took %v, want at least 200ms", took)
 	}
 }
+
+func TestVolumeChapters(t *testing.T) {
+	// newest first, like the site
+	pages["/series/4"] = `{"chapters":[{"chapter":"2.00","title":"Two","token":"c"},{"chapter":"","title":"Extra","token":"x"},{"chapter":"1.00","title":"One","token":"b","release_date":1611705600}]}`
+	defer delete(pages, "/series/4")
+	f := newTest(t)
+	volume := mango.Volume{Number: 1, None: true, Manga_: &mango.Manga{ID: "4"}}
+	chapters, err := f.VolumeChapters(context.Background(), mango.Store{}, volume)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []struct {
+		id     string
+		number float32
+		date   string
+	}{{"b", 1, "2021-01-27"}, {"x", 1.5, ""}, {"c", 2, ""}}
+	if len(chapters) != len(want) {
+		t.Fatalf("got %v, want %d chapters", chapters, len(want))
+	}
+	for i, w := range want {
+		c := chapters[i].(*mango.Chapter)
+		if c.ID != w.id || c.Number != w.number || c.Date.String() != w.date {
+			t.Errorf("chapter %d: got %s %v %q, want %s %v %q", i, c.ID, c.Number, c.Date, w.id, w.number, w.date)
+		}
+	}
+}
