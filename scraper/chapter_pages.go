@@ -47,7 +47,7 @@ func (s *Scraper) getPagesCollector() *colly.Collector {
 		if s.config.PageExtractor.URLs != nil {
 			urls := s.config.PageExtractor.URLs(elements)
 			for _, u := range urls {
-				page, err := s.urlToPage(chapter, u)
+				page, err := s.urlToPage(chapter, absoluteURL(e.Request, u))
 				if err != nil {
 					setScrapeError(e.Request.Ctx, err)
 					return
@@ -59,7 +59,7 @@ func (s *Scraper) getPagesCollector() *colly.Collector {
 
 		elements.Each(func(_ int, selection *goquery.Selection) {
 			url := s.config.PageExtractor.URL(selection)
-			page, err := s.urlToPage(chapter, url)
+			page, err := s.urlToPage(chapter, absoluteURL(e.Request, url))
 			if err != nil {
 				setScrapeError(e.Request.Ctx, err)
 				return
@@ -68,6 +68,14 @@ func (s *Scraper) getPagesCollector() *colly.Collector {
 		})
 	})
 	return collector
+}
+
+// absoluteURL: The url resolved against the page it's on, as is if it can't be.
+func absoluteURL(r *colly.Request, u string) string {
+	if abs := r.AbsoluteURL(u); abs != "" {
+		return abs
+	}
+	return u
 }
 
 func (s *Scraper) urlToPage(chapter mango.Chapter, url string) (*mango.Page, error) {

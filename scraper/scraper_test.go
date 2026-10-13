@@ -205,3 +205,22 @@ func TestRequestHost(t *testing.T) {
 		t.Error("the chapter wasn't requested")
 	}
 }
+
+func TestChapterPagesAbsoluteURL(t *testing.T) {
+	extractor := &PageExtractor{
+		Selector: "img",
+		URL:      func(s *goquery.Selection) string { return s.AttrOr("src", "") },
+	}
+	s, url := newTestScraper(t, http.StatusOK, `<html><body><img src="/images/1.png"><img src="https://cdn.test/2.png"></body></html>`, extractor)
+
+	pages, err := s.ChapterPages(context.Background(), mango.Store{}, mango.Chapter{URL: url})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{strings.TrimSuffix(url, "/chapter") + "/images/1.png", "https://cdn.test/2.png"}
+	for i, page := range pages {
+		if got := page.(*mango.Page).URL; got != want[i] {
+			t.Errorf("page %d: wanted %q, got %q", i, want[i], got)
+		}
+	}
+}
