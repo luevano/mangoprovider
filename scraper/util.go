@@ -26,9 +26,8 @@ func (s *Scraper) setCollectorOnRequest(collector *colly.Collector, collectorTyp
 			referer = s.config.BaseURL
 		}
 		r.Headers.Set("Referer", referer)
-		r.Headers.Set("Accept-Language", "en-US") // TODO: remove this? shouldn't specify a language
+		r.Headers.Set("Accept-Language", "en-US")
 		r.Headers.Set("Accept", "text/html")
-		r.Headers.Set("Host", s.config.BaseURL) // TODO: remove this? even rod breaks when setting it
 		r.Headers.Set("User-Agent", s.options.UserAgent)
 
 		// Custom scraper headers (like "Cookie" for some sites)

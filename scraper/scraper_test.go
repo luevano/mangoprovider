@@ -174,3 +174,34 @@ func TestMangaByID(t *testing.T) {
 		t.Errorf("search by id: %v, %v", mangas, err)
 	}
 }
+
+// hostRecorder: Transport that records the Host header it gets, like the headless ones forward it.
+type hostRecorder struct{ hosts chan string }
+
+func (h hostRecorder) RoundTrip(r *http.Request) (*http.Response, error) {
+	h.hosts <- r.Header.Get("Host")
+	return http.DefaultTransport.RoundTrip(r)
+}
+
+func TestRequestHost(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	defer server.Close()
+
+	config := &Configuration{Name: "test", BaseURL: server.URL, Parallelism: 1, PageExtractor: &PageExtractor{Selector: "img"}}
+	s, err := NewScraper(context.Background(), config, mango.DefaultOptions(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	recorder := hostRecorder{make(chan string, 1)}
+	s.collector.WithTransport(recorder)
+	s.ChapterPages(context.Background(), mango.Store{}, mango.Chapter{URL: server.URL + "/chapter"})
+
+	select {
+	case host := <-recorder.hosts:
+		if host != "" {
+			t.Errorf("the Host header should be left to net/http, got %q", host)
+		}
+	default:
+		t.Error("the chapter wasn't requested")
+	}
+}
