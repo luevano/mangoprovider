@@ -77,10 +77,11 @@ func (l *Logger) Status(ctx context.Context, format string, a ...any) {
 	progress.Report(ctx, progress.Status{Source: l.source, Message: l.name + ": " + fmt.Sprintf(format, a...)})
 }
 
-// Progress reports a counted step (e.g. a search page) without logging it.
+// Progress reports a routine step (e.g. a search page, see progress.Status.Minor) without
+// logging it.
 func (l *Logger) Progress(ctx context.Context, done, total int, format string, a ...any) {
 	if l == nil {
 		return
 	}
-	progress.Report(ctx, progress.Status{Source: l.source, Message: l.name + ": " + fmt.Sprintf(format, a...), Done: done, Total: total})
+	progress.Report(ctx, progress.Status{Source: l.source, Message: l.name + ": " + fmt.Sprintf(format, a...), Done: done, Total: total, Minor: true})
 }
