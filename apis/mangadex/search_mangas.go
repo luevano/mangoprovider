@@ -69,10 +69,14 @@ func (d *dex) MangaByID(ctx context.Context, store mango.Store, id string) (mang
 	return m, true, store.SetMangas(cacheID, []mangadata.Manga{m})
 }
 
+// searchPages caps the search (100 results each, the most followed first), a short query
+// matches thousands of mangas (and MangaDex refuses an offset+limit over 10000)
+const searchPages = 5
+
 // search of mangas by query and populate the list
 func (d *dex) searchMangas(ctx context.Context, mangas *[]mangadata.Manga, params url.Values, limit int) error {
 	offset := 0
-	for page := 1; ; page++ {
+	for page := 1; page <= searchPages; page++ {
 		if page > 1 {
 			d.log.Progress(ctx, 0, 0, "%d results so far, getting page %d", len(*mangas), page)
 		}
