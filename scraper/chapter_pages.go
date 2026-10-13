@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/gocolly/colly/v2"
 	"github.com/luevano/libmangal/mangadata"
 	mango "github.com/luevano/mangoprovider"
 )
@@ -13,17 +12,15 @@ import (
 func (s *Scraper) ChapterPages(ctx context.Context, store mango.Store, chapter mango.Chapter) ([]mangadata.Page, error) {
 	var pages []mangadata.Page
 
-	// data shared with the collector callbacks
-	data := colly.NewContext()
-	data.Put("chapter", chapter)
-	data.Put("pages", &pages)
-
 	pagesURL := chapter.URL
 	if s.config.PagesURL != nil {
 		pagesURL = s.config.PagesURL(chapter)
 	}
-	collector := s.getPagesCollector()
-	if err := s.scrape(ctx, collector, pagesURL, data); err != nil {
+	err := s.scrape(ctx, pagesURL, chapter.URL, func(p *page) (err error) {
+		pages, err = s.parsePages(p, chapter)
+		return err
+	})
+	if err != nil {
 		return nil, err
 	}
 	if len(pages) == 0 {
@@ -33,48 +30,31 @@ func (s *Scraper) ChapterPages(ctx context.Context, store mango.Store, chapter m
 	return pages, nil
 }
 
-// Get the pages collector, the actual scraping logic is defined here.
-func (s *Scraper) getPagesCollector() *colly.Collector {
-	collector := s.collector.Clone()
-	s.setCollectorOnRequest(collector, requestPage)
-	collector.OnHTML("html", func(e *colly.HTMLElement) {
-		defer recoverScrape(e)
-		elements := e.DOM.Find(s.config.PageExtractor.Selector)
-		chapter := e.Request.Ctx.GetAny("chapter").(mango.Chapter)
-		pages := e.Request.Ctx.GetAny("pages").(*[]mangadata.Page)
-
-		if s.config.PageExtractor.URLs != nil {
-			urls := s.config.PageExtractor.URLs(elements)
-			for _, u := range urls {
-				page, err := s.urlToPage(chapter, absoluteURL(e.Request, u))
-				if err != nil {
-					setScrapeError(e.Request.Ctx, err)
-					return
-				}
-				*pages = append(*pages, page)
-			}
-			return
-		}
-
+// parsePages: The pages of the chapter in its page.
+func (s *Scraper) parsePages(p *page, chapter mango.Chapter) ([]mangadata.Page, error) {
+	elements := p.doc.Find(s.config.PageExtractor.Selector)
+	var urls []string
+	if s.config.PageExtractor.URLs != nil {
+		urls = s.config.PageExtractor.URLs(elements)
+	} else {
 		elements.Each(func(_ int, selection *goquery.Selection) {
-			url := s.config.PageExtractor.URL(selection)
-			page, err := s.urlToPage(chapter, absoluteURL(e.Request, url))
-			if err != nil {
-				setScrapeError(e.Request.Ctx, err)
-				return
-			}
-			*pages = append(*pages, page)
+			urls = append(urls, s.config.PageExtractor.URL(selection))
 		})
-	})
-	return collector
-}
-
-// absoluteURL: The url resolved against the page it's on, as is if it can't be.
-func absoluteURL(r *colly.Request, u string) string {
-	if abs := r.AbsoluteURL(u); abs != "" {
-		return abs
 	}
-	return u
+
+	pages := make([]mangadata.Page, 0, len(urls))
+	for _, u := range urls {
+		// as is if it can't be resolved
+		if abs := p.absoluteURL(u); abs != "" {
+			u = abs
+		}
+		page, err := s.urlToPage(chapter, u)
+		if err != nil {
+			return nil, err
+		}
+		pages = append(pages, page)
+	}
+	return pages, nil
 }
 
 func (s *Scraper) urlToPage(chapter mango.Chapter, url string) (*mango.Page, error) {

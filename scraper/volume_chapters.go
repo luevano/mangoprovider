@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/gocolly/colly/v2"
 	"github.com/luevano/libmangal/mangadata"
 	"github.com/luevano/libmangal/metadata"
 	mango "github.com/luevano/mangoprovider"
@@ -29,17 +28,15 @@ func (s *Scraper) VolumeChapters(ctx context.Context, store mango.Store, volume 
 		return chapters, nil
 	}
 
-	// data shared with the collector callbacks
-	data := colly.NewContext()
-	data.Put("volume", volume)
-	data.Put("chapters", &chapters)
-
 	chaptersURL := volume.Manga_.URL
 	if s.config.ChaptersURL != nil {
 		chaptersURL = s.config.ChaptersURL(*volume.Manga_)
 	}
-	collector := s.getChaptersCollector()
-	if err := s.scrape(ctx, collector, chaptersURL, data); err != nil {
+	err = s.scrape(ctx, chaptersURL, volume.Manga_.URL, func(p *page) error {
+		chapters = s.parseChapters(p, volume)
+		return nil
+	})
+	if err != nil {
 		return nil, err
 	}
 
@@ -64,58 +61,50 @@ func (s *Scraper) VolumeChapters(ctx context.Context, store mango.Store, volume 
 	return chapters, nil
 }
 
-func (s *Scraper) getChaptersCollector() *colly.Collector {
-	collector := s.collector.Clone()
-	s.setCollectorOnRequest(collector, requestChapter)
-	collector.OnHTML("html", func(e *colly.HTMLElement) {
-		defer recoverScrape(e)
-		elements := e.DOM.Find(s.config.ChapterExtractor.Selector)
-		volume := e.Request.Ctx.GetAny("volume").(mango.Volume)
-		chapters := e.Request.Ctx.GetAny("chapters").(*[]mangadata.Chapter)
+// parseChapters: The chapters in the page, in its order.
+func (s *Scraper) parseChapters(p *page, volume mango.Volume) []mangadata.Chapter {
+	var chapters []mangadata.Chapter
+	p.doc.Find(s.config.ChapterExtractor.Selector).Each(func(_ int, selection *goquery.Selection) {
+		url := p.absoluteURL(s.config.ChapterExtractor.URL(selection))
+		title := strings.TrimSpace(mango.CleanString(s.config.ChapterExtractor.Title(selection)))
+		id := s.config.ChapterExtractor.ID(url)
+		if id == "" {
+			s.log.Log("skipping chapter %q: no id in %q", title, url)
+			return
+		}
 
-		elements.Each(func(_ int, selection *goquery.Selection) {
-			link := s.config.ChapterExtractor.URL(selection)
-			url := e.Request.AbsoluteURL(link)
-			title := strings.TrimSpace(mango.CleanString(s.config.ChapterExtractor.Title(selection)))
-			id := s.config.ChapterExtractor.ID(url)
-			if id == "" {
-				s.log.Log("skipping chapter %q: no id in %q", title, url)
-				return
-			}
+		parseNumber := mango.ParseChapterNumber
+		if s.config.ChapterExtractor.Number != nil {
+			parseNumber = s.config.ChapterExtractor.Number
+		}
+		chapterNumber, ok := parseNumber(title)
+		if !ok {
+			// numbered once all chapters are in order, see numberExtraChapters
+			chapterNumber = -1
+		}
 
-			parseNumber := mango.ParseChapterNumber
-			if s.config.ChapterExtractor.Number != nil {
-				parseNumber = s.config.ChapterExtractor.Number
-			}
-			chapterNumber, ok := parseNumber(title)
-			if !ok {
-				// numbered once all chapters are in order, see numberExtraChapters
-				chapterNumber = -1
-			}
+		var chapterDate metadata.Date
+		if s.config.ChapterExtractor.Date != nil {
+			chapterDate = s.config.ChapterExtractor.Date(selection)
+		}
 
-			var chapterDate metadata.Date
-			if s.config.ChapterExtractor.Date != nil {
-				chapterDate = s.config.ChapterExtractor.Date(selection)
-			}
+		var scanlationGroup string
+		if s.config.ChapterExtractor.ScanlationGroup != nil {
+			scanlationGroup = s.config.ChapterExtractor.ScanlationGroup(selection)
+		}
 
-			var scanlationGroup string
-			if s.config.ChapterExtractor.ScanlationGroup != nil {
-				scanlationGroup = s.config.ChapterExtractor.ScanlationGroup(selection)
-			}
-
-			c := mango.Chapter{
-				Title:           mango.ParseChapterTitle(title),
-				ID:              id,
-				URL:             url,
-				Number:          chapterNumber,
-				Date:            chapterDate,
-				ScanlationGroup: scanlationGroup,
-				Volume_:         &volume,
-			}
-			*chapters = append(*chapters, &c)
-		})
+		c := mango.Chapter{
+			Title:           mango.ParseChapterTitle(title),
+			ID:              id,
+			URL:             url,
+			Number:          chapterNumber,
+			Date:            chapterDate,
+			ScanlationGroup: scanlationGroup,
+			Volume_:         &volume,
+		}
+		chapters = append(chapters, &c)
 	})
-	return collector
+	return chapters
 }
 
 // numberExtraChapters: Chapters without a number (e.g. "Extra") go right after the previous one.

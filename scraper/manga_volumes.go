@@ -6,7 +6,6 @@ import (
 	"sort"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/gocolly/colly/v2"
 	"github.com/luevano/libmangal/mangadata"
 	mango "github.com/luevano/mangoprovider"
 )
@@ -25,13 +24,16 @@ func (s *Scraper) MangaVolumes(ctx context.Context, store mango.Store, manga man
 		return volumes, nil
 	}
 
-	// data shared with the collector callbacks
-	data := colly.NewContext()
-	data.Put("manga", manga)
-	data.Put("volumes", &volumes)
-
-	collector := s.getVolumesCollector()
-	if err := s.scrape(ctx, collector, manga.URL, data); err != nil {
+	err = s.scrape(ctx, manga.URL, manga.URL, func(p *page) error {
+		p.doc.Find(s.config.VolumeExtractor.Selector).Each(func(_ int, selection *goquery.Selection) {
+			volumes = append(volumes, &mango.Volume{
+				Number: s.config.VolumeExtractor.Number(selection),
+				Manga_: &manga,
+			})
+		})
+		return nil
+	})
+	if err != nil {
 		return nil, err
 	}
 
@@ -49,25 +51,4 @@ func (s *Scraper) MangaVolumes(ctx context.Context, store mango.Store, manga man
 	}
 
 	return volumes, nil
-}
-
-// Get the volumes collector, the actual scraping logic is defined here.
-func (s *Scraper) getVolumesCollector() *colly.Collector {
-	collector := s.collector.Clone()
-	s.setCollectorOnRequest(collector, requestVolume)
-	collector.OnHTML("html", func(e *colly.HTMLElement) {
-		defer recoverScrape(e)
-		elements := e.DOM.Find(s.config.VolumeExtractor.Selector)
-		manga := e.Request.Ctx.GetAny("manga").(mango.Manga)
-		volumes := e.Request.Ctx.GetAny("volumes").(*[]mangadata.Volume)
-
-		elements.Each(func(_ int, selection *goquery.Selection) {
-			v := mango.Volume{
-				Number: s.config.VolumeExtractor.Number(selection),
-				Manga_: &manga,
-			}
-			*volumes = append(*volumes, &v)
-		})
-	})
-	return collector
 }

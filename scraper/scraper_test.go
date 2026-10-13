@@ -72,7 +72,7 @@ func TestChapterPagesHTTPError(t *testing.T) {
 	s, url := newTestScraper(t, http.StatusServiceUnavailable, "", &PageExtractor{Selector: "img"})
 
 	_, err := s.ChapterPages(context.Background(), mango.Store{}, mango.Chapter{URL: url})
-	if err == nil || !strings.Contains(err.Error(), "GET "+url+": 503 service unavailable") {
+	if !errors.Is(err, mango.ErrSiteDown) || !strings.Contains(err.Error(), "GET "+url+": ") || !strings.Contains(err.Error(), "503 service unavailable") {
 		t.Errorf("wanted the 503 error, got %v", err)
 	}
 }
@@ -194,7 +194,7 @@ func TestRequestHost(t *testing.T) {
 		t.Fatal(err)
 	}
 	recorder := hostRecorder{make(chan string, 1)}
-	s.collector.WithTransport(recorder)
+	s.client = &http.Client{Transport: recorder}
 	s.ChapterPages(context.Background(), mango.Store{}, mango.Chapter{URL: server.URL + "/chapter"})
 
 	select {
@@ -310,5 +310,115 @@ func TestSkipNoID(t *testing.T) {
 	chapters, err := s.VolumeChapters(context.Background(), mango.Store{}, volume)
 	if err != nil || len(chapters) != 2 {
 		t.Errorf("wanted the odd chapter skipped, got %v, %v", chapters, err)
+	}
+}
+
+func TestRequestHeaders(t *testing.T) {
+	got := make(chan http.Header, 3)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			got <- r.Header.Clone()
+		}
+		w.Write([]byte(`<html><body><a href="/manga/1">One</a><img src="1.png"></body></html>`))
+	}))
+	defer server.Close()
+
+	config := &Configuration{
+		Name:              "test",
+		BaseURL:           server.URL + "/",
+		Parallelism:       1,
+		Headers:           map[string]string{"Cookie": "toonily-mature=1"},
+		GenerateSearchURL: func(baseUrl, query string) (string, error) { return baseUrl + "search", nil },
+		MangaExtractor: &MangaExtractor{
+			Selector: "a",
+			Title:    func(s *goquery.Selection) string { return s.Text() },
+			URL:      func(s *goquery.Selection) string { return s.AttrOr("href", "") },
+			ID:       func(u string) string { return u },
+			Cover:    func(*goquery.Selection) string { return "" },
+		},
+		PageExtractor: &PageExtractor{Selector: "img", URL: func(s *goquery.Selection) string { return s.AttrOr("src", "") }},
+	}
+	options := mango.DefaultOptions()
+	options.UserAgent = "test-agent"
+	s, err := NewScraper(context.Background(), config, options, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.SearchMangas(context.Background(), mango.Store{}, "x"); err != nil {
+		t.Fatal(err)
+	}
+	chapterURL := server.URL + "/chapter/1"
+	if _, err := s.ChapterPages(context.Background(), mango.Store{}, mango.Chapter{URL: chapterURL}); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, referer := range []string{config.BaseURL, chapterURL} {
+		h := <-got
+		if h.Get("Referer") != referer || h.Get("User-Agent") != "test-agent" || h.Get("Cookie") != "toonily-mature=1" || h.Get("Accept") != "text/html" {
+			t.Errorf("wanted referer %s, got headers %v", referer, h)
+		}
+	}
+}
+
+func TestRedirectedPage(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/manga/old":
+			http.Redirect(w, r, "/new/manga/1/", http.StatusMovedPermanently)
+		case "/new/manga/1/":
+			w.Write([]byte(`<html><body><a href="chapter-1">Chapter 1</a><a href="#top">Top</a></body></html>`))
+		case "/based":
+			w.Write([]byte(`<html><head><base href="/cdn/"></head><body><img src="1.png"></body></html>`))
+		}
+	}))
+	defer server.Close()
+
+	config := &Configuration{
+		Name:        "test",
+		BaseURL:     server.URL + "/",
+		Parallelism: 1,
+		ChapterExtractor: &ChapterExtractor{
+			Selector: "a",
+			Title:    func(s *goquery.Selection) string { return s.Text() },
+			URL:      func(s *goquery.Selection) string { return s.AttrOr("href", "") },
+			ID:       func(u string) string { return u },
+		},
+		PageExtractor: &PageExtractor{Selector: "img", URL: func(s *goquery.Selection) string { return s.AttrOr("src", "") }},
+	}
+	s, err := NewScraper(context.Background(), config, mango.DefaultOptions(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	volume := mango.Volume{Number: 1, Manga_: &mango.Manga{URL: server.URL + "/manga/old"}}
+	chapters, err := s.VolumeChapters(context.Background(), mango.Store{}, volume)
+	// relative to where the redirect ended, the fragment-only link has no url
+	if err != nil || len(chapters) != 1 || chapters[0].Info().URL != server.URL+"/new/manga/1/chapter-1" {
+		t.Errorf("got %v, %v", chapters, err)
+	}
+
+	pages, err := s.ChapterPages(context.Background(), mango.Store{}, mango.Chapter{URL: server.URL + "/based"})
+	if err != nil || len(pages) != 1 || pages[0].(*mango.Page).URL != server.URL+"/cdn/1.png" {
+		t.Errorf("relative to <base href>: got %v, %v", pages, err)
+	}
+}
+
+func TestCharset(t *testing.T) {
+	// "Capítulo" in latin-1
+	latin1 := "Cap\xedtulo 1"
+	for name, tt := range map[string]struct{ contentType, html string }{
+		"utf-8":           {"text/html; charset=utf-8", "<p>Capítulo 1</p>"},
+		"undeclared":      {"text/html", "<p>Capítulo 1</p>"},
+		"content-type":    {"text/html; charset=iso-8859-1", "<p>" + latin1 + "</p>"},
+		"meta charset":    {"text/html", `<head><meta charset="windows-1252"></head><p>` + latin1 + "</p>"},
+		"meta http-equiv": {"text/html", `<head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"></head><p>` + latin1 + "</p>"},
+	} {
+		doc, err := parseHTML([]byte(tt.html), tt.contentType)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := doc.Find("p").Text(); got != "Capítulo 1" {
+			t.Errorf("%s: got %q", name, got)
+		}
 	}
 }

@@ -25,7 +25,7 @@ var (
 
 var _ http.RoundTripper = (*TransportFlaresolverr)(nil)
 
-// TransportFlaresolverr implementation of Transport used for colly.
+// TransportFlaresolverr is an http.RoundTripper that makes the requests through FlareSolverr.
 type TransportFlaresolverr struct {
 	client *http.Client
 	uuid   uuid.UUID
@@ -42,7 +42,7 @@ func NewTransport(url string) *TransportFlaresolverr {
 	}
 }
 
-// RoundTrip gets called on each colly request.
+// RoundTrip makes the request through FlareSolverr.
 func (t *TransportFlaresolverr) RoundTrip(r *http.Request) (*http.Response, error) {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()

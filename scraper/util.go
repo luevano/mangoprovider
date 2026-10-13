@@ -1,50 +1,19 @@
 package scraper
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"math/rand/v2"
 	"net/http"
+	"net/url"
 	"strings"
+	"time"
 
-	"github.com/gocolly/colly/v2"
+	"github.com/PuerkitoBio/goquery"
 	mango "github.com/luevano/mangoprovider"
+	"golang.org/x/net/html/charset"
 )
-
-// requestKind: What a collector requests, for its Referer.
-type requestKind int
-
-const (
-	requestManga requestKind = iota
-	requestVolume
-	requestChapter
-	requestPage
-)
-
-// Sets request headers via OnRequest callback for the collector.
-func (s *Scraper) setCollectorOnRequest(collector *colly.Collector, kind requestKind) {
-	collector.OnRequest(func(r *colly.Request) {
-		var referer string
-		switch kind {
-		case requestVolume:
-			referer = r.Ctx.GetAny("manga").(mango.Manga).URL
-		case requestChapter:
-			referer = r.Ctx.GetAny("volume").(mango.Volume).Manga_.URL
-		case requestPage:
-			referer = r.Ctx.GetAny("chapter").(mango.Chapter).URL
-		default:
-			referer = s.config.BaseURL
-		}
-		r.Headers.Set("Referer", referer)
-		r.Headers.Set("Accept-Language", "en-US")
-		r.Headers.Set("Accept", "text/html")
-		r.Headers.Set("User-Agent", s.options.UserAgent)
-
-		// Custom scraper headers (like "Cookie" for some sites)
-		for k, v := range s.config.Headers {
-			r.Headers.Set(k, v)
-		}
-	})
-}
 
 // Checks redirections and sets the new BaseURL if needed.
 func setBaseURLOnRedirect(ctx context.Context, config *Configuration, httpClient *http.Client) error {
@@ -74,52 +43,140 @@ func setBaseURLOnRedirect(ctx context.Context, config *Configuration, httpClient
 	return nil
 }
 
-const scrapeErrorKey = "scrape_error"
+// page: A scraped html page.
+type page struct {
+	doc *goquery.Document
+	// url: Where the page ended up, after the redirects.
+	url *url.URL
+	// base: What its relative urls are relative to (url or its <base href>).
+	base *url.URL
+}
 
-// scrape: Requests the url (throttled) with the collector and waits for its callbacks to finish.
-//
-// The collector is async, so colly only passes request errors (including 4xx/5xx) to OnError,
-// they're collected here and returned along with panics in the callbacks (see recoverScrape).
-func (s *Scraper) scrape(ctx context.Context, collector *colly.Collector, url string, data *colly.Context) error {
-	if err := s.limiter.Wait(ctx); err != nil {
+// absoluteURL: u resolved against the page, empty for fragments ("#x") and urls that don't parse.
+func (p *page) absoluteURL(u string) string {
+	u = strings.TrimSpace(u)
+	if strings.HasPrefix(u, "#") {
+		return ""
+	}
+	ref, err := url.Parse(u)
+	if err != nil {
+		return ""
+	}
+	return p.base.ResolveReference(ref).String()
+}
+
+// scrape: Requests rawURL (throttled, at most Parallelism at once) with referer and parses the
+// html with parse. Any status but 200 is an error (see mango.StatusError), so is a panic in parse
+// (e.g. a site config indexing a url that changed), instead of crashing the whole program.
+func (s *Scraper) scrape(ctx context.Context, rawURL, referer string, parse func(*page) error) (err error) {
+	select {
+	case s.slots <- struct{}{}:
+		defer func() { <-s.slots }()
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+	if err := s.delay(ctx); err != nil {
 		return err
 	}
-	collector.Context = ctx
-	collector.OnError(func(r *colly.Response, err error) {
-		switch {
-		case r.StatusCode == http.StatusNotFound:
-			err = fmt.Errorf("%d %w", r.StatusCode, mango.ErrNotFound)
-		case r.StatusCode != 0:
-			err = fmt.Errorf("%d %s", r.StatusCode, strings.ToLower(http.StatusText(r.StatusCode)))
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
+	if err != nil {
+		return fmt.Errorf("GET %s: %w", rawURL, err)
+	}
+	req.Header.Set("Referer", referer)
+	req.Header.Set("Accept-Language", "en-US")
+	req.Header.Set("Accept", "text/html")
+	req.Header.Set("User-Agent", s.options.UserAgent)
+	// custom scraper headers (like "Cookie" for some sites)
+	for k, v := range s.config.Headers {
+		req.Header.Set(k, v)
+	}
+
+	body, resp, err := mango.FetchRequest(s.client, s.limiter, req)
+	if ctxErr := ctx.Err(); ctxErr != nil {
+		return ctxErr
+	}
+	if err != nil {
+		return fmt.Errorf("GET %s: %w", rawURL, err)
+	}
+	if err := mango.StatusError(resp.StatusCode, resp.Header); err != nil {
+		return fmt.Errorf("GET %s: %w", rawURL, err)
+	}
+
+	p := &page{url: resp.Request.URL}
+	if p.doc, err = parseHTML(body, resp.Header.Get("Content-Type")); err != nil {
+		return fmt.Errorf("parse %s: %w", p.url, err)
+	}
+	p.base = p.url
+	if href, ok := p.doc.Find("base[href]").First().Attr("href"); ok {
+		if base, err := p.url.Parse(strings.TrimSpace(href)); err == nil {
+			p.base = base
 		}
-		setScrapeError(r.Ctx, fmt.Errorf("GET %s: %w", r.Request.URL, err))
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("parse %s: %v", p.url, r)
+		}
+	}()
+	return parse(p)
+}
+
+// delay: Waits a random time up to the configured Delay.
+func (s *Scraper) delay(ctx context.Context) error {
+	if s.config.Delay <= 0 {
+		return nil
+	}
+	timer := time.NewTimer(rand.N(s.config.Delay))
+	defer timer.Stop()
+	select {
+	case <-timer.C:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+// parseHTML: The html in body, decoded to UTF-8 if the page declares another charset (in the
+// Content-Type, a BOM or a <meta>). An undeclared one is UTF-8.
+func parseHTML(body []byte, contentType string) (*goquery.Document, error) {
+	if enc, name, certain := charset.DetermineEncoding(body, contentType); certain {
+		if name == "utf-8" {
+			return goquery.NewDocumentFromReader(bytes.NewReader(body))
+		}
+		return goquery.NewDocumentFromReader(enc.NewDecoder().Reader(bytes.NewReader(body)))
+	}
+
+	doc, err := goquery.NewDocumentFromReader(bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+	label := metaCharset(doc)
+	if label == "" {
+		return doc, nil
+	}
+	enc, name := charset.Lookup(label)
+	if enc == nil || name == "utf-8" {
+		return doc, nil
+	}
+	return goquery.NewDocumentFromReader(enc.NewDecoder().Reader(bytes.NewReader(body)))
+}
+
+// metaCharset: The charset declared by a <meta charset> or <meta http-equiv="Content-Type">.
+func metaCharset(doc *goquery.Document) string {
+	if cs, ok := doc.Find("meta[charset]").First().Attr("charset"); ok {
+		return strings.TrimSpace(cs)
+	}
+	var label string
+	doc.Find("meta[http-equiv]").EachWithBreak(func(_ int, meta *goquery.Selection) bool {
+		if !strings.EqualFold(meta.AttrOr("http-equiv", ""), "content-type") {
+			return true
+		}
+		_, cs, ok := strings.Cut(strings.ToLower(meta.AttrOr("content", "")), "charset=")
+		if ok {
+			label = strings.Trim(strings.TrimSpace(cs), `"'`)
+		}
+		return !ok
 	})
-
-	if err := collector.Request(http.MethodGet, url, nil, data, nil); err != nil {
-		return fmt.Errorf("GET %s: %w", url, err)
-	}
-	collector.Wait()
-
-	if err := ctx.Err(); err != nil {
-		return err
-	}
-	if err, ok := data.GetAny(scrapeErrorKey).(error); ok {
-		return err
-	}
-	return nil
-}
-
-// recoverScrape: Turns a panic in a collector callback (e.g. the site changed its markup) into
-// an error returned by scrape, instead of crashing the whole program. Use it deferred.
-func recoverScrape(e *colly.HTMLElement) {
-	if r := recover(); r != nil {
-		setScrapeError(e.Request.Ctx, fmt.Errorf("parse %s: %v", e.Request.URL, r))
-	}
-}
-
-// setScrapeError: Keeps the first error only.
-func setScrapeError(data *colly.Context, err error) {
-	if data.GetAny(scrapeErrorKey) == nil {
-		data.Put(scrapeErrorKey, err)
-	}
+	return label
 }

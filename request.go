@@ -70,16 +70,22 @@ func StatusError(status int, header http.Header) error {
 // Fetch gets url with the user agent, once limiter (if any) allows it, whatever the status.
 // The body is read with ReadBody.
 func Fetch(ctx context.Context, client *http.Client, limiter *rate.Limiter, userAgent, url string) ([]byte, *http.Response, error) {
-	if limiter != nil {
-		if err := limiter.Wait(ctx); err != nil {
-			return nil, nil, err
-		}
-	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, nil, err
 	}
 	req.Header.Set("User-Agent", userAgent)
+	return FetchRequest(client, limiter, req)
+}
+
+// FetchRequest sends req once limiter (if any) allows it, whatever the status. The body is read
+// with ReadBody.
+func FetchRequest(client *http.Client, limiter *rate.Limiter, req *http.Request) ([]byte, *http.Response, error) {
+	if limiter != nil {
+		if err := limiter.Wait(req.Context()); err != nil {
+			return nil, nil, err
+		}
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, nil, err

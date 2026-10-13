@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/gocolly/colly/v2"
 	"github.com/luevano/libmangal/mangadata"
 	"github.com/luevano/libmangal/metadata"
 	mango "github.com/luevano/mangoprovider"
@@ -32,10 +31,11 @@ func (s *Scraper) SearchMangas(ctx context.Context, store mango.Store, query str
 		return mangas, nil
 	}
 
-	// data shared with the collector callbacks
-	data := colly.NewContext()
-	data.Put("mangas", &mangas)
-	if err := s.scrape(ctx, s.getMangasCollector(), searchURL, data); err != nil {
+	err = s.scrape(ctx, searchURL, s.config.BaseURL, func(p *page) error {
+		mangas = s.parseMangas(p)
+		return nil
+	})
+	if err != nil {
 		return nil, err
 	}
 
@@ -68,87 +68,67 @@ func (s *Scraper) MangaByID(ctx context.Context, store mango.Store, id string) (
 		return mangas[0], true, nil
 	}
 
-	mangas = nil
-	data := colly.NewContext()
-	data.Put("mangas", &mangas)
-	if err := s.scrape(ctx, s.getMangaCollector(id), mangaURL, data); err != nil {
-		if errors.Is(err, mango.ErrNotFound) {
-			return nil, false, nil
+	var manga *mango.Manga
+	notFound := false
+	err = s.scrape(ctx, mangaURL, s.config.BaseURL, func(p *page) error {
+		// some sites (weebcentral) redirect unknown mangas to an error page that answers 200
+		if errorPagePath.MatchString(p.url.Path) {
+			notFound = true
+			return nil
 		}
-		return nil, false, err
-	}
-	if data.GetAny(notFoundKey) != nil {
+		manga = s.parseManga(p, id)
+		return nil
+	})
+	if errors.Is(err, mango.ErrNotFound) || (err == nil && notFound) {
 		return nil, false, nil
 	}
-	if len(mangas) == 0 {
+	if err != nil {
+		return nil, false, err
+	}
+	if manga == nil {
 		return nil, false, fmt.Errorf("GET %s: no manga in the page", mangaURL)
 	}
-	return mangas[0], true, store.SetMangas(cacheID, mangas[:1])
+	return manga, true, store.SetMangas(cacheID, []mangadata.Manga{manga})
 }
-
-const notFoundKey = "notFound"
 
 var errorPagePath = regexp.MustCompile(`^/(400|404)/?$`)
 
 // TODO: define metadata scraping logic
-// Get the manga collector, the actual scraping logic is defined here.
-func (s *Scraper) getMangaCollector(id string) *colly.Collector {
-	collector := s.collector.Clone()
-	s.setCollectorOnRequest(collector, requestManga)
-	collector.OnHTML("html", func(e *colly.HTMLElement) {
-		defer recoverScrape(e)
-		// some sites (weebcentral) redirect unknown mangas to an error page that answers 200
-		if errorPagePath.MatchString(e.Request.URL.Path) {
-			e.Request.Ctx.Put(notFoundKey, true)
-			return
-		}
-		selection := e.DOM.Find(s.config.MangaByIDExtractor.Selector).First()
-		if selection.Length() == 0 {
-			return
-		}
-		mangas := e.Request.Ctx.GetAny("mangas").(*[]mangadata.Manga)
-
-		var meta metadata.Metadata = &mangadata.Metadata{}
-		m := mango.Manga{
-			Title:     mango.CleanString(s.config.MangaByIDExtractor.Title(selection)),
-			URL:       e.Request.URL.String(),
-			ID:        id,
-			Cover:     s.config.MangaByIDExtractor.Cover(selection),
-			Metadata_: &meta,
-		}
-		*mangas = append(*mangas, &m)
-	})
-	return collector
+// parseManga: The manga in its page, nil if it isn't there.
+func (s *Scraper) parseManga(p *page, id string) *mango.Manga {
+	selection := p.doc.Find(s.config.MangaByIDExtractor.Selector).First()
+	if selection.Length() == 0 {
+		return nil
+	}
+	var meta metadata.Metadata = &mangadata.Metadata{}
+	return &mango.Manga{
+		Title:     mango.CleanString(s.config.MangaByIDExtractor.Title(selection)),
+		URL:       p.url.String(),
+		ID:        id,
+		Cover:     s.config.MangaByIDExtractor.Cover(selection),
+		Metadata_: &meta,
+	}
 }
 
 // TODO: define metadata scraping logic
-// Get the mangas collector, the actual scraping logic is defined here.
-func (s *Scraper) getMangasCollector() *colly.Collector {
-	collector := s.collector.Clone()
-	s.setCollectorOnRequest(collector, requestManga)
-	collector.OnHTML("html", func(e *colly.HTMLElement) {
-		defer recoverScrape(e)
-		elements := e.DOM.Find(s.config.MangaExtractor.Selector)
-		mangas := e.Request.Ctx.GetAny("mangas").(*[]mangadata.Manga)
-
-		elements.Each(func(_ int, selection *goquery.Selection) {
-			link := s.config.MangaExtractor.URL(selection)
-			url := e.Request.AbsoluteURL(link)
-			id := s.config.MangaExtractor.ID(url)
-			if id == "" {
-				s.log.Log("skipping manga %q: no id in %q", mango.CleanString(selection.Text()), url)
-				return
-			}
-			var meta metadata.Metadata = &mangadata.Metadata{}
-			m := mango.Manga{
-				Title:     mango.CleanString(s.config.MangaExtractor.Title(selection)),
-				URL:       url,
-				ID:        id,
-				Cover:     s.config.MangaExtractor.Cover(selection),
-				Metadata_: &meta,
-			}
-			*mangas = append(*mangas, &m)
+// parseMangas: The mangas in a search page.
+func (s *Scraper) parseMangas(p *page) []mangadata.Manga {
+	var mangas []mangadata.Manga
+	p.doc.Find(s.config.MangaExtractor.Selector).Each(func(_ int, selection *goquery.Selection) {
+		url := p.absoluteURL(s.config.MangaExtractor.URL(selection))
+		id := s.config.MangaExtractor.ID(url)
+		if id == "" {
+			s.log.Log("skipping manga %q: no id in %q", mango.CleanString(selection.Text()), url)
+			return
+		}
+		var meta metadata.Metadata = &mangadata.Metadata{}
+		mangas = append(mangas, &mango.Manga{
+			Title:     mango.CleanString(s.config.MangaExtractor.Title(selection)),
+			URL:       url,
+			ID:        id,
+			Cover:     s.config.MangaExtractor.Cover(selection),
+			Metadata_: &meta,
 		})
 	})
-	return collector
+	return mangas
 }
