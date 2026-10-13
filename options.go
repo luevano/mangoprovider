@@ -1,10 +1,10 @@
 package mangoprovider
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/luevano/libmangal"
 	"github.com/luevano/mangodex"
 	"github.com/luevano/mangoplus"
 	"github.com/luevano/mangoplus/creators"
@@ -18,38 +18,7 @@ const BundleID = "mango"
 const defaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36"
 
 // FilterOptions are general filtering options for all sources.
-type FilterOptions struct {
-	// NSFW if the manga results should contain NSFW content.
-	//
-	// Only if the source allows to filter by NSFW.
-	NSFW bool
-
-	// Language of the manga results.
-	//
-	// Only if the source allows to filter by language.
-	Language string
-
-	// AvoidDuplicateChapters will not include duplicate
-	// chapters in the results.
-	AvoidDuplicateChapters bool
-
-	// ShowUnavailableChapters will not show unavailable
-	// chapters in the results.
-	//
-	// Such as external sites for the chapters
-	// (in the case of MangaDex that points to MangaPlus for example).
-	ShowUnavailableChapters bool
-}
-
-func (f *FilterOptions) String() string {
-	return fmt.Sprintf(
-		"filters[%t&%s&%t&%t]",
-		f.NSFW,
-		f.Language,
-		f.AvoidDuplicateChapters,
-		f.ShowUnavailableChapters,
-	)
-}
+type FilterOptions = libmangal.FilterOptions
 
 func DefaultFilterOptions() FilterOptions {
 	return FilterOptions{
