@@ -11,6 +11,7 @@ import (
 	"github.com/luevano/libmangal/mangadata"
 	"github.com/luevano/libmangal/metadata"
 	mango "github.com/luevano/mangoprovider"
+	"github.com/luevano/mangoprovider/scraper/headless/rod"
 )
 
 func (s *Scraper) SearchMangas(ctx context.Context, store mango.Store, query string) ([]mangadata.Manga, error) {
@@ -31,7 +32,7 @@ func (s *Scraper) SearchMangas(ctx context.Context, store mango.Store, query str
 		return mangas, nil
 	}
 
-	err = s.scrape(ctx, searchURL, s.config.BaseURL, func(p *page) error {
+	err = s.scrape(s.mangaAction(ctx), searchURL, s.config.BaseURL, func(p *page) error {
 		mangas = s.parseMangas(p)
 		return nil
 	})
@@ -70,7 +71,7 @@ func (s *Scraper) MangaByID(ctx context.Context, store mango.Store, id string) (
 
 	var manga *mango.Manga
 	notFound := false
-	err = s.scrape(ctx, mangaURL, s.config.BaseURL, func(p *page) error {
+	err = s.scrape(s.mangaAction(ctx), mangaURL, s.config.BaseURL, func(p *page) error {
 		// some sites (weebcentral) redirect unknown mangas to an error page that answers 200
 		if errorPagePath.MatchString(p.url.Path) {
 			notFound = true
@@ -131,4 +132,12 @@ func (s *Scraper) parseMangas(p *page) []mangadata.Manga {
 		})
 	})
 	return mangas
+}
+
+// mangaAction: ctx with the MangaExtractor's Action, if any.
+func (s *Scraper) mangaAction(ctx context.Context) context.Context {
+	if s.config.MangaExtractor == nil {
+		return ctx
+	}
+	return rod.WithAction(ctx, s.config.MangaExtractor.Action)
 }

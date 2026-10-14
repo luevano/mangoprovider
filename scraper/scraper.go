@@ -6,6 +6,7 @@ import (
 
 	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/fetch"
+	"github.com/luevano/mangoprovider/scraper/headless/rod"
 	"golang.org/x/time/rate"
 )
 
@@ -41,6 +42,7 @@ func NewScraper(ctx context.Context, config *Configuration, options mango.Option
 	}
 	client, err := fetch.NewClient(options.HTTPClient, options.Headless, log, fetch.Config{
 		Strategy:    config.Fetch,
+		Headless:    rod.Options{LoadWait: config.LoadWait, LocalStorage: config.LocalStorage},
 		Limiter:     rate.NewLimiter(limit, burst),
 		Middlewares: config.Middlewares,
 	})

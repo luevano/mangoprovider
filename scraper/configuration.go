@@ -25,6 +25,11 @@ type Configuration struct {
 
 	// Fetch: How the pages are requested, direct by default (see fetch.Strategy).
 	Fetch fetch.Strategy
+	// LoadWait: With fetch.Headless, wait this long for the page to load instead of its load
+	// event (e.g. html filled in by scripts after it).
+	LoadWait time.Duration
+	// LocalStorage: With fetch.Headless, local storage values to set before the requests.
+	LocalStorage map[string]string
 	// RateLimit: Optional, html requests per second (with RateBurst at once), instead of
 	// ~4/s after a burst of 4. E.g. rate.Every(2*time.Second) for keiyoushi's rateLimit(1, 2.seconds).
 	RateLimit rate.Limit

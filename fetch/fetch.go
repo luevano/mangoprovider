@@ -9,6 +9,7 @@ import (
 	"net/http/cookiejar"
 
 	mango "github.com/luevano/mangoprovider"
+	"github.com/luevano/mangoprovider/scraper/headless/rod"
 	"golang.org/x/net/publicsuffix"
 	"golang.org/x/time/rate"
 )
@@ -22,6 +23,9 @@ const (
 	// CloudflareFallback: direct, a request Cloudflare challenges is retried through
 	// FlareSolverr (mango.HeadlessOptions), whose session keeps the clearance.
 	CloudflareFallback
+	// Headless: every request loads the page in rod's headless Chromium (sites that build the
+	// html with scripts), downloaded on first use. The body is the page's html once loaded.
+	Headless
 )
 
 // Middleware wraps the transport of a request, like an OkHttp interceptor.
@@ -38,6 +42,8 @@ type Config struct {
 	// Limiter: Optional, every request (redirects and retries through FlareSolverr included)
 	// waits for it.
 	Limiter *rate.Limiter
+	// Headless: How the Headless strategy loads the pages.
+	Headless rod.Options
 	// Middlewares: The site's own hooks (headers, user agent, url rewrites, ...), the first is
 	// the outermost. They run before the limiter and the strategy.
 	Middlewares []Middleware
@@ -77,6 +83,10 @@ func NewClient(base *http.Client, headless mango.HeadlessOptions, log *mango.Log
 		cf := newCloudflare(transport, headless, log)
 		c.closers = append(c.closers, cf.Close)
 		transport = cf
+	case Headless:
+		browser := rod.NewTransport(config.Headless, log)
+		c.closers = append(c.closers, browser.Close)
+		transport = browser
 	default:
 		return nil, errors.New("fetch: unknown strategy")
 	}

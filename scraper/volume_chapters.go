@@ -11,6 +11,7 @@ import (
 	"github.com/luevano/libmangal/mangadata"
 	"github.com/luevano/libmangal/metadata"
 	mango "github.com/luevano/mangoprovider"
+	"github.com/luevano/mangoprovider/scraper/headless/rod"
 )
 
 func (s *Scraper) VolumeChapters(ctx context.Context, store mango.Store, volume mango.Volume) ([]mangadata.Chapter, error) {
@@ -32,7 +33,7 @@ func (s *Scraper) VolumeChapters(ctx context.Context, store mango.Store, volume 
 	if s.config.ChaptersURL != nil {
 		chaptersURL = s.config.ChaptersURL(*volume.Manga_)
 	}
-	err = s.scrape(ctx, chaptersURL, volume.Manga_.URL, func(p *page) error {
+	err = s.scrape(rod.WithAction(ctx, s.config.ChapterExtractor.Action), chaptersURL, volume.Manga_.URL, func(p *page) error {
 		chapters = s.parseChapters(p, volume)
 		return nil
 	})

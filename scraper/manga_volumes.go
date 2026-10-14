@@ -8,6 +8,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/luevano/libmangal/mangadata"
 	mango "github.com/luevano/mangoprovider"
+	"github.com/luevano/mangoprovider/scraper/headless/rod"
 )
 
 func (s *Scraper) MangaVolumes(ctx context.Context, store mango.Store, manga mango.Manga) ([]mangadata.Volume, error) {
@@ -24,7 +25,7 @@ func (s *Scraper) MangaVolumes(ctx context.Context, store mango.Store, manga man
 		return volumes, nil
 	}
 
-	err = s.scrape(ctx, manga.URL, manga.URL, func(p *page) error {
+	err = s.scrape(rod.WithAction(ctx, s.config.VolumeExtractor.Action), manga.URL, manga.URL, func(p *page) error {
 		p.doc.Find(s.config.VolumeExtractor.Selector).Each(func(_ int, selection *goquery.Selection) {
 			volumes = append(volumes, &mango.Volume{
 				Number: s.config.VolumeExtractor.Number(selection),
