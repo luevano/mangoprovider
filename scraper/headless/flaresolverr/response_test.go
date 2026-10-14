@@ -28,3 +28,24 @@ func TestRoundTripDecodesV3Response(t *testing.T) {
 		}
 	}
 }
+
+func TestRoundTripFinalURL(t *testing.T) {
+	for solutionURL, want := range map[string]string{
+		"https://site/404": "https://site/404",
+		"":                 "https://site/manga/1",
+	} {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte(`{"status": "ok", "solution": {"url": "` + solutionURL + `", "status": 200, "headers": {}, "response": "<html></html>"}}`))
+		}))
+
+		req, _ := http.NewRequest(http.MethodGet, "https://site/manga/1", nil)
+		resp, err := NewTransport(server.URL).RoundTrip(req)
+		server.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if resp.Request.URL.String() != want || req.URL.String() != "https://site/manga/1" {
+			t.Errorf("solution url %q: got response url %s, request url %s", solutionURL, resp.Request.URL, req.URL)
+		}
+	}
+}

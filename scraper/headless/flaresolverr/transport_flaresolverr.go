@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -125,12 +126,20 @@ func (t *TransportFlaresolverr) RoundTrip(r *http.Request) (*http.Response, erro
 	}
 	header.Set("Content-Length", strconv.Itoa(len(html)))
 
+	// where the browser ended up, so redirects are seen like with a direct request
+	final := r
+	if u, err := url.Parse(flareResponse.Solution.URL); err == nil && u.IsAbs() {
+		final = r.Clone(r.Context())
+		final.URL = u
+		final.Host = u.Host
+	}
+
 	return &http.Response{
 		StatusCode:    flareResponse.Solution.Status,
 		Header:        header,
 		Body:          io.NopCloser(strings.NewReader(html)),
 		ContentLength: int64(len(html)),
-		Request:       r,
+		Request:       final,
 	}, nil
 }
 
