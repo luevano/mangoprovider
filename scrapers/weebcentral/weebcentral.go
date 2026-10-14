@@ -171,8 +171,7 @@ func pathAfter(_url, segment string) (string, bool) {
 	return "", false
 }
 
-// trackers: The ids of the series' trackers links that libmangal can bind (integers;
-// MangaUpdates' links have its new base36 ids).
+// trackers: The ids of the series' trackers links that libmangal can bind.
 var trackers = []struct {
 	re     *regexp.Regexp
 	code   metadata.IDCode
@@ -180,6 +179,7 @@ var trackers = []struct {
 }{
 	{regexp.MustCompile(`anilist\.co/manga/(\d+)`), metadata.IDCodeAnilist, metadata.IDSourceAnilist},
 	{regexp.MustCompile(`myanimelist\.net/manga/(\d+)`), metadata.IDCodeMyAnimeList, metadata.IDSourceMyAnimeList},
+	{regexp.MustCompile(`mangaupdates\.com/series/([0-9a-z]+)`), metadata.IDCodeMangaUpdates, metadata.IDSourceMangaUpdates},
 }
 
 // extractMetadata: keiyoushi's getMangaDetails, plus the release year and the trackers' ids.
@@ -210,7 +210,14 @@ func extractMetadata(page *goquery.Selection, meta *mangadata.Metadata) {
 	detail(left, "Track").Find("span[data-tip] > a").Each(func(_ int, a *goquery.Selection) {
 		href := a.AttrOr("href", "")
 		for _, t := range trackers {
-			if m := t.re.FindStringSubmatch(href); m != nil {
+			m := t.re.FindStringSubmatch(href)
+			switch {
+			case m == nil:
+			case t.source == metadata.IDSourceMangaUpdates:
+				if id, ok := metadata.MangaUpdatesID(m[1]); ok {
+					meta.OtherIDs = append(meta.OtherIDs, id)
+				}
+			default:
 				meta.OtherIDs = append(meta.OtherIDs, metadata.ID{Raw: m[1], Code: t.code, Source: t.source})
 			}
 		}

@@ -2,10 +2,12 @@ package mangadex
 
 import (
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/luevano/libmangal/mangadata"
+	"github.com/luevano/libmangal/metadata"
 	"github.com/luevano/mangodex"
 	mango "github.com/luevano/mangoprovider"
 )
@@ -143,5 +145,36 @@ func TestGetDate(t *testing.T) {
 	// unknown stays unknown, not today
 	if got := d.getDate(""); got.Year != 0 {
 		t.Errorf("wanted no date, got %v", got)
+	}
+}
+
+func TestMetadataLinks(t *testing.T) {
+	d := &dex{}
+	manga := &mangodex.Manga{ID: "a1c7c817-4e59-43b7-9365-09675a149a6f"}
+	manga.Attributes.Title = mangodex.LocalisedStrings{Values: map[string]string{"en": "One Piece"}}
+	year := 1997
+	manga.Attributes.Year = &year
+	status := mangodex.PublicationStatusOngoing
+	manga.Attributes.Status = &status
+	for _, tt := range []struct {
+		mu   string
+		want string
+	}{
+		{"pb8uwds", "[al:30013 mu:55099564912]"}, // the current base36 ids
+		{"33", "[al:30013]"},                     // an old one, unknown to the api
+	} {
+		manga.Attributes.Links = mangodex.LocalisedStrings{Values: map[string]string{"al": "30013", "mu": tt.mu}}
+		meta := d.dexToMetadata(manga)
+		var got []string
+		for _, id := range meta.ExtraIDs() {
+			got = append(got, string(id.Code)+":"+id.Raw)
+		}
+		if s := "[" + strings.Join(got, " ") + "]"; s != tt.want {
+			t.Errorf("mu %q: got %s, want %s", tt.mu, s, tt.want)
+		}
+		meta.AuthorList = []string{"ODA Eiichiro"} // from the relationships
+		if err := metadata.Validate(meta); err != nil {
+			t.Errorf("mu %q: %v", tt.mu, err)
+		}
 	}
 }

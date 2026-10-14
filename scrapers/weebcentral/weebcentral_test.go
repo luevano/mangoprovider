@@ -102,7 +102,7 @@ func TestScrape(t *testing.T) {
 		meta.Description() != "As a child, Monkey D. Luffy dreamed of becoming the King of the Pirates." {
 		t.Errorf("by id: got %+v", meta)
 	}
-	if ids := fmt.Sprint(meta.ExtraIDs()); len(meta.ExtraIDs()) != 2 || meta.ExtraIDs()[0].Value() != 30013 || meta.ExtraIDs()[1].Value() != 13 {
+	if ids := fmt.Sprint(meta.ExtraIDs()); len(meta.ExtraIDs()) != 3 || meta.ExtraIDs()[0].Value() != 30013 || meta.ExtraIDs()[1].Value() != 13 || meta.ExtraIDs()[2].Value() != 55099564912 {
 		t.Errorf("by id: extra ids %s", ids)
 	}
 
