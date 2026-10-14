@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/go-rod/rod/lib/launcher"
 	"github.com/luevano/libmangal/mangadata"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/fetch"
@@ -517,5 +518,40 @@ func TestFetchCloudflareFallback(t *testing.T) {
 	}
 	if err := s.Close(); err != nil || !destroyed {
 		t.Errorf("close: %v, session destroyed %t", err, destroyed)
+	}
+}
+
+func TestFetchHeadless(t *testing.T) {
+	if testing.Short() || launcher.NewBrowser().Validate() != nil {
+		t.Skip("needs rod's chromium already downloaded")
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		switch r.URL.Path {
+		case "/chapter":
+			// the images are only there once the script ran
+			w.Write([]byte(`<html><body><div id="r"></div><script>document.getElementById("r").innerHTML = '<img src="/1.png"><img src="/2.png">'</script></body></html>`))
+		case "/":
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+
+	config := &Configuration{
+		Name: "test", BaseURL: server.URL, Fetch: fetch.Headless,
+		PageExtractor: &PageExtractor{Selector: "img", URL: func(s *goquery.Selection) string { return s.AttrOr("src", "") }},
+	}
+	s, err := NewScraper(context.Background(), config, mango.DefaultOptions(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	pages, err := s.ChapterPages(context.Background(), mango.Store{}, mango.Chapter{URL: server.URL + "/chapter"})
+	if err != nil || len(pages) != 2 || pages[1].(*mango.Page).URL != server.URL+"/2.png" {
+		t.Fatalf("got %v, %v", pages, err)
+	}
+	if _, err := s.ChapterPages(context.Background(), mango.Store{}, mango.Chapter{URL: server.URL + "/gone"}); !errors.Is(err, mango.ErrNotFound) {
+		t.Errorf("got %v, want the page's 404", err)
 	}
 }
