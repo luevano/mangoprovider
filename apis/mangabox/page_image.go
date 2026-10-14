@@ -13,6 +13,11 @@ import (
 // GetPageImage tries the image on each cdn the chapter lists, starting with the one that
 // served the last image (like keiyoushi's useAltCdnInterceptor).
 func (m *mangabox) GetPageImage(ctx context.Context, client *http.Client, page mango.Page) ([]byte, error) {
+	if m.images != nil {
+		if err := m.images.Wait(ctx); err != nil {
+			return nil, err
+		}
+	}
 	var errs []error
 	urls := m.cdnOrder(append([]string{page.URL}, page.Fallbacks...))
 	for i, u := range urls {

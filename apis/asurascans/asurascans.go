@@ -33,8 +33,9 @@ type asura struct {
 	client    *http.Client
 	userAgent string
 	filter    mango.FilterOptions
-	// limiter keeps to the 2 requests / 2 s the site tolerates (keiyoushi's limit, the cdn's
-	// images included), across loads
+	// limiter keeps to the 2 requests / 2 s the site tolerates, across loads: keiyoushi's
+	// rateLimit(2, 2.seconds) on everything but the covers (src/en/asurascans/.../AsuraScans.kt),
+	// the cdn's images included
 	limiter *rate.Limiter
 	// base is the api, a test server in tests
 	base string

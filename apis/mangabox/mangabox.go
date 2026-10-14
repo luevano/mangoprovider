@@ -55,9 +55,12 @@ func Loaders(options mango.Options) []libmangal.ProviderLoader {
 
 type mangabox struct {
 	info libmangal.ProviderInfo
-	// client: direct, retried through FlareSolverr (or rod) on a challenge, 2 requests per second
-	// like keiyoushi's
-	client    *fetch.Client
+	// client: direct, retried through FlareSolverr (or rod) on a challenge, 2 requests per
+	// second: keiyoushi's Mangakakalot.kt rateLimit(2, 1.seconds) (src/en/mangakakalot), the
+	// lib-multisrc/mangabox base and the other two set none
+	client *fetch.Client
+	// images: Optional, page images wait for it (see imageLimiter)
+	images    *rate.Limiter
 	userAgent string
 	mirrors   *mango.Mirrors
 	log       *mango.Logger
@@ -84,6 +87,7 @@ func loader(info libmangal.ProviderInfo, options mango.Options) libmangal.Provid
 			m := &mangabox{
 				info:      info,
 				client:    client,
+				images:    imageLimiter(info),
 				userAgent: options.UserAgent,
 				mirrors:   mango.NewMirrors(info, options.Mirrors[info.ID], log),
 				log:       log,
@@ -100,6 +104,15 @@ func loader(info libmangal.ProviderInfo, options mango.Options) libmangal.Provid
 			}, nil
 		},
 	}
+}
+
+// imageLimiter: keiyoushi's Mangakakalot limit covers every request, images included; the
+// other sites' images aren't limited.
+func imageLimiter(info libmangal.ProviderInfo) *rate.Limiter {
+	if info.ID != MangakakalotInfo.ID {
+		return nil
+	}
+	return rate.NewLimiter(rate.Every(500*time.Millisecond), 2)
 }
 
 // get the page at path (relative to the website), in a headless browser when Cloudflare

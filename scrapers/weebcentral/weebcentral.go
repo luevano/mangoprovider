@@ -11,6 +11,7 @@ import (
 	"github.com/luevano/libmangal/metadata"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/scraper"
+	"golang.org/x/time/rate"
 )
 
 // searchPageSize: Results in a search page.
@@ -34,7 +35,11 @@ func Config(log *mango.Logger) *scraper.Configuration {
 		Name:            Info.ID,
 		Delay:           50 * time.Millisecond,
 		ReverseChapters: true,
-		BaseURL:         Info.Website,
+		// keiyoushi's rateLimit(1, 2.seconds) on the site's host (src/en/weebcentral/.../WeebCentral.kt),
+		// images are on other hosts
+		RateLimit: rate.Every(2 * time.Second),
+		RateBurst: 1,
+		BaseURL:   Info.Website,
 		GenerateSearchURL: func(baseUrl string, query string) (string, error) {
 			params := url.Values{}
 			params.Set("text", query)

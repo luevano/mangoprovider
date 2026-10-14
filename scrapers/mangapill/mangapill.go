@@ -24,7 +24,8 @@ var Info = libmangal.ProviderInfo{
 // Config: A new configuration, built on every load.
 func Config(_ *mango.Logger) *scraper.Configuration {
 	return &scraper.Configuration{
-		Name:            Info.ID,
+		Name: Info.ID,
+		// no rateLimit in keiyoushi (src/en/mangapill), the scraper's default ~4/s
 		Delay:           50 * time.Millisecond,
 		ReverseChapters: true,
 		BaseURL:         Info.Website,

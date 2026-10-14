@@ -142,3 +142,26 @@ func TestVolumeChapters(t *testing.T) {
 		}
 	}
 }
+
+func TestLimit(t *testing.T) {
+	// keiyoushi's rateLimit(2, 2.seconds)
+	if l := newLimiter(); l.Limit() != 1 || l.Burst() != 2 {
+		t.Errorf("got %v/s burst %d, want 1/s burst 2", l.Limit(), l.Burst())
+	}
+}
+
+func TestPageImageThrottled(t *testing.T) {
+	image := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("png")) }))
+	defer image.Close()
+	f := newTest(t)
+	f.limiter = rate.NewLimiter(rate.Every(100*time.Millisecond), 1)
+	start := time.Now()
+	for range 3 {
+		if _, err := f.GetPageImage(context.Background(), image.Client(), mango.Page{URL: image.URL + "/p.png"}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if took := time.Since(start); took < 200*time.Millisecond {
+		t.Errorf("3 images took %v, want at least 200ms", took)
+	}
+}

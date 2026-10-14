@@ -10,10 +10,13 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/luevano/libmangal"
 	"github.com/luevano/libmangal/progress"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/fetch"
+	"golang.org/x/time/rate"
 )
 
 // reports records the statuses reported through the returned context.
@@ -277,5 +280,27 @@ func TestGetRateLimited(t *testing.T) {
 	_, _, err := m.get(context.Background(), mango.Store{}, "/manga/x")
 	if !errors.Is(err, mango.ErrRateLimited) {
 		t.Errorf("wanted a rate limit, got %v", err)
+	}
+}
+
+func TestImagesThrottled(t *testing.T) {
+	// keiyoushi limits Mangakakalot's images too (Mangakakalot.kt rateLimit(2, 1.seconds))
+	for _, info := range []libmangal.ProviderInfo{MangabatInfo, MangakakalotInfo, ManganatoInfo} {
+		if got, want := imageLimiter(info) != nil, info.ID == MangakakalotInfo.ID; got != want {
+			t.Errorf("%s: image limiter %t, want %t", info.ID, got, want)
+		}
+	}
+	image := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("png")) }))
+	defer image.Close()
+	m := newTest(t, false, nil)
+	m.images = rate.NewLimiter(rate.Every(100*time.Millisecond), 1)
+	start := time.Now()
+	for range 3 {
+		if _, err := m.GetPageImage(context.Background(), image.Client(), mango.Page{URL: image.URL + "/p.png"}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if took := time.Since(start); took < 200*time.Millisecond {
+		t.Errorf("3 images took %v, want at least 200ms", took)
 	}
 }

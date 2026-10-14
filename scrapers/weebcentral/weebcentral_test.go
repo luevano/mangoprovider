@@ -4,10 +4,12 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/scraper/scrapertest"
+	"golang.org/x/time/rate"
 )
 
 func TestIDs(t *testing.T) {
@@ -50,6 +52,7 @@ func TestScrape(t *testing.T) {
 	config := Config(nil)
 	config.ChaptersURL = func(manga mango.Manga) string { return base + "series/" + manga.ID + "/full-chapter-list" }
 	config.PagesURL = func(chapter mango.Chapter) string { return base + "chapters/" + chapter.ID + "/images" }
+	config.RateLimit = rate.Inf
 	s, base := scrapertest.New(t, config, map[string]string{
 		"/search/data":                                "search.html",
 		"/search/data?offset=32&limit=32":             "search-2.html",
@@ -121,5 +124,12 @@ func TestScrape(t *testing.T) {
 	}
 	if p := pages[1].(*mango.Page); p.URL != "https://scans.test/manga/One-Piece/0001-002.png" || p.Ext != ".png" {
 		t.Errorf("page 2: got %+v", p)
+	}
+}
+
+func TestRateLimit(t *testing.T) {
+	// keiyoushi's rateLimit(1, 2.seconds) on the site's host
+	if c := Config(nil); c.RateLimit != rate.Every(2*time.Second) || c.RateBurst != 1 {
+		t.Errorf("got %v/s burst %d, want 1 per 2s", c.RateLimit, c.RateBurst)
 	}
 }

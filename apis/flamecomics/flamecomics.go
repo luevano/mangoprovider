@@ -33,8 +33,7 @@ var nextData = regexp.MustCompile(`(?s)<script id="__NEXT_DATA__" type="applicat
 type flame struct {
 	client    *http.Client
 	userAgent string
-	// limiter keeps to ~2 pages a second, across loads: every call is a full next.js page (the
-	// search one lists the whole catalog), the cdn's images aren't limited
+	// limiter: pages and page images, across loads (see newLimiter)
 	limiter *rate.Limiter
 	// base is the website, a test server in tests
 	base string
@@ -44,7 +43,7 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 	f := flame{
 		client:    options.HTTPClient,
 		userAgent: options.UserAgent,
-		limiter:   rate.NewLimiter(rate.Every(500*time.Millisecond), 2),
+		limiter:   newLimiter(),
 		base:      website,
 	}
 	return &mango.Loader{
@@ -57,9 +56,24 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 				MangaVolumes:   f.MangaVolumes,
 				VolumeChapters: f.VolumeChapters,
 				ChapterPages:   f.ChapterPages,
+				GetPageImage:   f.GetPageImage,
 			}, nil
 		},
 	}
+}
+
+// newLimiter: 2 requests / 2 s, keiyoushi's rateLimit(2, 2.seconds) on everything but the
+// covers (src/en/flamecomics/.../FlameComics.kt), the cdn's page images included.
+func newLimiter() *rate.Limiter {
+	return rate.NewLimiter(rate.Every(time.Second), 2)
+}
+
+// GetPageImage is the generic one, throttled.
+func (f *flame) GetPageImage(ctx context.Context, client *http.Client, page mango.Page) ([]byte, error) {
+	if err := f.limiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+	return mango.GenericGetPageImage(ctx, client, page)
 }
 
 // page gets a page of the site and decodes the props it embeds into v.
