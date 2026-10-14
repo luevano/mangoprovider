@@ -5,13 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/luevano/libmangal"
 	"github.com/luevano/libmangal/logger"
 	"github.com/luevano/libmangal/mangadata"
-	"github.com/luevano/libmangal/netutil"
 )
 
 var (
@@ -191,85 +189,32 @@ func (p *Provider) GetPageImage(
 // pageRetries is how many times a page is tried again after a 429, waiting Retry-After
 // (at most maxRetryWait) or pageRetryWait, doubled each time.
 const (
-	pageRetries  = 3
-	maxRetryWait = time.Minute
+	pageRetries  = libmangal.DefaultPageRetries
+	maxRetryWait = libmangal.DefaultMaxPageRetryWait
 )
 
-var pageRetryWait = 5 * time.Second
+var pageRetryWait = libmangal.DefaultPageRetryWait
 
 // pageRetryKey: the context value (a func(retry int, wait time.Duration)) that
 // (*Provider).GetPageImage sets to report the retries of GenericGetPageImage.
 type pageRetryKey struct{}
 
+// GenericGetPageImage gets the page with libmangal.FetchPageImage, capped at 100 MiB.
 func GenericGetPageImage(
 	ctx context.Context,
 	client *http.Client,
 	page Page,
 ) ([]byte, error) {
-	wait := pageRetryWait
-	for retry := 0; ; retry++ {
-		image, after, err := getPageImage(ctx, client, page)
-		if after < 0 {
-			return image, err
-		}
-		if retry == pageRetries {
-			// the caller may wait longer, as long as the next try here would have
-			var rateLimit *RateLimitError
-			if errors.As(err, &rateLimit) && rateLimit.RetryAfter == 0 {
-				rateLimit.RetryAfter = min(wait, maxRetryWait)
-			}
-			return image, err
-		}
-		if after == 0 {
-			after = wait
-			wait *= 2
-		}
-		after = min(after, maxRetryWait)
-		if report, ok := ctx.Value(pageRetryKey{}).(func(int, time.Duration)); ok {
-			report(retry+1, after)
-		}
-		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		case <-time.After(after):
-		}
-	}
-}
-
-// getPageImage gets the page once; after is how long to wait before trying again after a
-// 429 (0 when the site didn't say), -1 for any other outcome.
-func getPageImage(ctx context.Context, client *http.Client, page Page) (image []byte, after time.Duration, err error) {
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, page.URL, nil)
-	if err != nil {
-		return nil, -1, err
-	}
-
-	for key, value := range page.Headers {
-		request.Header.Set(key, value)
-	}
-
-	for key, value := range page.Cookies {
-		request.AddCookie(&http.Cookie{Name: key, Value: value})
-	}
-
-	response, err := client.Do(request)
-	if err != nil {
-		return nil, -1, err
-	}
-	defer response.Body.Close()
-
-	if response.StatusCode == http.StatusTooManyRequests {
-		after := netutil.RetryAfter(response.Header.Get("Retry-After"))
-		return nil, after, fmt.Errorf("GET %s: %w", page.URL, &RateLimitError{RetryAfter: after})
-	}
-	if response.StatusCode != http.StatusOK {
-		return nil, -1, fmt.Errorf("GET %s: %d %s", page.URL, response.StatusCode, strings.ToLower(http.StatusText(response.StatusCode)))
-	}
-
-	image, err = ReadBody(response.Body)
-	if err != nil {
-		return nil, -1, err
-	}
-
-	return image, -1, nil
+	report, _ := ctx.Value(pageRetryKey{}).(func(int, time.Duration))
+	return libmangal.FetchPageImage(ctx, client, libmangal.PageImageRequest{
+		URL:     page.URL,
+		Headers: page.Headers,
+		Cookies: page.Cookies,
+	}, libmangal.FetchPageImageOptions{
+		Retries:      pageRetries,
+		RetryWait:    pageRetryWait,
+		MaxRetryWait: maxRetryWait,
+		MaxSize:      maxBodySize,
+		OnRetry:      report,
+	})
 }

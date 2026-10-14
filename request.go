@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/luevano/libmangal/netutil"
 	"golang.org/x/time/rate"
@@ -28,27 +27,7 @@ func ReadBody(r io.Reader) ([]byte, error) {
 }
 
 // RateLimitError: The site answered 429 too many requests.
-type RateLimitError struct {
-	// RetryAfter: How long the site asked to wait, 0 if it didn't say.
-	RetryAfter time.Duration
-}
-
-func (e *RateLimitError) Error() string {
-	if e.RetryAfter > 0 {
-		return fmt.Sprintf("429 too many requests (retry after %s)", e.RetryAfter)
-	}
-	return "429 too many requests"
-}
-
-func (e *RateLimitError) Is(target error) bool {
-	return target == ErrRateLimited
-}
-
-// RetryAfterDuration: How long to wait before trying again, for callers that don't import
-// mangoprovider.
-func (e *RateLimitError) RetryAfterDuration() time.Duration {
-	return e.RetryAfter
-}
+type RateLimitError = netutil.RateLimitError
 
 // StatusError is the error for a response status, nil for 200: 404 matches ErrNotFound, 429 is
 // a *RateLimitError and 5xx matches ErrSiteDown.

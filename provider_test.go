@@ -59,19 +59,6 @@ func TestProviderErrorContext(t *testing.T) {
 	}
 }
 
-func TestGenericGetPageImageStatus(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.NotFound(w, r)
-	}))
-	defer server.Close()
-
-	_, err := GenericGetPageImage(context.Background(), server.Client(), Page{URL: server.URL + "/1.png"})
-	want := "GET " + server.URL + "/1.png: 404 not found"
-	if err == nil || err.Error() != want {
-		t.Errorf("wanted %q, got %v", want, err)
-	}
-}
-
 func TestAccount(t *testing.T) {
 	p := &Provider{ProviderInfo: libmangal.ProviderInfo{ID: "mango-x"}}
 	if _, found, err := p.Account(context.Background()); found || err != nil {
@@ -158,54 +145,6 @@ func TestMangaByID(t *testing.T) {
 	p.F.MangaByID = nil
 	if _, _, err := p.MangaByID(ctx, "13"); !errors.Is(err, libmangal.ErrMangaByIDUnsupported) {
 		t.Errorf("without MangaByID: %v, want ErrMangaByIDUnsupported", err)
-	}
-}
-
-func TestGenericGetPageImageRetries(t *testing.T) {
-	defer func(w time.Duration) { pageRetryWait = w }(pageRetryWait)
-	pageRetryWait = time.Millisecond
-	var calls atomic.Int32
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch calls.Add(1) {
-		case 1:
-			w.WriteHeader(http.StatusTooManyRequests)
-		case 2:
-			w.Header().Set("Retry-After", "1")
-			w.WriteHeader(http.StatusTooManyRequests)
-		default:
-			_, _ = w.Write([]byte("png"))
-		}
-	}))
-	defer server.Close()
-
-	start := time.Now()
-	image, err := GenericGetPageImage(context.Background(), server.Client(), Page{URL: server.URL + "/1.png"})
-	if err != nil || string(image) != "png" || calls.Load() != 3 {
-		t.Fatalf("got %q, %v after %d calls", image, err, calls.Load())
-	}
-	if time.Since(start) < time.Second {
-		t.Errorf("didn't wait the Retry-After")
-	}
-
-	// it gives up after pageRetries
-	calls.Store(0)
-	always := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		calls.Add(1)
-		w.WriteHeader(http.StatusTooManyRequests)
-	}))
-	defer always.Close()
-	_, err = GenericGetPageImage(context.Background(), always.Client(), Page{URL: always.URL + "/1.png"})
-	if !errors.Is(err, ErrRateLimited) || calls.Load() != pageRetries+1 {
-		t.Errorf("always 429: %v after %d calls", err, calls.Load())
-	}
-	var rateLimit interface{ RetryAfterDuration() time.Duration }
-	if !errors.As(err, &rateLimit) || rateLimit.RetryAfterDuration() <= 0 {
-		t.Errorf("the rate limit should say how long to wait: %v", err)
-	}
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-	if _, err := GenericGetPageImage(ctx, always.Client(), Page{URL: always.URL + "/1.png"}); !errors.Is(err, context.Canceled) {
-		t.Errorf("cancelled: %v", err)
 	}
 }
 
