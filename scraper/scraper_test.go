@@ -3,6 +3,7 @@ package scraper
 import (
 	"context"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/luevano/libmangal/mangadata"
 	mango "github.com/luevano/mangoprovider"
+	"github.com/luevano/mangoprovider/fetch"
 )
 
 func TestChapterPagesCanceled(t *testing.T) {
@@ -177,28 +179,26 @@ func TestMangaByID(t *testing.T) {
 }
 
 // hostRecorder: Transport that records the Host header it gets, like the headless ones forward it.
-type hostRecorder struct{ hosts chan string }
-
-func (h hostRecorder) RoundTrip(r *http.Request) (*http.Response, error) {
-	h.hosts <- r.Header.Get("Host")
-	return http.DefaultTransport.RoundTrip(r)
-}
-
 func TestRequestHost(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 	defer server.Close()
 
-	config := &Configuration{Name: "test", BaseURL: server.URL, Parallelism: 1, PageExtractor: &PageExtractor{Selector: "img"}}
+	hosts := make(chan string, 1)
+	record := func(next http.RoundTripper) http.RoundTripper {
+		return fetch.RoundTripperFunc(func(r *http.Request) (*http.Response, error) {
+			hosts <- r.Header.Get("Host")
+			return next.RoundTrip(r)
+		})
+	}
+	config := &Configuration{Name: "test", BaseURL: server.URL, Parallelism: 1, PageExtractor: &PageExtractor{Selector: "img"}, Middlewares: []fetch.Middleware{record}}
 	s, err := NewScraper(context.Background(), config, mango.DefaultOptions(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	recorder := hostRecorder{make(chan string, 1)}
-	s.client = &http.Client{Transport: recorder}
 	s.ChapterPages(context.Background(), mango.Store{}, mango.Chapter{URL: server.URL + "/chapter"})
 
 	select {
-	case host := <-recorder.hosts:
+	case host := <-hosts:
 		if host != "" {
 			t.Errorf("the Host header should be left to net/http, got %q", host)
 		}
@@ -480,5 +480,42 @@ func TestCookies(t *testing.T) {
 	}
 	if _, err := other.ChapterPages(context.Background(), mango.Store{}, mango.Chapter{URL: server.URL + "/chapter/1"}); err == nil {
 		t.Error("another scraper got the cookie")
+	}
+}
+
+func TestFetchCloudflareFallback(t *testing.T) {
+	var destroyed bool
+	fs := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		if strings.Contains(string(body), "sessions.destroy") {
+			destroyed = true
+		}
+		w.Write([]byte(`{"status": "ok", "solution": {"status": 200, "response": "<html><body><img src=\"/1.png\"></body></html>"}}`))
+	}))
+	defer fs.Close()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/chapter" {
+			w.WriteHeader(http.StatusForbidden)
+			w.Write([]byte(`<html><head><title>Just a moment...</title></head></html>`))
+		}
+	}))
+	defer server.Close()
+
+	options := mango.DefaultOptions()
+	options.Headless = mango.HeadlessOptions{UseFlaresolverr: true, FlaresolverrURL: fs.URL}
+	config := &Configuration{
+		Name: "test", BaseURL: server.URL, Fetch: fetch.CloudflareFallback,
+		PageExtractor: &PageExtractor{Selector: "img", URL: func(s *goquery.Selection) string { return s.AttrOr("src", "") }},
+	}
+	s, err := NewScraper(context.Background(), config, options, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pages, err := s.ChapterPages(context.Background(), mango.Store{}, mango.Chapter{URL: server.URL + "/chapter"})
+	if err != nil || len(pages) != 1 {
+		t.Fatalf("got %v, %v", pages, err)
+	}
+	if err := s.Close(); err != nil || !destroyed {
+		t.Errorf("close: %v, session destroyed %t", err, destroyed)
 	}
 }

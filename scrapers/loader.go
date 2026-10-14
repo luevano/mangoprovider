@@ -36,6 +36,7 @@ func Loader(info libmangal.ProviderInfo, newConfig func(*mango.Logger) *scraper.
 				MangaVolumes:   s.MangaVolumes,
 				VolumeChapters: s.VolumeChapters,
 				ChapterPages:   s.ChapterPages,
+				Close:          s.Close,
 			}, nil
 		},
 	}

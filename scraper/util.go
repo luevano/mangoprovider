@@ -92,7 +92,7 @@ func (s *Scraper) scrape(ctx context.Context, rawURL, referer string, parse func
 		req.Header.Set(k, v)
 	}
 
-	body, resp, err := mango.FetchRequest(s.client, s.limiter, req)
+	body, resp, err := mango.FetchRequest(s.client.Client, nil, req)
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return ctxErr
 	}

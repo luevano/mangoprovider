@@ -4,6 +4,8 @@ import (
 	"time"
 
 	mango "github.com/luevano/mangoprovider"
+	"github.com/luevano/mangoprovider/fetch"
+	"golang.org/x/time/rate"
 )
 
 // Configuration: Defines behavior of the scraper.
@@ -20,6 +22,16 @@ type Configuration struct {
 
 	// Headers: Custom headers to pass to the request.
 	Headers map[string]string
+
+	// Fetch: How the pages are requested, direct by default (see fetch.Strategy).
+	Fetch fetch.Strategy
+	// RateLimit: Optional, html requests per second (with RateBurst at once), instead of
+	// ~4/s after a burst of 4. E.g. rate.Every(2*time.Second) for keiyoushi's rateLimit(1, 2.seconds).
+	RateLimit rate.Limit
+	RateBurst int
+	// Middlewares: Optional hooks around every html request (headers, url rewrites, ...), the
+	// first is the outermost.
+	Middlewares []fetch.Middleware
 
 	// BaseURL: Base URL of the source.
 	BaseURL string

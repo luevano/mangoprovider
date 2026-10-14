@@ -2,12 +2,10 @@ package scraper
 
 import (
 	"context"
-	"net/http"
-	"net/http/cookiejar"
 	"time"
 
 	mango "github.com/luevano/mangoprovider"
-	"golang.org/x/net/publicsuffix"
+	"github.com/luevano/mangoprovider/fetch"
 	"golang.org/x/time/rate"
 )
 
@@ -24,9 +22,8 @@ const (
 type Scraper struct {
 	config  *Configuration
 	options mango.Options
-	client  *http.Client
+	client  *fetch.Client
 	log     *mango.Logger
-	limiter *rate.Limiter
 	// slots: one per request in flight, Parallelism of them.
 	slots chan struct{}
 }
@@ -38,12 +35,20 @@ func NewScraper(ctx context.Context, config *Configuration, options mango.Option
 		config.Parallelism = max(min(options.Parallelism, maxParallelism), 1)
 		log.Log("setting parallelism to %d", config.Parallelism)
 	}
-	client, err := newClient(options.HTTPClient)
+	limit, burst := rate.Every(requestInterval), requestBurst
+	if config.RateLimit != 0 {
+		limit, burst = config.RateLimit, max(config.RateBurst, 1)
+	}
+	client, err := fetch.NewClient(options.HTTPClient, options.Headless, log, fetch.Config{
+		Strategy:    config.Fetch,
+		Limiter:     rate.NewLimiter(limit, burst),
+		Middlewares: config.Middlewares,
+	})
 	if err != nil {
 		return nil, err
 	}
 	// Set the new BaseURL if there are redirects.
-	err = setBaseURLOnRedirect(ctx, config, client)
+	err = setBaseURLOnRedirect(ctx, config, client.Direct())
 	if err != nil {
 		return nil, err
 	}
@@ -53,24 +58,11 @@ func NewScraper(ctx context.Context, config *Configuration, options mango.Option
 		options: options,
 		client:  client,
 		log:     log,
-		limiter: rate.NewLimiter(rate.Every(requestInterval), requestBurst),
 		slots:   make(chan struct{}, config.Parallelism),
 	}, nil
 }
 
-// newClient: A copy of base (the shared client stays as is) with its own cookie jar, some sites
-// set a session cookie on a redirect or the first page. A jar base already has is kept.
-func newClient(base *http.Client) (*http.Client, error) {
-	if base == nil {
-		base = mango.DefaultOptions().HTTPClient
-	}
-	client := *base
-	if client.Jar == nil {
-		jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
-		if err != nil {
-			return nil, err
-		}
-		client.Jar = jar
-	}
-	return &client, nil
+// Close: Ends what the fetch strategy started (FlareSolverr session, browser).
+func (s *Scraper) Close() error {
+	return s.client.Close()
 }
