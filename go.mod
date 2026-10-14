@@ -22,6 +22,7 @@ require (
 	github.com/agnivade/levenshtein v1.2.1 // indirect
 	github.com/andybalholm/cascadia v1.3.5 // indirect
 	github.com/bits-and-blooms/bitset v1.20.0 // indirect
+	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
 	github.com/hhrutter/tiff v1.0.7 // indirect
 	github.com/mattn/go-runewidth v0.0.31 // indirect

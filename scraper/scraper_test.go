@@ -671,3 +671,32 @@ func TestLenientURLs(t *testing.T) {
 		}
 	}
 }
+
+// a transient 5xx is retried, by default
+func TestRetry(t *testing.T) {
+	var requests int
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/chapter" {
+			return
+		}
+		if requests++; requests == 1 {
+			w.WriteHeader(http.StatusBadGateway)
+			return
+		}
+		w.Write([]byte(`<img src="/1.jpg">`))
+	}))
+	defer server.Close()
+
+	config := &Configuration{Name: "test", BaseURL: server.URL, Parallelism: 1, PageExtractor: &PageExtractor{
+		Selector: "img",
+		URL:      func(s *goquery.Selection) string { return s.AttrOr("src", "") },
+	}}
+	s, err := NewScraper(context.Background(), config, mango.DefaultOptions(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pages, err := s.ChapterPages(context.Background(), mango.Store{}, mango.Chapter{URL: server.URL + "/chapter"})
+	if err != nil || len(pages) != 1 || requests != 2 {
+		t.Errorf("got %v, %v after %d requests", pages, err, requests)
+	}
+}

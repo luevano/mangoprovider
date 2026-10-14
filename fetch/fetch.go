@@ -56,8 +56,11 @@ type Config struct {
 	// rod.NewTransport with Headless by default.
 	NewBrowser func() Browser
 	// Middlewares: The site's own hooks (headers, user agent, url rewrites, ...), the first is
-	// the outermost. They run before the limiter and the strategy.
+	// the outermost. They run before the retries, the limiter and the strategy.
 	Middlewares []Middleware
+	// Retry: Optional, transient failures (429, 5xx) are tried again (see Retries), each try
+	// waiting for the limiter.
+	Retry *Retry
 }
 
 // Client is a site's http client, Close it with the provider.
@@ -108,6 +111,9 @@ func NewClient(base *http.Client, headless mango.HeadlessOptions, log *mango.Log
 	}
 	if config.Limiter != nil {
 		transport = RateLimit(config.Limiter)(transport)
+	}
+	if config.Retry != nil {
+		transport = Retries(*config.Retry, log)(transport)
 	}
 	for i := len(config.Middlewares) - 1; i >= 0; i-- {
 		transport = config.Middlewares[i](transport)

@@ -37,6 +37,9 @@ type Configuration struct {
 	// Middlewares: Optional hooks around every html request (headers, url rewrites, ...), the
 	// first is the outermost.
 	Middlewares []fetch.Middleware
+	// Retry: How an html request answered 429 or 5xx is tried again, fetch.DefaultRetry if
+	// nil (MaxTries 1 never retries).
+	Retry *fetch.Retry
 
 	// BaseURL: Base URL of the source.
 	BaseURL string
