@@ -44,7 +44,10 @@ func (d *dex) VolumeChapters(ctx context.Context, store mango.Store, volume mang
 	params.Add("volume[]", volumeNumber)
 	params.Set("limit", strconv.Itoa(limit))
 	params.Set("order[chapter]", mangodex.OrderAscending)
-	params.Add("translatedLanguage[]", d.filter.Language)
+	// none is any language
+	if d.filter.Language != "" {
+		params.Add("translatedLanguage[]", d.filter.Language)
+	}
 	params.Add("includes[]", string(mangodex.RelationshipTypeScanlationGroup))
 	params.Add("includes[]", string(mangodex.RelationshipTypeUser))
 	if !d.filter.ShowUnavailableChapters {

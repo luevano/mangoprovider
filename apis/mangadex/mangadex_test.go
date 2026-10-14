@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -25,10 +26,12 @@ type fakeDex struct {
 	nodeStatus int
 	// total: How many mangas the search says match.
 	total int
+	// queries: The last query by path.
+	queries map[string]string
 }
 
 func newFakeDex() *fakeDex {
-	return &fakeDex{requests: map[string]int{}, nodeStatus: http.StatusOK, total: 10000}
+	return &fakeDex{requests: map[string]int{}, queries: map[string]string{}, nodeStatus: http.StatusOK, total: 10000}
 }
 
 func (f *fakeDex) count(path string) int {
@@ -40,6 +43,7 @@ func (f *fakeDex) count(path string) int {
 func (f *fakeDex) RoundTrip(r *http.Request) (*http.Response, error) {
 	f.mu.Lock()
 	f.requests[r.URL.Path]++
+	f.queries[r.URL.Path] = r.URL.RawQuery
 	nodeStatus, total := f.nodeStatus, f.total
 	f.mu.Unlock()
 
@@ -193,6 +197,29 @@ func TestLoadsIndependent(t *testing.T) {
 	for _, source := range sources {
 		if source != "first" {
 			t.Errorf("the first provider reported as %q", source)
+		}
+	}
+}
+
+// an empty language is any language: no translatedLanguage[] (it would match none)
+func TestAnyLanguage(t *testing.T) {
+	for lang, want := range map[string]string{"": "", "es-la": "es-la"} {
+		fake := newFakeDex()
+		options := mango.DefaultOptions()
+		options.HTTPClient = &http.Client{Transport: fake}
+		options.Filter.Language = lang
+		fns := load(t, Loader(options).(*mango.Loader), nil)
+		manga := mango.Manga{ID: "m"}
+		fns.MangaVolumes(context.Background(), mango.Store{}, manga)
+		fns.VolumeChapters(context.Background(), mango.Store{}, mango.Volume{Number: 1, Manga_: &manga})
+		for _, path := range []string{"/manga/m/aggregate", "/chapter"} {
+			query, err := url.ParseQuery(fake.queries[path])
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got, ok := query["translatedLanguage[]"]; (want == "") == ok || (ok && got[0] != want) {
+				t.Errorf("language %q, %s: got %s", lang, path, fake.queries[path])
+			}
 		}
 	}
 }
