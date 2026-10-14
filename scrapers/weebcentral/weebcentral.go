@@ -21,7 +21,7 @@ const searchPageSize = 32
 var Info = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-weebcentral",
 	Name:        "Weeb Central",
-	Version:     "0.4.2",
+	Version:     "0.4.3",
 	Description: "Weeb Central scraper",
 	Website:     "https://weebcentral.com/",
 	History: []libmangal.ProviderAlias{

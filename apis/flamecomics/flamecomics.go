@@ -23,7 +23,7 @@ const (
 var providerInfo = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-flamecomics",
 	Name:        "FlameComics",
-	Version:     "0.4.2",
+	Version:     "0.4.3",
 	Description: "FlameComics, from the data its pages embed",
 	Website:     website,
 }
