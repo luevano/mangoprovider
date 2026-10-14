@@ -49,6 +49,15 @@ type MangaDexOptions struct {
 
 	// DataSaver if lower quality images should be requested.
 	DataSaver bool
+
+	// ExcludeGroups: Scanlation groups (names, case insensitive, or ids) whose chapters are
+	// left out.
+	ExcludeGroups []string
+
+	// PreferGroups: Scanlation groups (names, case insensitive, or ids) in order of
+	// preference, for the one chapter per number of FilterOptions.AvoidDuplicateChapters. A
+	// number without any of them gets the group with the most uploads in the volume.
+	PreferGroups []string
 }
 
 func DefaultMangaDexOptions() MangaDexOptions {

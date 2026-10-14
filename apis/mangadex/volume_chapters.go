@@ -19,6 +19,8 @@ type aggregate struct {
 	groupsCount map[string]int
 	// extras: chapters without a number
 	extras map[*mango.Chapter]bool
+	// groups: the chapters' scanlation groups (ids and lowercased names)
+	groups map[*mango.Chapter][]string
 }
 
 func (d *dex) VolumeChapters(ctx context.Context, store mango.Store, volume mango.Volume) ([]mangadata.Chapter, error) {
@@ -28,6 +30,7 @@ func (d *dex) VolumeChapters(ctx context.Context, store mango.Store, volume mang
 		chaptersMap: map[string][]mangadata.Chapter{},
 		groupsCount: map[string]int{},
 		extras:      map[*mango.Chapter]bool{},
+		groups:      map[*mango.Chapter][]string{},
 	}
 
 	volumeNumber := volume.Label
@@ -65,6 +68,9 @@ func (d *dex) VolumeChapters(ctx context.Context, store mango.Store, volume mang
 
 	// This doesn't include the offset so that it retrieves and saves all the chapters.
 	cacheID := fmt.Sprintf("%s-%s", params.Encode(), d.filter.String())
+	if groups := d.groupsKey(); groups != "" {
+		cacheID += "-" + groups
+	}
 	var chapters []mangadata.Chapter
 	found, err := store.GetChapters(cacheID, volume, &chapters)
 	if err != nil {
@@ -92,11 +98,10 @@ func (d *dex) VolumeChapters(ctx context.Context, store mango.Store, volume mang
 	}
 	numberExtraChapters(agg.chapters, agg.extras)
 
-	// TODO: add option to exclude list of scanlators/prefer list of scanlators
 	var chaptersFiltered []mangadata.Chapter
 
 	if d.filter.AvoidDuplicateChapters {
-		chaptersFiltered, err = getUniqueChapters(&agg)
+		chaptersFiltered, err = getUniqueChapters(&agg, d.options.PreferGroups)
 		if err != nil {
 			return nil, err
 		}
@@ -146,6 +151,11 @@ func (d *dex) populateChapters(ctx context.Context, agg *aggregate, params url.V
 		}
 
 		chapterID := chapter.ID
+		groups := chapterGroups(chapter.Relationships)
+		if excluded := matchGroup(groups, d.options.ExcludeGroups); excluded >= 0 {
+			d.log.Log("chapter %s: group %q excluded", chapterID, d.options.ExcludeGroups[excluded])
+			continue
+		}
 		date := d.getDate(chapter.Attributes.PublishAt)
 		scanlator := d.getScanlator(chapter.Relationships)
 
@@ -166,6 +176,7 @@ func (d *dex) populateChapters(ctx context.Context, agg *aggregate, params url.V
 			mapKey = chapterID
 			agg.extras[&c] = true
 		}
+		agg.groups[&c] = groups
 		agg.chaptersMap[mapKey] = append(agg.chaptersMap[mapKey], &c)
 		agg.groupsCount[scanlator] += 1
 		agg.chapters = append(agg.chapters, &c)

@@ -2,7 +2,9 @@ package mangadex
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/luevano/libmangal/mangadata"
@@ -82,8 +84,44 @@ func (d *dex) getScanlator(relationships []*mangodex.Relationship) string {
 	return scanlator
 }
 
-// Filters out duplicate chapters, the logic tries to get the chapter that's from a scanlator that appears the most in the volume.
-func getUniqueChapters(agg *aggregate) ([]mangadata.Chapter, error) {
+// chapterGroups: The ids and lowercased names of the chapter's scanlation groups.
+func chapterGroups(relationships []*mangodex.Relationship) []string {
+	var groups []string
+	for _, relationship := range relationships {
+		if relationship.Type != mangodex.RelationshipTypeScanlationGroup {
+			continue
+		}
+		groups = append(groups, relationship.ID.String())
+		if group, ok := relationship.Attributes.(*mangodex.ScanlationGroupAttributes); ok && group.Name != "" {
+			groups = append(groups, strings.ToLower(group.Name))
+		}
+	}
+	return groups
+}
+
+// matchGroup: The index of the first of wanted (names or ids, case insensitive) in groups,
+// -1 if none is.
+func matchGroup(groups, wanted []string) int {
+	for i, w := range wanted {
+		if slices.Contains(groups, strings.ToLower(strings.TrimSpace(w))) {
+			return i
+		}
+	}
+	return -1
+}
+
+// groupsKey: The group options for the chapters' cache id, empty without any.
+func (d *dex) groupsKey() string {
+	if len(d.options.ExcludeGroups) == 0 && len(d.options.PreferGroups) == 0 {
+		return ""
+	}
+	return fmt.Sprintf("exclude:%s;prefer:%s", strings.Join(d.options.ExcludeGroups, ","), strings.Join(d.options.PreferGroups, ","))
+}
+
+// getUniqueChapters: One chapter per number: a downloadable one over an unavailable one, then
+// the one from the first of prefer's groups, else from the group with the most uploads in the
+// volume.
+func getUniqueChapters(agg *aggregate, prefer []string) ([]mangadata.Chapter, error) {
 	var chaptersFiltered []mangadata.Chapter
 	for number, chapters := range agg.chaptersMap {
 		switch len(chapters) {
@@ -102,6 +140,11 @@ func getUniqueChapters(agg *aggregate) ([]mangadata.Chapter, error) {
 			}
 			if len(available) != 0 {
 				candidates = available
+			}
+
+			if preferred := preferredChapter(agg, candidates, prefer); preferred != nil {
+				chaptersFiltered = append(chaptersFiltered, preferred)
+				continue
 			}
 
 			var chapterTemp mangadata.Chapter
@@ -127,4 +170,20 @@ func getUniqueChapters(agg *aggregate) ([]mangadata.Chapter, error) {
 		}
 	}
 	return chaptersFiltered, nil
+}
+
+// preferredChapter: The candidate from the earliest group in prefer, nil if none is from them.
+func preferredChapter(agg *aggregate, candidates []mangadata.Chapter, prefer []string) mangadata.Chapter {
+	var best mangadata.Chapter
+	bestRank := len(prefer)
+	for _, chapter := range candidates {
+		groups := agg.groups[chapter.(*mango.Chapter)]
+		if groups == nil {
+			groups = []string{strings.ToLower(chapter.Info().ScanlationGroup)}
+		}
+		if rank := matchGroup(groups, prefer); rank >= 0 && rank < bestRank {
+			best, bestRank = chapter, rank
+		}
+	}
+	return best
 }

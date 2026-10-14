@@ -28,6 +28,8 @@ type fakeDex struct {
 	total int
 	// queries: The last query by path.
 	queries map[string]string
+	// chapters: Optional, the /chapter answer's data.
+	chapters string
 }
 
 func newFakeDex() *fakeDex {
@@ -56,6 +58,8 @@ func (f *fakeDex) RoundTrip(r *http.Request) (*http.Response, error) {
 			mangas[i] = `{"id":"m","type":"manga","attributes":{"title":{"en":"A"}}}`
 		}
 		w.WriteString(`{"result":"ok","data":[` + strings.Join(mangas, ",") + `],"total":` + strconv.Itoa(total) + `}`)
+	case r.URL.Path == "/chapter" && f.chapters != "":
+		w.WriteString(`{"result":"ok","data":[` + f.chapters + `]}`)
 	case strings.HasPrefix(r.URL.Path, "/at-home/server/"):
 		w.WriteString(`{"result":"ok","baseUrl":"https://node.test","chapter":{"hash":"h","data":["1.png","2.png"]}}`)
 	case r.URL.Host == "node.test":
@@ -221,5 +225,38 @@ func TestAnyLanguage(t *testing.T) {
 				t.Errorf("language %q, %s: got %s", lang, path, fake.queries[path])
 			}
 		}
+	}
+}
+
+func TestGroups(t *testing.T) {
+	chapter := func(id, number, groupID, group string) string {
+		return `{"id":"` + id + `","type":"chapter","attributes":{"chapter":"` + number + `","pages":3,"publishAt":"2024-01-02T00:00:00+00:00"},` +
+			`"relationships":[{"id":"` + groupID + `","type":"scanlation_group","attributes":{"name":"` + group + `"}}]}`
+	}
+	const a, b, c = "00000000-0000-0000-0000-00000000000a", "00000000-0000-0000-0000-00000000000b", "00000000-0000-0000-0000-00000000000c"
+	fake := newFakeDex()
+	fake.chapters = strings.Join([]string{
+		chapter("1a", "1", a, "Alpha"), chapter("1b", "1", b, "Beta"), chapter("1c", "1", c, "Gamma"),
+		chapter("2b", "2", b, "Beta"), chapter("2c", "2", c, "Gamma"),
+		chapter("3c", "3", c, "Gamma"),
+	}, ",")
+	options := mango.DefaultOptions()
+	options.HTTPClient = &http.Client{Transport: fake}
+	options.Filter.AvoidDuplicateChapters = true
+	options.MangaDex.ExcludeGroups = []string{"gamma"}
+	options.MangaDex.PreferGroups = []string{b, "Alpha"}
+	fns := load(t, Loader(options).(*mango.Loader), nil)
+	manga := mango.Manga{ID: "m"}
+	chapters, err := fns.VolumeChapters(context.Background(), mango.Store{}, mango.Volume{Number: 1, Manga_: &manga})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	for _, c := range chapters {
+		got = append(got, c.(*mango.Chapter).ID)
+	}
+	// gamma's left out, beta (by id) preferred over alpha
+	if want := []string{"1b", "2b"}; strings.Join(got, ",") != strings.Join(want, ",") {
+		t.Errorf("wanted %v, got %v", want, got)
 	}
 }

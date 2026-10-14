@@ -1,8 +1,10 @@
 package mangadex
 
 import (
+	"slices"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/luevano/libmangal/mangadata"
 	"github.com/luevano/mangodex"
 	mango "github.com/luevano/mangoprovider"
@@ -64,7 +66,7 @@ func TestGetUniqueChapters(t *testing.T) {
 		groupsCount: map[string]int{"active": 5, "other": 1},
 	}
 
-	chapters, err := getUniqueChapters(agg)
+	chapters, err := getUniqueChapters(agg, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,6 +76,61 @@ func TestGetUniqueChapters(t *testing.T) {
 	for _, c := range chapters {
 		if c != active && c != available {
 			t.Errorf("unexpected chapter picked: %+v", c.Info())
+		}
+	}
+}
+
+func TestPreferGroups(t *testing.T) {
+	chapter := func(group string) *mango.Chapter {
+		return &mango.Chapter{ScanlationGroup: group}
+	}
+	big, small, fav := chapter("Big"), chapter("Small"), chapter("Fav")
+	big2, small2 := chapter("Big"), chapter("Small")
+	big3, other3 := chapter("Big"), chapter("Other")
+	agg := &aggregate{
+		chaptersMap: map[string][]mangadata.Chapter{
+			"1": {big, small, fav}, // the first preferred group there wins
+			"2": {big2, small2},    // groups not listed: by the chapter's group name
+			"3": {other3, big3},    // none preferred: the most uploads
+		},
+		groupsCount: map[string]int{"Big": 9, "Small": 2, "Fav": 1, "Other": 1},
+		groups: map[*mango.Chapter][]string{
+			big: {"b-id", "big"}, small: {"s-id", "small"}, fav: {"f-id", "fav"},
+		},
+	}
+	chapters, err := getUniqueChapters(agg, []string{"Missing", "F-ID", "small"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := map[mangadata.Chapter]bool{}
+	for _, c := range chapters {
+		got[c] = true
+	}
+	if len(chapters) != 3 || !got[fav] || !got[small2] || !got[big3] {
+		t.Errorf("wanted fav, small2 and big3, got %v", chapters)
+	}
+}
+
+func TestChapterGroups(t *testing.T) {
+	id := uuid.MustParse("6f0b3b9c-3e0b-4b8a-9f43-6c3c1f8f2a10")
+	groups := chapterGroups([]*mangodex.Relationship{
+		{ID: id, Type: mangodex.RelationshipTypeScanlationGroup, Attributes: &mangodex.ScanlationGroupAttributes{Name: "Some Scans"}},
+		{ID: uuid.New(), Type: mangodex.RelationshipTypeUser, Attributes: &mangodex.UserAttributes{Username: "uploader"}},
+	})
+	if want := []string{id.String(), "some scans"}; !slices.Equal(groups, want) {
+		t.Errorf("wanted %v, got %v", want, groups)
+	}
+	for _, tt := range []struct {
+		wanted []string
+		index  int
+	}{
+		{[]string{"other", " SOME scans "}, 1},
+		{[]string{id.String()}, 0},
+		{[]string{"uploader"}, -1},
+		{nil, -1},
+	} {
+		if got := matchGroup(groups, tt.wanted); got != tt.index {
+			t.Errorf("%q: wanted %d, got %d", tt.wanted, tt.index, got)
 		}
 	}
 }
