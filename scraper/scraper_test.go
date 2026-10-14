@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"code.dny.dev/ssrf"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/go-rod/rod/lib/launcher"
 	"github.com/luevano/libmangal/mangadata"
@@ -41,7 +42,7 @@ func TestChapterPagesCanceled(t *testing.T) {
 		Parallelism:   1,
 		PageExtractor: &PageExtractor{Selector: "img"},
 	}
-	s, err := NewScraper(context.Background(), config, mango.DefaultOptions(), nil)
+	s, err := NewScraper(context.Background(), config, testOptions(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,7 +71,7 @@ func newTestScraper(t *testing.T, status int, html string, extractor *PageExtrac
 	t.Cleanup(server.Close)
 
 	config := &Configuration{Name: "test", BaseURL: server.URL, Parallelism: 1, PageExtractor: extractor}
-	s, err := NewScraper(context.Background(), config, mango.DefaultOptions(), nil)
+	s, err := NewScraper(context.Background(), config, testOptions(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -158,7 +159,7 @@ func TestMangaByID(t *testing.T) {
 			Cover:    func(s *goquery.Selection) string { return s.Find("img").AttrOr("src", "") },
 		},
 	}
-	s, err := NewScraper(context.Background(), config, mango.DefaultOptions(), nil)
+	s, err := NewScraper(context.Background(), config, testOptions(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -198,7 +199,7 @@ func TestRequestHost(t *testing.T) {
 		})
 	}
 	config := &Configuration{Name: "test", BaseURL: server.URL, Parallelism: 1, PageExtractor: &PageExtractor{Selector: "img"}, Middlewares: []fetch.Middleware{record}}
-	s, err := NewScraper(context.Background(), config, mango.DefaultOptions(), nil)
+	s, err := NewScraper(context.Background(), config, testOptions(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -259,7 +260,7 @@ func TestParallelism(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 	defer server.Close()
 	for _, tt := range []struct{ option, want uint8 }{{15, maxParallelism}, {2, 2}} {
-		options := mango.DefaultOptions()
+		options := testOptions()
 		options.Parallelism = tt.option
 		config := &Configuration{Name: "test", BaseURL: server.URL}
 		if _, err := NewScraper(context.Background(), config, options, nil); err != nil {
@@ -304,7 +305,7 @@ func TestSkipNoID(t *testing.T) {
 			ID:       id,
 		},
 	}
-	s, err := NewScraper(context.Background(), config, mango.DefaultOptions(), nil)
+	s, err := NewScraper(context.Background(), config, testOptions(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -345,7 +346,7 @@ func TestRequestHeaders(t *testing.T) {
 		},
 		PageExtractor: &PageExtractor{Selector: "img", URL: func(s *goquery.Selection) string { return s.AttrOr("src", "") }},
 	}
-	options := mango.DefaultOptions()
+	options := testOptions()
 	options.UserAgent = "test-agent"
 	s, err := NewScraper(context.Background(), config, options, nil)
 	if err != nil {
@@ -392,7 +393,7 @@ func TestRedirectedPage(t *testing.T) {
 		},
 		PageExtractor: &PageExtractor{Selector: "img", URL: func(s *goquery.Selection) string { return s.AttrOr("src", "") }},
 	}
-	s, err := NewScraper(context.Background(), config, mango.DefaultOptions(), nil)
+	s, err := NewScraper(context.Background(), config, testOptions(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -462,7 +463,7 @@ func TestCookies(t *testing.T) {
 			PageExtractor: &PageExtractor{Selector: "img", URL: func(s *goquery.Selection) string { return s.AttrOr("src", "") }},
 		}
 	}
-	options := mango.DefaultOptions()
+	options := testOptions()
 	s, err := NewScraper(context.Background(), newConfig(), options, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -508,7 +509,7 @@ func TestFetchHeadlessFallback(t *testing.T) {
 	}))
 	defer server.Close()
 
-	options := mango.DefaultOptions()
+	options := testOptions()
 	options.Headless = mango.HeadlessOptions{UseFlaresolverr: true, FlaresolverrURL: fs.URL}
 	config := &Configuration{
 		Name: "test", BaseURL: server.URL, Fetch: fetch.HeadlessFallback,
@@ -548,7 +549,7 @@ func TestFetchHeadless(t *testing.T) {
 		Name: "test", BaseURL: server.URL, Fetch: fetch.Headless,
 		PageExtractor: &PageExtractor{Selector: "img", URL: func(s *goquery.Selection) string { return s.AttrOr("src", "") }},
 	}
-	s, err := NewScraper(context.Background(), config, mango.DefaultOptions(), nil)
+	s, err := NewScraper(context.Background(), config, testOptions(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -624,7 +625,7 @@ func TestSearchPagination(t *testing.T) {
 				Cover:    func(*goquery.Selection) string { return "" },
 			},
 		}
-		s, err := NewScraper(context.Background(), config, mango.DefaultOptions(), nil)
+		s, err := NewScraper(context.Background(), config, testOptions(), nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -695,7 +696,7 @@ func TestRetry(t *testing.T) {
 		Selector: "img",
 		URL:      func(s *goquery.Selection) string { return s.AttrOr("src", "") },
 	}}
-	s, err := NewScraper(context.Background(), config, mango.DefaultOptions(), nil)
+	s, err := NewScraper(context.Background(), config, testOptions(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -759,7 +760,7 @@ func TestRequests(t *testing.T) {
 			ID:       func(u string) string { return PathParts(u)[2] },
 		},
 	}
-	s, err := NewScraper(context.Background(), config, mango.DefaultOptions(), nil)
+	s, err := NewScraper(context.Background(), config, testOptions(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -835,7 +836,7 @@ func TestMetadata(t *testing.T) {
 			},
 		},
 	}
-	s, err := NewScraper(context.Background(), config, mango.DefaultOptions(), nil)
+	s, err := NewScraper(context.Background(), config, testOptions(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -914,7 +915,7 @@ func TestNewScraperNoRequest(t *testing.T) {
 	defer server.Close()
 
 	config := &Configuration{Name: "test", BaseURL: server.URL + "/", Parallelism: 1}
-	if _, err := NewScraper(context.Background(), config, mango.DefaultOptions(), nil); err != nil {
+	if _, err := NewScraper(context.Background(), config, testOptions(), nil); err != nil {
 		t.Fatal(err)
 	}
 	if requests.Load() != 0 || config.BaseURL != server.URL+"/" {
@@ -922,7 +923,36 @@ func TestNewScraperNoRequest(t *testing.T) {
 	}
 
 	server.Close()
-	if _, err := NewScraper(context.Background(), config, mango.DefaultOptions(), nil); err != nil {
+	if _, err := NewScraper(context.Background(), config, testOptions(), nil); err != nil {
 		t.Errorf("site down: %v", err)
+	}
+}
+
+// testOptions are mango.DefaultOptions that reach the local test servers.
+func testOptions() mango.Options {
+	o := mango.DefaultOptions()
+	o.AllowPrivateAddresses = true
+	return o
+}
+
+// by default a site's urls can't reach loopback/LAN addresses
+func TestGuarded(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`<html><body><img src="1.png"></body></html>`))
+	}))
+	defer server.Close()
+
+	config := &Configuration{
+		Name:          "test",
+		BaseURL:       "https://site.test/",
+		Parallelism:   1,
+		PageExtractor: &PageExtractor{Selector: "img", URL: func(s *goquery.Selection) string { return s.AttrOr("src", "") }},
+	}
+	s, err := NewScraper(context.Background(), config, mango.DefaultOptions(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.ChapterPages(context.Background(), mango.Store{}, mango.Chapter{URL: server.URL + "/chapter"}); !errors.Is(err, ssrf.ErrProhibitedIP) {
+		t.Errorf("got %v, want the loopback address refused", err)
 	}
 }

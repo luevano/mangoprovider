@@ -12,6 +12,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/scraper"
+	"github.com/luevano/mangoprovider/scraper/scrapertest"
 )
 
 func selection(t *testing.T, html string) *goquery.Selection {
@@ -130,7 +131,7 @@ func TestChapterModes(t *testing.T) {
 	} {
 		fake := &madara{}
 		server := fake.serve(t)
-		s, err := scraper.NewScraper(context.Background(), Config(Options{ID: "test", BaseURL: server.URL + "/", ChapterMode: mode}), mango.DefaultOptions(), nil)
+		s, err := scraper.NewScraper(context.Background(), Config(Options{ID: "test", BaseURL: server.URL + "/", ChapterMode: mode}), scrapertest.Options(), nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -152,7 +153,7 @@ func TestChapterModes(t *testing.T) {
 func TestNoAjaxSearch(t *testing.T) {
 	fake := &madara{}
 	server := fake.serve(t)
-	s, err := scraper.NewScraper(context.Background(), Config(Options{ID: "test", BaseURL: server.URL + "/", NoAjax: true}), mango.DefaultOptions(), nil)
+	s, err := scraper.NewScraper(context.Background(), Config(Options{ID: "test", BaseURL: server.URL + "/", NoAjax: true}), scrapertest.Options(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -186,7 +187,7 @@ func TestAjaxSearchForm(t *testing.T) {
 func TestMangaByIDNoTitle(t *testing.T) {
 	fake := &madara{}
 	server := fake.serve(t)
-	s, err := scraper.NewScraper(context.Background(), Config(Options{ID: "test", BaseURL: server.URL + "/"}), mango.DefaultOptions(), nil)
+	s, err := scraper.NewScraper(context.Background(), Config(Options{ID: "test", BaseURL: server.URL + "/"}), scrapertest.Options(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -202,7 +203,7 @@ func TestMangaByIDNoTitle(t *testing.T) {
 func TestMovedManga(t *testing.T) {
 	fake := &madara{}
 	server := fake.serve(t)
-	s, err := scraper.NewScraper(context.Background(), Config(Options{ID: "test", BaseURL: server.URL + "/", ChapterMode: MangaAjax}), mango.DefaultOptions(), nil)
+	s, err := scraper.NewScraper(context.Background(), Config(Options{ID: "test", BaseURL: server.URL + "/", ChapterMode: MangaAjax}), scrapertest.Options(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}

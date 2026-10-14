@@ -122,6 +122,10 @@ type Options struct {
 	// Mirrors: the preferred website (its Website or one of its Mirrors) by provider id.
 	Mirrors map[string]string
 
+	// AllowPrivateAddresses lets the scrapers and page images reach loopback, LAN and other
+	// non-public addresses. Off, a site's urls can't reach them (see GuardClient).
+	AllowPrivateAddresses bool
+
 	// MangaDex options
 	MangaDex MangaDexOptions
 

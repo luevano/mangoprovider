@@ -44,7 +44,7 @@ func NewScraper(ctx context.Context, config *Configuration, options mango.Option
 	if config.Retry != nil {
 		retry = *config.Retry
 	}
-	client, err := fetch.NewClient(options.HTTPClient, options.Headless, log, fetch.Config{
+	client, err := fetch.NewClient(mango.GuardClient(options.HTTPClient, options), options.Headless, log, fetch.Config{
 		Strategy:    config.Fetch,
 		Headless:    rod.Options{LoadWait: config.LoadWait, LocalStorage: config.LocalStorage},
 		Limiter:     rate.NewLimiter(limit, burst),

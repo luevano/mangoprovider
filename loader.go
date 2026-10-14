@@ -50,7 +50,7 @@ func (l *Loader) Load(ctx context.Context) (libmangal.Provider, error) {
 		ProviderInfo: l.ProviderInfo,
 		Options:      l.Options,
 		F:            f,
-		client:       l.Options.HTTPClient,
+		client:       GuardClient(l.Options.HTTPClient, l.Options),
 		store:        store,
 		log:          log,
 	}, nil

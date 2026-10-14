@@ -77,7 +77,7 @@ func loader(info libmangal.ProviderInfo, options mango.Options) libmangal.Provid
 		ProviderInfo: info,
 		Options:      options,
 		F: func(_ context.Context, log *mango.Logger) (mango.Functions, error) {
-			client, err := fetch.NewClient(options.HTTPClient, options.Headless, log, fetch.Config{
+			client, err := fetch.NewClient(mango.GuardClient(options.HTTPClient, options), options.Headless, log, fetch.Config{
 				Strategy: fetch.HeadlessFallback,
 				Limiter:  rate.NewLimiter(rate.Every(500*time.Millisecond), 2),
 			})

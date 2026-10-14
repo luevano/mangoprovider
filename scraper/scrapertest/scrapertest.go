@@ -43,11 +43,18 @@ func New(t *testing.T, config *scraper.Configuration, files map[string]string) (
 	t.Cleanup(server.Close)
 
 	config.BaseURL = server.URL + "/"
-	s, err := scraper.NewScraper(context.Background(), config, mango.DefaultOptions(), nil)
+	s, err := scraper.NewScraper(context.Background(), config, Options(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	return s, config.BaseURL
+}
+
+// Options are mango.DefaultOptions that reach the local test servers.
+func Options() mango.Options {
+	o := mango.DefaultOptions()
+	o.AllowPrivateAddresses = true
+	return o
 }
 
 // match: The file for the request, the key with the most matching params.

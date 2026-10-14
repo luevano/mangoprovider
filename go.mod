@@ -3,7 +3,9 @@ module github.com/luevano/mangoprovider
 go 1.27.0
 
 require (
+	code.dny.dev/ssrf v0.3.0
 	github.com/PuerkitoBio/goquery v1.13.0
+	github.com/cenkalti/backoff/v5 v5.0.3
 	github.com/go-rod/rod v0.116.2
 	github.com/google/uuid v1.6.0
 	github.com/lithammer/fuzzysearch v1.1.8
@@ -22,7 +24,6 @@ require (
 	github.com/agnivade/levenshtein v1.2.1 // indirect
 	github.com/andybalholm/cascadia v1.3.5 // indirect
 	github.com/bits-and-blooms/bitset v1.20.0 // indirect
-	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
 	github.com/hhrutter/tiff v1.0.7 // indirect
 	github.com/mattn/go-runewidth v0.0.31 // indirect
