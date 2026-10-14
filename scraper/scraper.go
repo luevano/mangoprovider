@@ -3,9 +3,11 @@ package scraper
 import (
 	"context"
 	"net/http"
+	"net/http/cookiejar"
 	"time"
 
 	mango "github.com/luevano/mangoprovider"
+	"golang.org/x/net/publicsuffix"
 	"golang.org/x/time/rate"
 )
 
@@ -36,9 +38,9 @@ func NewScraper(ctx context.Context, config *Configuration, options mango.Option
 		config.Parallelism = max(min(options.Parallelism, maxParallelism), 1)
 		log.Log("setting parallelism to %d", config.Parallelism)
 	}
-	client := options.HTTPClient
-	if client == nil {
-		client = mango.DefaultOptions().HTTPClient
+	client, err := newClient(options.HTTPClient)
+	if err != nil {
+		return nil, err
 	}
 	// Set the new BaseURL if there are redirects.
 	err = setBaseURLOnRedirect(ctx, config, client)
@@ -54,4 +56,21 @@ func NewScraper(ctx context.Context, config *Configuration, options mango.Option
 		limiter: rate.NewLimiter(rate.Every(requestInterval), requestBurst),
 		slots:   make(chan struct{}, config.Parallelism),
 	}, nil
+}
+
+// newClient: A copy of base (the shared client stays as is) with its own cookie jar, some sites
+// set a session cookie on a redirect or the first page. A jar base already has is kept.
+func newClient(base *http.Client) (*http.Client, error) {
+	if base == nil {
+		base = mango.DefaultOptions().HTTPClient
+	}
+	client := *base
+	if client.Jar == nil {
+		jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
+		if err != nil {
+			return nil, err
+		}
+		client.Jar = jar
+	}
+	return &client, nil
 }

@@ -422,3 +422,63 @@ func TestCharset(t *testing.T) {
 		}
 	}
 }
+
+func TestCookies(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/manga/old":
+			http.SetCookie(w, &http.Cookie{Name: "session", Value: "abc", Path: "/"})
+			http.Redirect(w, r, "/manga/new", http.StatusFound)
+			return
+		case "/":
+			return
+		}
+		if c, err := r.Cookie("session"); err != nil || c.Value != "abc" {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+		w.Write([]byte(`<html><body><a href="chapter-1">Chapter 1</a><img src="1.png"></body></html>`))
+	}))
+	defer server.Close()
+
+	newConfig := func() *Configuration {
+		return &Configuration{
+			Name:        "test",
+			BaseURL:     server.URL + "/",
+			Parallelism: 1,
+			ChapterExtractor: &ChapterExtractor{
+				Selector: "a",
+				Title:    func(s *goquery.Selection) string { return s.Text() },
+				URL:      func(s *goquery.Selection) string { return s.AttrOr("href", "") },
+				ID:       func(u string) string { return u },
+			},
+			PageExtractor: &PageExtractor{Selector: "img", URL: func(s *goquery.Selection) string { return s.AttrOr("src", "") }},
+		}
+	}
+	options := mango.DefaultOptions()
+	s, err := NewScraper(context.Background(), newConfig(), options, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if options.HTTPClient.Jar != nil {
+		t.Error("the shared client got a cookie jar")
+	}
+
+	// the cookie set on the redirect reaches its target and the next requests
+	volume := mango.Volume{Number: 1, Manga_: &mango.Manga{URL: server.URL + "/manga/old"}}
+	if chapters, err := s.VolumeChapters(context.Background(), mango.Store{}, volume); err != nil || len(chapters) != 1 {
+		t.Fatalf("got %v, %v", chapters, err)
+	}
+	if _, err := s.ChapterPages(context.Background(), mango.Store{}, mango.Chapter{URL: server.URL + "/chapter/1"}); err != nil {
+		t.Errorf("next request without the cookie: %v", err)
+	}
+
+	// one jar per scraper
+	other, err := NewScraper(context.Background(), newConfig(), options, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := other.ChapterPages(context.Background(), mango.Store{}, mango.Chapter{URL: server.URL + "/chapter/1"}); err == nil {
+		t.Error("another scraper got the cookie")
+	}
+}
