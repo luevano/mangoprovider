@@ -17,7 +17,7 @@ import (
 var Info = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-mangapill",
 	Name:        "Mangapill",
-	Version:     "0.4.3",
+	Version:     "0.4.4",
 	Description: "Mangapill scraper",
 	Website:     "https://mangapill.com/",
 }
