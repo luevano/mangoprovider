@@ -40,11 +40,13 @@ func TestDate(t *testing.T) {
 <li><span class="chapter-release-date"><i>soon</i></span></li>
 <li><span class="chapter-release-date"><a title="30 minutes ago"></a></span></li>
 <li></li>
+<li><span class="chapter-release-date"><i>Apr 3, 25</i></span></li>
+<li><span class="chapter-release-date"><a title="an hour ago"></a></span></li>
 </ul>`))
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []string{"2025-10-10", "2025-10-13", "2025-10-10", "2025-10-12", "", "2025-10-13", ""}
+	want := []string{"2025-10-10", "2025-10-13", "2025-10-10", "2025-10-12", "", "2025-10-13", "", "2025-04-03", "2025-10-13"}
 	doc.Find("li").Each(func(i int, s *goquery.Selection) {
 		if got := releaseDate(s, now).String(); got != want[i] {
 			t.Errorf("chapter %d: wanted %q, got %q", i, want[i], got)

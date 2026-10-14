@@ -3,7 +3,6 @@ package toonily
 import (
 	"fmt"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -127,44 +126,14 @@ func Config(_ *mango.Logger) *scraper.Configuration {
 	}
 }
 
-var relativeDate = regexp.MustCompile(`(\d+)\s*(min|hour|day|week|month|year)\w*\s+ago`)
-
 // releaseDate: The chapter's date, new ones say how long ago (e.g. "2 hours ago"), none if it's
 // neither.
 func releaseDate(selection *goquery.Selection, now time.Time) metadata.Date {
 	release := selection.Find("span.chapter-release-date")
-	text := strings.TrimSpace(release.Find("i").Text())
-	if date, err := time.Parse("Jan 02, 06", text); err == nil {
-		return mango.DateOf(date)
-	}
+	text := release.Find("i").Text()
 	if title := release.Find("a").AttrOr("title", ""); title != "" {
 		text = title
 	}
-	text = strings.ToLower(strings.TrimSpace(text))
-	switch {
-	case strings.HasPrefix(text, "today"):
-		return mango.DateOf(now)
-	case strings.HasPrefix(text, "yesterday"):
-		return mango.DateOf(now.AddDate(0, 0, -1))
-	}
-	m := relativeDate.FindStringSubmatch(text)
-	if m == nil {
-		return metadata.Date{}
-	}
-	n, _ := strconv.Atoi(m[1])
-	switch m[2] {
-	case "min":
-		now = now.Add(-time.Duration(n) * time.Minute)
-	case "hour":
-		now = now.Add(-time.Duration(n) * time.Hour)
-	case "day":
-		now = now.AddDate(0, 0, -n)
-	case "week":
-		now = now.AddDate(0, 0, -7*n)
-	case "month":
-		now = now.AddDate(0, -n, 0)
-	case "year":
-		now = now.AddDate(-n, 0, 0)
-	}
-	return mango.DateOf(now)
+	date, _ := mango.ParseDate(text, now, "Jan 2, 06")
+	return date
 }

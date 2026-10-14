@@ -125,12 +125,11 @@ func Config(log *mango.Logger) *scraper.Configuration {
 			},
 			Number: chapterNumber,
 			Date: func(selection *goquery.Selection) metadata.Date {
-				date, err := time.Parse(time.RFC3339, selection.Find("time").AttrOr("datetime", ""))
-				if err != nil {
+				date, ok := mango.ParseDate(selection.Find("time").AttrOr("datetime", ""), time.Now(), time.RFC3339)
+				if !ok {
 					log.Log("chapter %q has no valid date", mango.CleanString(selection.Text()))
-					return metadata.Date{}
 				}
-				return mango.DateOf(date)
+				return date
 			},
 			ScanlationGroup: func(_ *goquery.Selection) string {
 				return "Weeb Central"
