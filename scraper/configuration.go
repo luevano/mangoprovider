@@ -43,6 +43,8 @@ type Configuration struct {
 	// GenerateSearchURL: Create search URL from the query.
 	// E.g. "one piece" -> "https://manganelo.com/search/story/one_piece"
 	GenerateSearchURL func(baseUrl, query string) (string, error)
+	// SearchPagination: Optional, for a search over several pages (one page without it).
+	SearchPagination *Pagination
 	// GenerateSearchByIDURL: Create search URL from the id.
 	// E.g. (one piece) "manga-aa88620" -> "https://chapmanganelo.com/manga-aa88620"
 	GenerateSearchByIDURL func(baseUrl, id string) (string, error)
@@ -64,4 +66,20 @@ type Configuration struct {
 	ChapterExtractor *ChapterExtractor
 	// PageExtractor: Responsible for finding page elements and extracting required the data.
 	PageExtractor *PageExtractor
+}
+
+// defaultMaxPages: Like the api providers' search caps (asurascans, mangadex).
+const defaultMaxPages = 5
+
+// Pagination: How to get the next pages of a search, like keiyoushi's hasNextPage + page
+// number. The search stops at a page without new mangas.
+type Pagination struct {
+	// NextSelector: Optional, an element only there when there's a next page (keiyoushi's
+	// searchMangaNextPageSelector). Without URL, its href is the next page. Without it, a
+	// page with mangas means there may be a next one.
+	NextSelector string
+	// URL: Optional, the url of page n (2, 3, ...) of the search whose first page is searchURL.
+	URL func(searchURL string, page int) (string, error)
+	// MaxPages: At most this many pages, default 5.
+	MaxPages int
 }

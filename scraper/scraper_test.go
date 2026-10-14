@@ -3,9 +3,11 @@ package scraper
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -553,5 +555,81 @@ func TestFetchHeadless(t *testing.T) {
 	}
 	if _, err := s.ChapterPages(context.Background(), mango.Store{}, mango.Chapter{URL: server.URL + "/gone"}); !errors.Is(err, mango.ErrNotFound) {
 		t.Errorf("got %v, want the page's 404", err)
+	}
+}
+
+func TestSearchPagination(t *testing.T) {
+	// /search?page=N has mangas N*10, N*10+1, links to the next one up to page 3; page 4 is a 404
+	var requested []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/search" {
+			return
+		}
+		requested = append(requested, r.URL.Query().Get("page"))
+		n, _ := strconv.Atoi(r.URL.Query().Get("page"))
+		if n == 0 {
+			n = 1
+		}
+		if n > 3 {
+			http.NotFound(w, r)
+			return
+		}
+		ids := []int{n * 10, n*10 + 1}
+		if r.URL.Query().Get("repeat") != "" && n > 1 {
+			ids = []int{10, 11}
+		}
+		html := `<html><body>`
+		for _, id := range ids {
+			html += fmt.Sprintf(`<a class="manga" href="/manga/%d">Manga %d</a>`, id, id)
+		}
+		if n < 3 {
+			q := r.URL.Query()
+			q.Set("page", strconv.Itoa(n+1))
+			html += fmt.Sprintf(`<div class="next"><a href="?%s">Next</a></div>`, q.Encode())
+		}
+		w.Write([]byte(html + `</body></html>`))
+	}))
+	defer server.Close()
+
+	pageURL := func(searchURL string, n int) (string, error) {
+		return searchURL + "&page=" + strconv.Itoa(n), nil
+	}
+	for _, tt := range []struct {
+		name       string
+		query      string
+		pagination *Pagination
+		want       int
+		requested  string
+	}{
+		{"none", "a", nil, 2, ""},
+		{"next link", "a", &Pagination{NextSelector: "div.next"}, 6, ",2,3"},
+		{"url builder", "a", &Pagination{URL: pageURL}, 6, ",2,3,4"},
+		{"selector and url", "a", &Pagination{NextSelector: "div.next", URL: pageURL}, 6, ",2,3"},
+		{"cap", "a", &Pagination{NextSelector: "div.next", MaxPages: 2}, 4, ",2"},
+		{"no new mangas", "a&repeat=1", &Pagination{URL: pageURL}, 2, ",2"},
+	} {
+		requested = nil
+		config := &Configuration{
+			Name: "test", BaseURL: server.URL + "/", Parallelism: 1, SearchPagination: tt.pagination,
+			GenerateSearchURL: func(base, query string) (string, error) { return base + "search?q=" + query, nil },
+			MangaExtractor: &MangaExtractor{
+				Selector: "a.manga",
+				Title:    func(s *goquery.Selection) string { return s.Text() },
+				URL:      func(s *goquery.Selection) string { return s.AttrOr("href", "") },
+				ID:       func(u string) string { return strings.Join(PathParts(u), "/") },
+				Cover:    func(*goquery.Selection) string { return "" },
+			},
+		}
+		s, err := NewScraper(context.Background(), config, mango.DefaultOptions(), nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		mangas, err := s.SearchMangas(context.Background(), mango.Store{}, tt.query)
+		if err != nil || len(mangas) != tt.want {
+			t.Errorf("%s: got %d mangas (%v), want %d", tt.name, len(mangas), err, tt.want)
+		}
+		if got := strings.Join(requested, ","); got != tt.requested {
+			t.Errorf("%s: requested pages %q, want %q", tt.name, got, tt.requested)
+		}
 	}
 }

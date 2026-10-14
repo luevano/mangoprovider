@@ -32,10 +32,7 @@ func (s *Scraper) SearchMangas(ctx context.Context, store mango.Store, query str
 		return mangas, nil
 	}
 
-	err = s.scrape(s.mangaAction(ctx), searchURL, s.config.BaseURL, func(p *page) error {
-		mangas = s.parseMangas(p)
-		return nil
-	})
+	mangas, err = s.search(ctx, searchURL)
 	if err != nil {
 		return nil, err
 	}
@@ -45,6 +42,73 @@ func (s *Scraper) SearchMangas(ctx context.Context, store mango.Store, query str
 		return mangas, nil
 	}
 	return mangas, store.SetMangas(searchURL, mangas)
+}
+
+// search: The mangas in the search's pages, see Pagination.
+func (s *Scraper) search(ctx context.Context, searchURL string) ([]mangadata.Manga, error) {
+	pagination := s.config.SearchPagination
+	maxPages := 1
+	if pagination != nil && (pagination.NextSelector != "" || pagination.URL != nil) {
+		maxPages = pagination.MaxPages
+		if maxPages <= 0 {
+			maxPages = defaultMaxPages
+		}
+	}
+
+	var mangas []mangadata.Manga
+	seen := map[string]bool{}
+	pageURL := searchURL
+	for n := 1; ; n++ {
+		if n > 1 {
+			s.log.Progress(ctx, n, maxPages, "%d results so far, search page", len(mangas))
+		}
+		var hasNext bool
+		var nextURL string
+		err := s.scrape(s.mangaAction(ctx), pageURL, s.config.BaseURL, func(p *page) error {
+			added := 0
+			for _, manga := range s.parseMangas(p) {
+				if id := manga.Info().ID; !seen[id] {
+					seen[id] = true
+					mangas = append(mangas, manga)
+					added++
+				}
+			}
+			// a page without new mangas is the last, even if it links to another
+			hasNext = added > 0
+			if n >= maxPages || !hasNext || pagination.NextSelector == "" {
+				return nil
+			}
+			link := p.doc.Find(pagination.NextSelector).First()
+			hasNext = link.Length() > 0
+			href, ok := link.Attr("href")
+			if !ok {
+				href = link.Find("a[href]").First().AttrOr("href", "")
+			}
+			nextURL = p.absoluteURL(href)
+			return nil
+		})
+		// a page past the last one can be a 404
+		if n > 1 && errors.Is(err, mango.ErrNotFound) {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		if n >= maxPages || !hasNext {
+			break
+		}
+		if pagination.URL != nil {
+			if pageURL, err = pagination.URL(searchURL, n+1); err != nil {
+				return nil, err
+			}
+		} else if nextURL != "" {
+			pageURL = nextURL
+		} else {
+			s.log.Log("search page %d: %q has no link to the next page", n, pagination.NextSelector)
+			break
+		}
+	}
+	return mangas, nil
 }
 
 // MangaByID scrapes the manga's page, found false if the site answers 404.
