@@ -41,6 +41,13 @@ func Config(_ *mango.Logger) *scraper.Configuration {
 
 			return u.String(), nil
 		},
+		// madara's next page selector (keiyoushi before Madara 1.6), /page/N/
+		SearchPagination: &scraper.Pagination{
+			NextSelector: "div.nav-previous, nav.navigation-ajax, a.nextpostslink",
+			URL: func(searchURL string, page int) (string, error) {
+				return strings.TrimSuffix(searchURL, "/") + "/page/" + strconv.Itoa(page) + "/", nil
+			},
+		},
 		GenerateSearchByIDURL: func(baseUrl string, id string) (string, error) {
 			return fmt.Sprintf("%swebtoon/%s", baseUrl, id), nil
 		},

@@ -13,6 +13,9 @@ import (
 	"github.com/luevano/mangoprovider/scraper"
 )
 
+// searchPageSize: Results in a search page.
+const searchPageSize = 32
+
 // MangaSee shut down and moved to Weeb Central; its id is in the history so it still resolves.
 var Info = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-weebcentral",
@@ -42,6 +45,22 @@ func Config(log *mango.Logger) *scraper.Configuration {
 			params.Set("adult", "Any")
 			params.Set("display_mode", "Full Display")
 			return baseUrl + "search/data?" + params.Encode(), nil
+		},
+		// keiyoushi's: 32 per page (whatever limit says), a "View More Results..." button
+		// when there are more
+		SearchPagination: &scraper.Pagination{
+			NextSelector: "button",
+			URL: func(searchURL string, page int) (string, error) {
+				u, err := url.Parse(searchURL)
+				if err != nil {
+					return "", err
+				}
+				params := u.Query()
+				params.Set("limit", strconv.Itoa(searchPageSize))
+				params.Set("offset", strconv.Itoa((page-1)*searchPageSize))
+				u.RawQuery = params.Encode()
+				return u.String(), nil
+			},
 		},
 		GenerateSearchByIDURL: func(baseUrl string, id string) (string, error) {
 			return baseUrl + "series/" + id, nil

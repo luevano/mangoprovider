@@ -52,6 +52,7 @@ func TestScrape(t *testing.T) {
 	config.PagesURL = func(chapter mango.Chapter) string { return base + "chapters/" + chapter.ID + "/images" }
 	s, base := scrapertest.New(t, config, map[string]string{
 		"/search/data":                                "search.html",
+		"/search/data?offset=32&limit=32":             "search-2.html",
 		"/series/" + id:                               "series.html",
 		"/series/" + id + "/One-Piece":                "series.html",
 		"/series/" + id + "/full-chapter-list":        "chapters.html",
@@ -63,10 +64,11 @@ func TestScrape(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// the odd link is skipped
+	// the odd link is skipped, page 2 repeats one
 	want := []struct{ title, id string }{
 		{"One Piece", id},
 		{"One Piece Party", "01J76XYCERXE60T7FKXVCCAQ0H"},
+		{"One Piece: Ace", "01J76XYCFE7Y9HJ5BNTS9Z6RXA"},
 	}
 	if len(mangas) != len(want) {
 		t.Fatalf("got %v, want %d mangas", mangas, len(want))

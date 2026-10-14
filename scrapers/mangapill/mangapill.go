@@ -3,6 +3,7 @@ package mangapill
 import (
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -39,6 +40,20 @@ func Config(_ *mango.Logger) *scraper.Configuration {
 			u.RawQuery = params.Encode()
 
 			return u.String(), nil
+		},
+		// keiyoushi's: the "Next" button, ?page=N
+		SearchPagination: &scraper.Pagination{
+			NextSelector: "a.btn.btn-sm",
+			URL: func(searchURL string, page int) (string, error) {
+				u, err := url.Parse(searchURL)
+				if err != nil {
+					return "", err
+				}
+				params := u.Query()
+				params.Set("page", strconv.Itoa(page))
+				u.RawQuery = params.Encode()
+				return u.String(), nil
+			},
 		},
 		GenerateSearchByIDURL: func(baseUrl string, id string) (string, error) {
 			return fmt.Sprintf("%smanga/%s", baseUrl, id), nil

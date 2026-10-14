@@ -55,6 +55,7 @@ func TestDate(t *testing.T) {
 func TestScrape(t *testing.T) {
 	s, base := scrapertest.New(t, Config(nil), map[string]string{
 		"/search/solo-leveling":             "search.html",
+		"/search/solo-leveling/page/2/":     "search-2.html",
 		"/webtoon/solo-leveling":            "manga.html",
 		"/webtoon/solo-leveling/":           "manga.html",
 		"/webtoon/solo-leveling/chapter-1/": "chapter.html",
@@ -65,10 +66,11 @@ func TestScrape(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// the odd link is skipped
+	// the odd link is skipped, page 2 repeats one
 	want := []struct{ title, id, cover string }{
 		{"Solo Leveling", "solo-leveling", "https://cdn.test/toonily/solo-leveling-224x320.jpg"},
 		{"Solo Leveling: Ragnarok", "solo-leveling-ragnarok", "https://cdn.test/toonily/ragnarok-224x320.jpg"},
+		{"Solo Leveling: Side Story", "solo-leveling-side-story", "https://cdn.test/toonily/side-story-224x320.jpg"},
 	}
 	if len(mangas) != len(want) {
 		t.Fatalf("got %v, want %d mangas", mangas, len(want))
