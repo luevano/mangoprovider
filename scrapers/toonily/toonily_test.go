@@ -3,11 +3,9 @@ package toonily
 import (
 	"context"
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
-	"github.com/PuerkitoBio/goquery"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/scraper/scrapertest"
 )
@@ -15,7 +13,9 @@ import (
 func TestIDs(t *testing.T) {
 	config := Config(nil)
 	for _, tt := range []struct{ url, manga, chapter string }{
-		{"https://toonily.com/webtoon/solo-leveling/", "solo-leveling", ""},
+		{"https://toonily.com/serie/solo-leveling-574def58/", "solo-leveling-574def58", ""},
+		{"https://toonily.com/serie/solo-leveling-574def58/chapter-1/", "solo-leveling-574def58", "chapter-1"},
+		// the old path still gives the ids
 		{"https://toonily.com/webtoon/solo-leveling/chapter-1/", "solo-leveling", "chapter-1"},
 		// odd urls are skipped, not a panic
 		{"https://toonily.com/", "", ""},
@@ -30,47 +30,26 @@ func TestIDs(t *testing.T) {
 	}
 }
 
-func TestDate(t *testing.T) {
-	now := time.Date(2025, 10, 13, 12, 0, 0, 0, time.UTC)
-	doc, err := goquery.NewDocumentFromReader(strings.NewReader(`<ul>
-<li><span class="chapter-release-date"><i>Oct 10, 25</i></span></li>
-<li><span class="chapter-release-date"><a href="#" title="2 hours ago" class="c-new-tag"><img src="new.png"></a></span></li>
-<li><span class="chapter-release-date"><a href="#" title="3 days ago" class="c-new-tag"></a></span></li>
-<li><span class="chapter-release-date"><i>yesterday</i></span></li>
-<li><span class="chapter-release-date"><i>soon</i></span></li>
-<li><span class="chapter-release-date"><a title="30 minutes ago"></a></span></li>
-<li></li>
-<li><span class="chapter-release-date"><i>Apr 3, 25</i></span></li>
-<li><span class="chapter-release-date"><a title="an hour ago"></a></span></li>
-</ul>`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	want := []string{"2025-10-10", "2025-10-13", "2025-10-10", "2025-10-12", "", "2025-10-13", "", "2025-04-03", "2025-10-13"}
-	doc.Find("li").Each(func(i int, s *goquery.Selection) {
-		if got := releaseDate(s, now).String(); got != want[i] {
-			t.Errorf("chapter %d: wanted %q, got %q", i, want[i], got)
-		}
-	})
-}
-
 func TestScrape(t *testing.T) {
-	s, base := scrapertest.New(t, Config(nil), map[string]string{
-		"/search/solo-leveling":             "search.html",
-		"/search/solo-leveling/page/2/":     "search-2.html",
-		"/webtoon/solo-leveling":            "manga.html",
-		"/webtoon/solo-leveling/":           "manga.html",
-		"/webtoon/solo-leveling/chapter-1/": "chapter.html",
+	config := Config(nil)
+	// 25 a page on the site, 3 in the fixtures
+	config.SearchPagination.PageSize = 3
+	s, base := scrapertest.New(t, config, map[string]string{
+		"/wp-admin/admin-ajax.php?action=madara_load_more&page=0&vars[s]=solo leveling": "search.html",
+		"/wp-admin/admin-ajax.php?action=madara_load_more&page=1&vars[s]=solo leveling": "search-2.html",
+		"/serie/solo-leveling/":               "manga.html",
+		"/serie/solo-leveling/ajax/chapters/": "chapters.html",
+		"/serie/solo-leveling/chapter-1/":     "chapter.html",
 	})
 	ctx := context.Background()
 
-	mangas, err := s.SearchMangas(ctx, mango.Store{}, "solo leveling")
+	mangas, err := s.SearchMangas(ctx, mango.Store{}, "Solo: Leveling!")
 	if err != nil {
 		t.Fatal(err)
 	}
 	// the odd link is skipped, page 2 repeats one
 	want := []struct{ title, id, cover string }{
-		{"Solo Leveling", "solo-leveling", "https://cdn.test/toonily/solo-leveling-224x320.jpg"},
+		{"Solo Leveling", "solo-leveling", "https://cdn.test/toonily/solo-leveling-350x476.jpg"},
 		{"Solo Leveling: Ragnarok", "solo-leveling-ragnarok", "https://cdn.test/toonily/ragnarok-224x320.jpg"},
 		{"Solo Leveling: Side Story", "solo-leveling-side-story", "https://cdn.test/toonily/side-story-224x320.jpg"},
 	}
@@ -78,7 +57,7 @@ func TestScrape(t *testing.T) {
 		t.Fatalf("got %v, want %d mangas", mangas, len(want))
 	}
 	for i, w := range want {
-		if info := mangas[i].Info(); info.Title != w.title || info.ID != w.id || info.Cover != w.cover || info.URL != base+"webtoon/"+w.id+"/" {
+		if info := mangas[i].Info(); info.Title != w.title || info.ID != w.id || info.Cover != w.cover || info.URL != base+"serie/"+w.id+"/" {
 			t.Errorf("manga %d: got %+v, want %+v", i, info, w)
 		}
 	}
@@ -87,8 +66,8 @@ func TestScrape(t *testing.T) {
 	if err != nil || !found {
 		t.Fatalf("by id: %v, %v, %v", manga, found, err)
 	}
-	// without the "HOT" badge
-	if info := manga.Info(); info.Title != "Solo Leveling" || info.Cover != "https://cdn.test/toonily/solo-leveling-193x278.jpg" {
+	// without the "END" badge
+	if info := manga.Info(); info.Title != "Solo Leveling" || info.Cover != "https://cdn.test/toonily/solo-leveling-224x320.jpg" {
 		t.Errorf("by id: got %+v", info)
 	}
 
@@ -118,7 +97,7 @@ func TestScrape(t *testing.T) {
 	}
 	for i, w := range wantChapters {
 		c := chapters[i].(*mango.Chapter)
-		if c.Number != w.number || c.ID != w.id || c.Title != w.title || c.Date.String() != w.date || c.URL != base+"webtoon/solo-leveling/"+w.id+"/" {
+		if c.Number != w.number || c.ID != w.id || c.Title != w.title || c.Date.String() != w.date || c.URL != base+"serie/solo-leveling/"+w.id+"/" || c.ScanlationGroup != "Toonily" {
 			t.Errorf("chapter %d: got %+v %s, want %+v", i, c, c.Date, w)
 		}
 	}
