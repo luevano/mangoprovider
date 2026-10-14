@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"math/rand/v2"
 	"net/http"
 	"net/url"
@@ -71,10 +72,15 @@ func (p *page) absoluteURL(u string) string {
 	return abs.Href(false)
 }
 
-// scrape: Requests rawURL (throttled, at most Parallelism at once) with referer and parses the
+// scrape: GETs rawURL, see scrapeRequest.
+func (s *Scraper) scrape(ctx context.Context, rawURL, referer string, parse func(*page) error) error {
+	return s.scrapeRequest(ctx, Request{URL: rawURL}, referer, parse)
+}
+
+// scrapeRequest: Sends r (throttled, at most Parallelism at once) with referer and parses the
 // html with parse. Any status but 200 is an error (see mango.StatusError), so is a panic in parse
 // (e.g. a site config indexing a url that changed), instead of crashing the whole program.
-func (s *Scraper) scrape(ctx context.Context, rawURL, referer string, parse func(*page) error) (err error) {
+func (s *Scraper) scrapeRequest(ctx context.Context, r Request, referer string, parse func(*page) error) (err error) {
 	select {
 	case s.slots <- struct{}{}:
 		defer func() { <-s.slots }()
@@ -85,9 +91,17 @@ func (s *Scraper) scrape(ctx context.Context, rawURL, referer string, parse func
 		return err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
+	rawURL, method := r.URL, http.MethodGet
+	var form io.Reader
+	if r.Form != nil {
+		method, form = http.MethodPost, strings.NewReader(r.Form.Encode())
+	}
+	req, err := http.NewRequestWithContext(ctx, method, rawURL, form)
 	if err != nil {
-		return fmt.Errorf("GET %s: %w", rawURL, err)
+		return fmt.Errorf("%s %s: %w", method, rawURL, err)
+	}
+	if r.Form != nil {
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	}
 	req.Header.Set("Referer", referer)
 	req.Header.Set("Accept-Language", "en-US")
@@ -97,16 +111,19 @@ func (s *Scraper) scrape(ctx context.Context, rawURL, referer string, parse func
 	for k, v := range s.config.Headers {
 		req.Header.Set(k, v)
 	}
+	for k, v := range r.Headers {
+		req.Header.Set(k, v)
+	}
 
 	body, resp, err := mango.FetchRequest(s.client.Client, nil, req)
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return ctxErr
 	}
 	if err != nil {
-		return fmt.Errorf("GET %s: %w", rawURL, err)
+		return fmt.Errorf("%s %s: %w", method, rawURL, err)
 	}
 	if err := mango.StatusError(resp.StatusCode, resp.Header); err != nil {
-		return fmt.Errorf("GET %s: %w", rawURL, err)
+		return fmt.Errorf("%s %s: %w", method, rawURL, err)
 	}
 
 	p := &page{url: resp.Request.URL}

@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strconv"
 	"strings"
 	"testing"
@@ -698,5 +699,88 @@ func TestRetry(t *testing.T) {
 	pages, err := s.ChapterPages(context.Background(), mango.Store{}, mango.Chapter{URL: server.URL + "/chapter"})
 	if err != nil || len(pages) != 1 || requests != 2 {
 		t.Errorf("got %v, %v after %d requests", pages, err, requests)
+	}
+}
+
+// madara's ajax: the search's pages and the chapters are POSTs
+func TestRequests(t *testing.T) {
+	var requests []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/" {
+			return
+		}
+		r.ParseForm()
+		requests = append(requests, r.Method+" "+r.URL.Path+" "+r.PostForm.Encode()+" "+r.Header.Get("X-Requested-With"))
+		switch r.URL.Path {
+		case "/search":
+			// 2 per page, 3 in all
+			page, _ := strconv.Atoi(r.PostForm.Get("page"))
+			for id := page * 2; id < min(page*2+2, 3); id++ {
+				fmt.Fprintf(w, `<a class="manga" href="/manga/%d/">Manga %d</a>`, id, id)
+			}
+		case "/manga/1/":
+			w.Write([]byte(`<div id="post" data-id="101"></div>`))
+		case "/chapters":
+			if r.PostForm.Get("manga") == "101" {
+				w.Write([]byte(`<a class="chapter" href="/manga/1/chapter-1/">Chapter 1</a>`))
+			}
+		}
+	}))
+	defer server.Close()
+
+	ajax := map[string]string{"X-Requested-With": "XMLHttpRequest"}
+	config := &Configuration{
+		Name: "test", BaseURL: server.URL + "/", Parallelism: 1,
+		SearchRequest: func(base, query string, page int) (Request, error) {
+			return Request{URL: base + "search", Form: url.Values{"q": {query}, "page": {strconv.Itoa(page - 1)}}, Headers: ajax}, nil
+		},
+		SearchPagination: &Pagination{PageSize: 2},
+		ChaptersRequest: func(manga mango.Manga, mangaPage func() (*goquery.Selection, error)) (Request, error) {
+			doc, err := mangaPage()
+			if err != nil {
+				return Request{}, err
+			}
+			return Request{URL: server.URL + "/chapters", Form: url.Values{"manga": {doc.Find("#post").AttrOr("data-id", "")}}, Headers: ajax}, nil
+		},
+		MangaExtractor: &MangaExtractor{
+			Selector: "a.manga",
+			Title:    func(s *goquery.Selection) string { return s.Text() },
+			URL:      func(s *goquery.Selection) string { return s.AttrOr("href", "") },
+			ID:       func(u string) string { return PathParts(u)[1] },
+			Cover:    func(*goquery.Selection) string { return "" },
+		},
+		ChapterExtractor: &ChapterExtractor{
+			Selector: "a.chapter",
+			Title:    func(s *goquery.Selection) string { return s.Text() },
+			URL:      func(s *goquery.Selection) string { return s.AttrOr("href", "") },
+			ID:       func(u string) string { return PathParts(u)[2] },
+		},
+	}
+	s, err := NewScraper(context.Background(), config, mango.DefaultOptions(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	store := mango.NewMemoryStore()
+	mangas, err := s.SearchMangas(context.Background(), store, "a b")
+	if err != nil || len(mangas) != 3 {
+		t.Fatalf("got %v, %v", mangas, err)
+	}
+	// cached by the request's form
+	if _, err := s.SearchMangas(context.Background(), store, "a b"); err != nil {
+		t.Fatal(err)
+	}
+	m := *mangas[1].(*mango.Manga)
+	chapters, err := s.VolumeChapters(context.Background(), mango.Store{}, mango.Volume{Number: 1, Manga_: &m})
+	if err != nil || len(chapters) != 1 || chapters[0].(*mango.Chapter).ID != "chapter-1" {
+		t.Fatalf("got %v, %v", chapters, err)
+	}
+	want := []string{
+		"POST /search page=0&q=a+b XMLHttpRequest",
+		"POST /search page=1&q=a+b XMLHttpRequest",
+		"GET /manga/1/  ",
+		"POST /chapters manga=101 XMLHttpRequest",
+	}
+	if strings.Join(requests, "\n") != strings.Join(want, "\n") {
+		t.Errorf("requests:\n%s\nwant:\n%s", strings.Join(requests, "\n"), strings.Join(want, "\n"))
 	}
 }

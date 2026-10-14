@@ -46,6 +46,9 @@ type Configuration struct {
 	// GenerateSearchURL: Create search URL from the query.
 	// E.g. "one piece" -> "https://manganelo.com/search/story/one_piece"
 	GenerateSearchURL func(baseUrl, query string) (string, error)
+	// SearchRequest: Optional, instead of GenerateSearchURL (and SearchPagination's URL): the
+	// request of each page of the search (e.g. a POST).
+	SearchRequest SearchRequestFunc
 	// SearchPagination: Optional, for a search over several pages (one page without it).
 	SearchPagination *Pagination
 	// GenerateSearchByIDURL: Create search URL from the id.
@@ -53,6 +56,9 @@ type Configuration struct {
 	GenerateSearchByIDURL func(baseUrl, id string) (string, error)
 	// ChaptersURL: Optional, the page listing the chapters if it isn't the manga page.
 	ChaptersURL func(manga mango.Manga) string
+	// ChaptersRequest: Optional, instead of ChaptersURL, the request listing the chapters (e.g.
+	// a POST).
+	ChaptersRequest ChaptersRequestFunc
 	// PagesURL: Optional, the page listing the images if it isn't the chapter page.
 	PagesURL func(chapter mango.Chapter) string
 
@@ -75,7 +81,8 @@ type Configuration struct {
 const defaultMaxPages = 5
 
 // Pagination: How to get the next pages of a search, like keiyoushi's hasNextPage + page
-// number. The search stops at a page without new mangas.
+// number (Configuration.SearchRequest, URL, or the NextSelector's href). The search stops at a
+// page without new mangas.
 type Pagination struct {
 	// NextSelector: Optional, an element only there when there's a next page (keiyoushi's
 	// searchMangaNextPageSelector). Without URL, its href is the next page. Without it, a
@@ -83,6 +90,9 @@ type Pagination struct {
 	NextSelector string
 	// URL: Optional, the url of page n (2, 3, ...) of the search whose first page is searchURL.
 	URL func(searchURL string, page int) (string, error)
+	// PageSize: Optional, a page with this many mangas may have a next one, one with fewer
+	// is the last (keiyoushi's madara: mangas.size == pageSize). Wins over NextSelector.
+	PageSize int
 	// MaxPages: At most this many pages, default 5.
 	MaxPages int
 }

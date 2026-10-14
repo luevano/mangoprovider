@@ -7,6 +7,8 @@ import (
 
 	"github.com/luevano/libmangal/mangadata"
 	"github.com/philippgille/gokv"
+	"github.com/philippgille/gokv/encoding"
+	"github.com/philippgille/gokv/syncmap"
 )
 
 // The cache buckets, prefixed so they can't be mistaken for another owner's (e.g. a Lua
@@ -188,4 +190,12 @@ func (s Store) GetChapters(cacheID string, volume Volume, chapters *[]mangadata.
 		return true, nil
 	}
 	return false, nil
+}
+
+// NewMemoryStore: A Store in memory, like DefaultOptions' CacheStore (e.g. for tests).
+func NewMemoryStore() Store {
+	s, _ := openStore(func(string) (gokv.Store, error) {
+		return syncmap.NewStore(syncmap.Options{Codec: encoding.Gob}), nil
+	}, nil)
+	return s
 }

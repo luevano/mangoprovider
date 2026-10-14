@@ -3,6 +3,7 @@ package scraper
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/luevano/libmangal/mangadata"
@@ -45,6 +46,10 @@ func (s *Scraper) parsePages(p *page, chapter mango.Chapter) ([]mangadata.Page, 
 
 	pages := make([]mangadata.Page, 0, len(urls))
 	for _, u := range urls {
+		// e.g. a page break without its image
+		if strings.TrimSpace(u) == "" {
+			continue
+		}
 		// as is if it can't be resolved
 		if abs := p.absoluteURL(u); abs != "" {
 			u = abs

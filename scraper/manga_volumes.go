@@ -26,6 +26,8 @@ func (s *Scraper) MangaVolumes(ctx context.Context, store mango.Store, manga man
 	}
 
 	err = s.scrape(rod.WithAction(ctx, s.config.VolumeExtractor.Action), manga.URL, manga.URL, func(p *page) error {
+		// where the manga moved (e.g. toonily's /webtoon/ to /serie/), for its chapters
+		manga.URL = p.url.String()
 		p.doc.Find(s.config.VolumeExtractor.Selector).Each(func(_ int, selection *goquery.Selection) {
 			volumes = append(volumes, &mango.Volume{
 				Number: s.config.VolumeExtractor.Number(selection),

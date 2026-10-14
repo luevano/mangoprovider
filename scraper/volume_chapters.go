@@ -29,11 +29,11 @@ func (s *Scraper) VolumeChapters(ctx context.Context, store mango.Store, volume 
 		return chapters, nil
 	}
 
-	chaptersURL := volume.Manga_.URL
-	if s.config.ChaptersURL != nil {
-		chaptersURL = s.config.ChaptersURL(*volume.Manga_)
+	request, err := s.chaptersRequest(ctx, *volume.Manga_)
+	if err != nil {
+		return nil, err
 	}
-	err = s.scrape(rod.WithAction(ctx, s.config.ChapterExtractor.Action), chaptersURL, volume.Manga_.URL, func(p *page) error {
+	err = s.scrapeRequest(rod.WithAction(ctx, s.config.ChapterExtractor.Action), request, volume.Manga_.URL, func(p *page) error {
 		chapters = s.parseChapters(p, volume)
 		return nil
 	})
@@ -60,6 +60,24 @@ func (s *Scraper) VolumeChapters(ctx context.Context, store mango.Store, volume 
 	}
 
 	return chapters, nil
+}
+
+// chaptersRequest: The request listing the manga's chapters, its page by default.
+func (s *Scraper) chaptersRequest(ctx context.Context, manga mango.Manga) (Request, error) {
+	switch {
+	case s.config.ChaptersRequest != nil:
+		return s.config.ChaptersRequest(manga, func() (*goquery.Selection, error) {
+			var doc *goquery.Selection
+			err := s.scrape(ctx, manga.URL, manga.URL, func(p *page) error {
+				doc = p.doc.Selection
+				return nil
+			})
+			return doc, err
+		})
+	case s.config.ChaptersURL != nil:
+		return Request{URL: s.config.ChaptersURL(manga)}, nil
+	}
+	return Request{URL: manga.URL}, nil
 }
 
 // parseChapters: The chapters in the page, in its order.

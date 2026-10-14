@@ -20,11 +20,11 @@ func (s *Scraper) SearchMangas(ctx context.Context, store mango.Store, query str
 	}
 
 	var mangas []mangadata.Manga
-	searchURL, err := s.config.GenerateSearchURL(s.config.BaseURL, query)
+	first, next, err := s.searchRequests(query)
 	if err != nil {
 		return nil, err
 	}
-	found, err := store.GetMangas(searchURL, query, &mangas)
+	found, err := store.GetMangas(first.key(), query, &mangas)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +32,7 @@ func (s *Scraper) SearchMangas(ctx context.Context, store mango.Store, query str
 		return mangas, nil
 	}
 
-	mangas, err = s.search(ctx, searchURL)
+	mangas, err = s.search(ctx, first, next)
 	if err != nil {
 		return nil, err
 	}
@@ -41,14 +41,35 @@ func (s *Scraper) SearchMangas(ctx context.Context, store mango.Store, query str
 	if len(mangas) == 0 {
 		return mangas, nil
 	}
-	return mangas, store.SetMangas(searchURL, mangas)
+	return mangas, store.SetMangas(first.key(), mangas)
 }
 
-// search: The mangas in the search's pages, see Pagination.
-func (s *Scraper) search(ctx context.Context, searchURL string) ([]mangadata.Manga, error) {
+// searchRequests: The request of the search's first page, and of page n if the pages are
+// built (nil if they're the next links).
+func (s *Scraper) searchRequests(query string) (Request, func(n int) (Request, error), error) {
+	if s.config.SearchRequest != nil {
+		first, err := s.config.SearchRequest(s.config.BaseURL, query, 1)
+		return first, func(n int) (Request, error) { return s.config.SearchRequest(s.config.BaseURL, query, n) }, err
+	}
+	searchURL, err := s.config.GenerateSearchURL(s.config.BaseURL, query)
+	if err != nil {
+		return Request{}, nil, err
+	}
+	if p := s.config.SearchPagination; p == nil || p.URL == nil {
+		return Request{URL: searchURL}, nil, nil
+	}
+	return Request{URL: searchURL}, func(n int) (Request, error) {
+		u, err := s.config.SearchPagination.URL(searchURL, n)
+		return Request{URL: u}, err
+	}, nil
+}
+
+// search: The mangas in the search's pages, see Pagination. pageN is page n's request, nil
+// to follow the NextSelector's links.
+func (s *Scraper) search(ctx context.Context, first Request, pageN func(n int) (Request, error)) ([]mangadata.Manga, error) {
 	pagination := s.config.SearchPagination
 	maxPages := 1
-	if pagination != nil && (pagination.NextSelector != "" || pagination.URL != nil) {
+	if pagination != nil && (pagination.NextSelector != "" || pageN != nil) {
 		maxPages = pagination.MaxPages
 		if maxPages <= 0 {
 			maxPages = defaultMaxPages
@@ -57,14 +78,14 @@ func (s *Scraper) search(ctx context.Context, searchURL string) ([]mangadata.Man
 
 	var mangas []mangadata.Manga
 	seen := map[string]bool{}
-	pageURL := searchURL
+	request := first
 	for n := 1; ; n++ {
 		if n > 1 {
 			s.log.Progress(ctx, n, maxPages, "%d results so far, search page", len(mangas))
 		}
 		var hasNext bool
 		var nextURL string
-		err := s.scrape(s.mangaAction(ctx), pageURL, s.config.BaseURL, func(p *page) error {
+		err := s.scrapeRequest(s.mangaAction(ctx), request, s.config.BaseURL, func(p *page) error {
 			added := 0
 			for _, manga := range s.parseMangas(p) {
 				if id := manga.Info().ID; !seen[id] {
@@ -75,7 +96,15 @@ func (s *Scraper) search(ctx context.Context, searchURL string) ([]mangadata.Man
 			}
 			// a page without new mangas is the last, even if it links to another
 			hasNext = added > 0
-			if n >= maxPages || !hasNext || pagination.NextSelector == "" {
+			if n >= maxPages || !hasNext {
+				return nil
+			}
+			if pagination.PageSize > 0 {
+				// skipped ones (no id) count, the site sent them
+				hasNext = p.doc.Find(s.config.MangaExtractor.Selector).Length() >= pagination.PageSize
+				return nil
+			}
+			if pagination.NextSelector == "" {
 				return nil
 			}
 			link := p.doc.Find(pagination.NextSelector).First()
@@ -97,12 +126,12 @@ func (s *Scraper) search(ctx context.Context, searchURL string) ([]mangadata.Man
 		if n >= maxPages || !hasNext {
 			break
 		}
-		if pagination.URL != nil {
-			if pageURL, err = pagination.URL(searchURL, n+1); err != nil {
+		if pageN != nil {
+			if request, err = pageN(n + 1); err != nil {
 				return nil, err
 			}
 		} else if nextURL != "" {
-			pageURL = nextURL
+			request = Request{URL: nextURL}
 		} else {
 			s.log.Log("search page %d: %q has no link to the next page", n, pagination.NextSelector)
 			break
@@ -159,15 +188,19 @@ func (s *Scraper) MangaByID(ctx context.Context, store mango.Store, id string) (
 var errorPagePath = regexp.MustCompile(`^/(400|404)/?$`)
 
 // TODO: define metadata scraping logic
-// parseManga: The manga in its page, nil if it isn't there.
+// parseManga: The manga in its page, nil if it isn't there (or has no title).
 func (s *Scraper) parseManga(p *page, id string) *mango.Manga {
 	selection := p.doc.Find(s.config.MangaByIDExtractor.Selector).First()
 	if selection.Length() == 0 {
 		return nil
 	}
+	title := mango.CleanString(s.config.MangaByIDExtractor.Title(selection))
+	if title == "" {
+		return nil
+	}
 	var meta metadata.Metadata = &mangadata.Metadata{}
 	return &mango.Manga{
-		Title:     mango.CleanString(s.config.MangaByIDExtractor.Title(selection)),
+		Title:     title,
 		URL:       p.url.String(),
 		ID:        id,
 		Cover:     s.config.MangaByIDExtractor.Cover(selection),

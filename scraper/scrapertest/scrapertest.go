@@ -17,15 +17,18 @@ import (
 
 // New serves files (url path -> file in testdata/) and returns the scraper for config with its
 // BaseURL set to the server's (ends with "/"). A key with a query ("/search?page=2") is
-// only for requests with those params, and wins over its path alone. Any other path is a test
-// error and a 404.
+// only for requests with those params (in the url or a POSTed form), and wins over its path
+// alone. Any other path is a test error and a 404.
 func New(t *testing.T, config *scraper.Configuration, files map[string]string) (*scraper.Scraper, string) {
 	t.Helper()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
 			return // NewScraper's redirect check
 		}
-		file, ok := match(files, r.URL)
+		if err := r.ParseForm(); err != nil {
+			t.Error(err)
+		}
+		file, ok := match(files, r.URL.Path, r.Form)
 		if !ok {
 			t.Errorf("unexpected request %s", r.URL)
 			http.NotFound(w, r)
@@ -50,13 +53,13 @@ func New(t *testing.T, config *scraper.Configuration, files map[string]string) (
 	return s, config.BaseURL
 }
 
-// match: The file for u, the key with the most matching query params.
-func match(files map[string]string, u *url.URL) (string, bool) {
-	file, ok := files[u.Path]
+// match: The file for the request, the key with the most matching params.
+func match(files map[string]string, path string, params url.Values) (string, bool) {
+	file, ok := files[path]
 	best := 0
 	for key, f := range files {
-		path, rawQuery, hasQuery := strings.Cut(key, "?")
-		if !hasQuery || path != u.Path {
+		keyPath, rawQuery, hasQuery := strings.Cut(key, "?")
+		if !hasQuery || keyPath != path {
 			continue
 		}
 		want, err := url.ParseQuery(rawQuery)
@@ -65,7 +68,7 @@ func match(files map[string]string, u *url.URL) (string, bool) {
 		}
 		matches := true
 		for k := range want {
-			if u.Query().Get(k) != want.Get(k) {
+			if params.Get(k) != want.Get(k) {
 				matches = false
 			}
 		}
