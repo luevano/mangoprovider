@@ -20,13 +20,9 @@ const defaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/
 // FilterOptions are general filtering options for all sources.
 type FilterOptions = libmangal.FilterOptions
 
+// DefaultFilterOptions filter nothing, see libmangal.DefaultFilterOptions.
 func DefaultFilterOptions() FilterOptions {
-	return FilterOptions{
-		NSFW:                    false,
-		Language:                "en",
-		AvoidDuplicateChapters:  true,
-		ShowUnavailableChapters: false,
-	}
+	return libmangal.DefaultFilterOptions()
 }
 
 // HeadlessOptions are options that applied to the Headless browser,
