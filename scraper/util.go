@@ -12,6 +12,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	mango "github.com/luevano/mangoprovider"
+	whatwgurl "github.com/nlnwa/whatwg-url/url"
 	"golang.org/x/net/html/charset"
 )
 
@@ -43,13 +44,18 @@ func setBaseURLOnRedirect(ctx context.Context, config *Configuration, httpClient
 	return nil
 }
 
+// urlParser: Resolves the urls in the pages like browsers do (WHATWG URL standard, as colly
+// did): Go's url.Parse refuses some that sites use (a lone "%", tabs in the path). A lone "%"
+// becomes "%25" so Go can request the result.
+var urlParser = whatwgurl.NewParser(whatwgurl.WithPercentEncodeSinglePercentSign())
+
 // page: A scraped html page.
 type page struct {
 	doc *goquery.Document
 	// url: Where the page ended up, after the redirects.
 	url *url.URL
 	// base: What its relative urls are relative to (url or its <base href>).
-	base *url.URL
+	base string
 }
 
 // absoluteURL: u resolved against the page, empty for fragments ("#x") and urls that don't parse.
@@ -58,11 +64,11 @@ func (p *page) absoluteURL(u string) string {
 	if strings.HasPrefix(u, "#") {
 		return ""
 	}
-	ref, err := url.Parse(u)
+	abs, err := urlParser.ParseRef(p.base, u)
 	if err != nil {
 		return ""
 	}
-	return p.base.ResolveReference(ref).String()
+	return abs.Href(false)
 }
 
 // scrape: Requests rawURL (throttled, at most Parallelism at once) with referer and parses the
@@ -107,10 +113,10 @@ func (s *Scraper) scrape(ctx context.Context, rawURL, referer string, parse func
 	if p.doc, err = parseHTML(body, resp.Header.Get("Content-Type")); err != nil {
 		return fmt.Errorf("parse %s: %w", p.url, err)
 	}
-	p.base = p.url
+	p.base = p.url.String()
 	if href, ok := p.doc.Find("base[href]").First().Attr("href"); ok {
-		if base, err := p.url.Parse(strings.TrimSpace(href)); err == nil {
-			p.base = base
+		if base, err := urlParser.ParseRef(p.base, href); err == nil {
+			p.base = base.Href(false)
 		}
 	}
 

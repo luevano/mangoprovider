@@ -4,11 +4,13 @@ go 1.27.0
 
 require (
 	github.com/PuerkitoBio/goquery v1.13.0
+	github.com/go-rod/rod v0.116.2
 	github.com/google/uuid v1.6.0
 	github.com/lithammer/fuzzysearch v1.1.8
 	github.com/luevano/libmangal v0.29.0
 	github.com/luevano/mangodex v0.5.0
 	github.com/luevano/mangoplus v0.7.2
+	github.com/nlnwa/whatwg-url v0.6.2
 	github.com/philippgille/gokv v0.7.0
 	github.com/philippgille/gokv/encoding v0.7.0
 	github.com/philippgille/gokv/syncmap v0.7.0
@@ -18,8 +20,8 @@ require (
 
 require (
 	github.com/andybalholm/cascadia v1.3.5 // indirect
+	github.com/bits-and-blooms/bitset v1.20.0 // indirect
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
-	github.com/go-rod/rod v0.116.2 // indirect
 	github.com/hhrutter/tiff v1.0.7 // indirect
 	github.com/mattn/go-runewidth v0.0.31 // indirect
 	github.com/pdfcpu/pdfcpu v0.16.1 // indirect

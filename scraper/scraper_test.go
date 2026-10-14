@@ -633,3 +633,41 @@ func TestSearchPagination(t *testing.T) {
 		}
 	}
 }
+
+// urls browsers take but Go's url.Parse refuses or reads differently are resolved like browsers do
+func TestLenientURLs(t *testing.T) {
+	extractor := &PageExtractor{
+		Selector: "img",
+		URL:      func(s *goquery.Selection) string { return s.AttrOr("src", "") },
+	}
+	s, url := newTestScraper(t, http.StatusOK, "<html><body>"+
+		`<img src="/images/100%.jpg">`+
+		`<img src="/images/a b.png">`+
+		`<img src="/ima`+"\t"+`ges/3.png">`+
+		`<img src="\images\4.png">`+
+		`<img src="//cdn.test/5%zz.webp">`+
+		`<img src=" https://cdn.test/6.png ">`+
+		"</body></html>", extractor)
+	base := strings.TrimSuffix(url, "/chapter")
+
+	pages, err := s.ChapterPages(context.Background(), mango.Store{}, mango.Chapter{URL: url})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{
+		base + "/images/100%25.jpg",
+		base + "/images/a%20b.png",
+		base + "/images/3.png",
+		base + "/images/4.png",
+		"http://cdn.test/5%25zz.webp",
+		"https://cdn.test/6.png",
+	}
+	if len(pages) != len(want) {
+		t.Fatalf("got %d pages, want %d", len(pages), len(want))
+	}
+	for i, page := range pages {
+		if got := page.(*mango.Page).URL; got != want[i] {
+			t.Errorf("page %d: wanted %q, got %q", i, want[i], got)
+		}
+	}
+}
