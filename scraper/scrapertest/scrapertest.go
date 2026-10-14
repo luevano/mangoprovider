@@ -22,9 +22,6 @@ import (
 func New(t *testing.T, config *scraper.Configuration, files map[string]string) (*scraper.Scraper, string) {
 	t.Helper()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/" {
-			return // NewScraper's redirect check
-		}
 		if err := r.ParseForm(); err != nil {
 			t.Error(err)
 		}

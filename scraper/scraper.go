@@ -54,12 +54,6 @@ func NewScraper(ctx context.Context, config *Configuration, options mango.Option
 	if err != nil {
 		return nil, err
 	}
-	// Set the new BaseURL if there are redirects.
-	err = setBaseURLOnRedirect(ctx, config, client.Direct())
-	if err != nil {
-		return nil, err
-	}
-
 	return &Scraper{
 		config:  config,
 		options: options,

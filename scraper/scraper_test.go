@@ -11,6 +11,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -900,5 +901,28 @@ func TestMetadata(t *testing.T) {
 	}
 	if got := anilist.(*mangadata.Metadata); got.Title() != "From AniList" || got.DateStart != (metadata.Date{}) {
 		t.Errorf("anilist's: %+v", got)
+	}
+}
+
+// loading makes no request: a site that's down doesn't stop the provider from loading
+func TestNewScraperNoRequest(t *testing.T) {
+	var requests atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests.Add(1)
+		http.Redirect(w, r, "http://192.0.2.1/", http.StatusFound)
+	}))
+	defer server.Close()
+
+	config := &Configuration{Name: "test", BaseURL: server.URL + "/", Parallelism: 1}
+	if _, err := NewScraper(context.Background(), config, mango.DefaultOptions(), nil); err != nil {
+		t.Fatal(err)
+	}
+	if requests.Load() != 0 || config.BaseURL != server.URL+"/" {
+		t.Errorf("%d requests, BaseURL %q", requests.Load(), config.BaseURL)
+	}
+
+	server.Close()
+	if _, err := NewScraper(context.Background(), config, mango.DefaultOptions(), nil); err != nil {
+		t.Errorf("site down: %v", err)
 	}
 }

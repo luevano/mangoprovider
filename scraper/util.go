@@ -17,34 +17,6 @@ import (
 	"golang.org/x/net/html/charset"
 )
 
-// Checks redirections and sets the new BaseURL if needed.
-func setBaseURLOnRedirect(ctx context.Context, config *Configuration, httpClient *http.Client) error {
-	// same client (timeout, transport), just without following redirects
-	client := *httpClient
-	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
-		return http.ErrUseLastResponse
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, config.BaseURL, nil)
-	if err != nil {
-		return err
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		return fmt.Errorf("check %s for redirects: %w", config.BaseURL, err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode == http.StatusMovedPermanently || resp.StatusCode == http.StatusFound {
-		loc, err := resp.Location()
-		if err != nil {
-			return err
-		}
-		config.BaseURL = loc.String()
-	}
-	return nil
-}
-
 // urlParser: Resolves the urls in the pages like browsers do (WHATWG URL standard, as colly
 // did): Go's url.Parse refuses some that sites use (a lone "%", tabs in the path). A lone "%"
 // becomes "%25" so Go can request the result.
