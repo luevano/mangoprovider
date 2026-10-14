@@ -26,6 +26,7 @@ func (s *Scraper) VolumeChapters(ctx context.Context, store mango.Store, volume 
 	}
 	if found {
 		s.log.Log("found chapters in cache for manga %q with id %q", volume.Manga_.String(), volume.Manga_.ID)
+		s.startFromChapters(volume.Manga_, chapters)
 		return chapters, nil
 	}
 
@@ -49,6 +50,7 @@ func (s *Scraper) VolumeChapters(ctx context.Context, store mango.Store, volume 
 	sort.SliceStable(chapters, func(i, j int) bool {
 		return chapters[i].Info().Number < chapters[j].Info().Number
 	})
+	s.startFromChapters(volume.Manga_, chapters)
 
 	// could be a markup change on the site, try again next time
 	if len(chapters) == 0 {

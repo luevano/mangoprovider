@@ -69,6 +69,8 @@ type Configuration struct {
 	MangaByIDExtractor *MangaByIDExtractor
 	// MangaExtractor: Responsible for finding manga elements and extracting the data.
 	MangaExtractor *MangaExtractor
+	// MetadataExtractor: Optional, the manga's metadata from its page (none without it).
+	MetadataExtractor *MetadataExtractor
 	// VolumeExtractor: Responsible for finding volume elements and extracting the data.
 	VolumeExtractor *VolumeExtractor
 	// ChapterExtractor: Responsible for finding chapter elements and extracting the data.

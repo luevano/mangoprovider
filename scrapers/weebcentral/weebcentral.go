@@ -2,12 +2,14 @@ package weebcentral
 
 import (
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/luevano/libmangal"
+	"github.com/luevano/libmangal/mangadata"
 	"github.com/luevano/libmangal/metadata"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/scraper"
@@ -87,6 +89,10 @@ func Config(log *mango.Logger) *scraper.Configuration {
 				return selection.Find("picture img").First().AttrOr("src", "")
 			},
 		},
+		MetadataExtractor: &scraper.MetadataExtractor{
+			IDCode:  "wc",
+			Extract: extractMetadata,
+		},
 		MangaExtractor: &scraper.MangaExtractor{
 			Selector: "article.bg-base-300",
 			Title: func(selection *goquery.Selection) string {
@@ -163,4 +169,50 @@ func pathAfter(_url, segment string) (string, bool) {
 		}
 	}
 	return "", false
+}
+
+// trackers: The ids of the series' trackers links that libmangal can bind (integers;
+// MangaUpdates' links have its new base36 ids).
+var trackers = []struct {
+	re     *regexp.Regexp
+	code   metadata.IDCode
+	source metadata.IDSource
+}{
+	{regexp.MustCompile(`anilist\.co/manga/(\d+)`), metadata.IDCodeAnilist, metadata.IDSourceAnilist},
+	{regexp.MustCompile(`myanimelist\.net/manga/(\d+)`), metadata.IDCodeMyAnimeList, metadata.IDSourceMyAnimeList},
+}
+
+// extractMetadata: keiyoushi's getMangaDetails, plus the release year and the trackers' ids.
+func extractMetadata(page *goquery.Selection, meta *mangadata.Metadata) {
+	sections := page.Find("section[x-data] > section")
+	left, right := sections.Eq(0), sections.Eq(1)
+	detail := func(s *goquery.Selection, name string) *goquery.Selection {
+		return s.Find("li").FilterFunction(func(_ int, li *goquery.Selection) bool {
+			return strings.HasPrefix(mango.CleanString(li.ChildrenFiltered("strong").Text()), name)
+		}).First()
+	}
+
+	meta.EnglishTitle = mango.CleanString(right.Find("h1").First().Text())
+	if cover := left.Find("picture source").AttrOr("srcset", ""); cover != "" {
+		meta.CoverImage = strings.Replace(cover, "small", "normal", 1)
+	} else {
+		meta.CoverImage = left.Find("picture img").AttrOr("src", "")
+	}
+	meta.AuthorList = scraper.Texts(detail(left, "Author").Find("span > a"))
+	meta.GenreList = scraper.Texts(detail(left, "Tag").Find("a"))
+	typ := mango.CleanString(detail(left, "Type").Find("a").Text())
+	meta.PublicationFormat, meta.CountryOfOrigin = typ, mango.CountryOfType(typ)
+	meta.PublicationStatus = mango.ParseStatus(detail(left, "Status").Find("a").Text())
+	meta.DateStart = scraper.YearDate(detail(left, "Released").Find("span").Text())
+	meta.Synonyms = scraper.Texts(detail(right, "Associated Name").Find("li"))
+	meta.Summary = strings.TrimSpace(detail(right, "Description").Find("p").First().Text())
+
+	detail(left, "Track").Find("span[data-tip] > a").Each(func(_ int, a *goquery.Selection) {
+		href := a.AttrOr("href", "")
+		for _, t := range trackers {
+			if m := t.re.FindStringSubmatch(href); m != nil {
+				meta.OtherIDs = append(meta.OtherIDs, metadata.ID{Raw: m[1], Code: t.code, Source: t.source})
+			}
+		}
+	})
 }

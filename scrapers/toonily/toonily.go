@@ -28,6 +28,7 @@ func Config(_ *mango.Logger) *scraper.Configuration {
 		ID:              Info.ID,
 		BaseURL:         Info.Website,
 		ScanlationGroup: Info.Name,
+		IDCode:          "tl",
 		// /webtoon/<slug>/ redirects here
 		MangaSubString: "serie",
 		ChapterMode:    madara.MangaAjax,

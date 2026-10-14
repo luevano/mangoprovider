@@ -29,6 +29,7 @@ func (s *Scraper) SearchMangas(ctx context.Context, store mango.Store, query str
 		return nil, err
 	}
 	if found {
+		s.withCachedMetadata(store, mangas)
 		return mangas, nil
 	}
 
@@ -36,12 +37,22 @@ func (s *Scraper) SearchMangas(ctx context.Context, store mango.Store, query str
 	if err != nil {
 		return nil, err
 	}
+	s.withCachedMetadata(store, mangas)
 
 	// could be a markup change on the site, try again next time
 	if len(mangas) == 0 {
 		return mangas, nil
 	}
 	return mangas, store.SetMangas(first.key(), mangas)
+}
+
+// withCachedMetadata: The mangas whose metadata was read before (MangaByID, MangaVolumes) get it.
+func (s *Scraper) withCachedMetadata(store mango.Store, mangas []mangadata.Manga) {
+	for _, manga := range mangas {
+		if m, ok := manga.(*mango.Manga); ok {
+			s.cachedMetadata(store, m)
+		}
+	}
 }
 
 // searchRequests: The request of the search's first page, and of page n if the pages are
@@ -182,13 +193,18 @@ func (s *Scraper) MangaByID(ctx context.Context, store mango.Store, id string) (
 	if manga == nil {
 		return nil, false, fmt.Errorf("GET %s: no manga in the page", mangaURL)
 	}
+	if meta, ok := s.ownMetadata(manga); ok {
+		if err := s.cacheMetadata(store, manga, meta); err != nil {
+			return nil, false, err
+		}
+	}
 	return manga, true, store.SetMangas(cacheID, []mangadata.Manga{manga})
 }
 
 var errorPagePath = regexp.MustCompile(`^/(400|404)/?$`)
 
-// TODO: define metadata scraping logic
-// parseManga: The manga in its page, nil if it isn't there (or has no title).
+// parseManga: The manga in its page with its metadata (see MetadataExtractor), nil if it isn't
+// there (or has no title).
 func (s *Scraper) parseManga(p *page, id string) *mango.Manga {
 	selection := p.doc.Find(s.config.MangaByIDExtractor.Selector).First()
 	if selection.Length() == 0 {
@@ -199,17 +215,20 @@ func (s *Scraper) parseManga(p *page, id string) *mango.Manga {
 		return nil
 	}
 	var meta metadata.Metadata = &mangadata.Metadata{}
-	return &mango.Manga{
+	manga := &mango.Manga{
 		Title:     title,
 		URL:       p.url.String(),
 		ID:        id,
 		Cover:     s.config.MangaByIDExtractor.Cover(selection),
 		Metadata_: &meta,
 	}
+	if s.config.MetadataExtractor != nil {
+		setMetadata(manga, s.extractMetadata(p, manga))
+	}
+	return manga
 }
 
-// TODO: define metadata scraping logic
-// parseMangas: The mangas in a search page.
+// parseMangas: The mangas in a search page, without their metadata (see MetadataExtractor).
 func (s *Scraper) parseMangas(p *page) []mangadata.Manga {
 	var mangas []mangadata.Manga
 	p.doc.Find(s.config.MangaExtractor.Selector).Each(func(_ int, selection *goquery.Selection) {

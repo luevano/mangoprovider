@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/luevano/libmangal/mangadata"
 	"github.com/luevano/libmangal/metadata"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/fetch"
@@ -56,6 +57,7 @@ const (
 	seriesTypeSelector    = ".post-content_item:contains(Type) .summary-content"
 	altNameSelector       = ".post-content_item:contains(Alt) .summary-content"
 	releaseSelector       = ".post-content_item:contains(Release) .summary-content"
+	publisherSelector     = ".post-content_item:contains(Publisher) .summary-content"
 	chapterListSelector   = "li.wp-manga-chapter"
 	chapterURLSelector    = "a"
 	chapterDateSelector   = "span.chapter-release-date"
@@ -70,6 +72,8 @@ type Options struct {
 	BaseURL string
 	// ScanlationGroup: Optional, the chapters' group (e.g. the site's name).
 	ScanlationGroup string
+	// IDCode: The metadata's provider id code (e.g. "tl"), see scraper.MetadataExtractor.
+	IDCode string
 
 	// MangaSubString: The path of the mangas, "manga" by default (/manga/<slug>/).
 	MangaSubString string
@@ -100,11 +104,12 @@ type Options struct {
 	Fetch fetch.Strategy
 }
 
-// Selectors: keiyoushi's selectors of the same name, empty is its default.
+// Selectors: keiyoushi's selectors of the same name (Release and Publisher are ours), empty is
+// the default.
 type Selectors struct {
 	Archive, SearchCard, ArchiveURL, NextPage                                              string
 	Title, Author, Artist, Status, Description, Thumbnail, Genre, Tag, SeriesType, AltName string
-	Release                                                                                string
+	Release, Publisher                                                                     string
 	ChapterList, ChapterURL, ChapterName, ChapterDate                                      string
 	PageListParse                                                                          string
 }
@@ -138,6 +143,7 @@ func (o Options) withDefaults() Options {
 	or(&s.SeriesType, seriesTypeSelector)
 	or(&s.AltName, altNameSelector)
 	or(&s.Release, releaseSelector)
+	or(&s.Publisher, publisherSelector)
 	or(&s.ChapterList, chapterListSelector)
 	or(&s.ChapterURL, chapterURLSelector)
 	or(&s.ChapterDate, chapterDateSelector)
@@ -173,6 +179,12 @@ func Config(o Options) *scraper.Configuration {
 			Cover: func(s *goquery.Selection) string {
 				return ImageURL(s.Find(sel.Thumbnail).First())
 			},
+		},
+		MetadataExtractor: &scraper.MetadataExtractor{
+			IDCode:  o.IDCode,
+			Extract: o.extractMetadata,
+			// madara pages rarely say when it started
+			StartFromChapters: true,
 		},
 		MangaExtractor: &scraper.MangaExtractor{
 			Selector: sel.Archive,
@@ -416,4 +428,70 @@ func PostID(page *goquery.Selection) string {
 		}
 	}
 	return ""
+}
+
+var (
+	updatingRegex   = regexp.MustCompile(`(?i)updating|atualizando`)
+	altNameSepRegex = regexp.MustCompile(`\s*[;|]\s*`)
+)
+
+// extractMetadata: keiyoushi's parseDetails, plus the release year and the publisher. The
+// alternative names are split on ";" or "|" (commas are in titles too).
+func (o Options) extractMetadata(page *goquery.Selection, meta *mangadata.Metadata) {
+	sel := o.Selectors
+	notUpdating := func(texts []string) []string {
+		var kept []string
+		for _, t := range texts {
+			if !updatingRegex.MatchString(t) {
+				kept = append(kept, t)
+			}
+		}
+		return kept
+	}
+	meta.EnglishTitle = OwnText(page.Find(sel.Title).First())
+	meta.AuthorList = notUpdating(scraper.Texts(page.Find(sel.Author)))
+	meta.ArtistList = notUpdating(scraper.Texts(page.Find(sel.Artist)))
+	if description := page.Find(sel.Description).First(); description.Find("p").Length() > 0 {
+		meta.Summary = strings.Join(scraper.Texts(description.Find("p")), "\n\n")
+	} else {
+		meta.Summary = mango.CleanString(description.Text())
+	}
+	if alt := OwnText(page.Find(sel.AltName).First()); alt != "" && !updatingRegex.MatchString(alt) {
+		meta.Synonyms = altNameSepRegex.Split(alt, -1)
+	}
+	meta.CoverImage = ImageURL(page.Find(sel.Thumbnail).First())
+	if status := page.Find(sel.Status).Last(); status.Length() > 0 {
+		meta.PublicationStatus = Status(status.Text())
+	}
+	meta.GenreList = scraper.Texts(page.Find(sel.Genre))
+	meta.TagList = scraper.Texts(page.Find(sel.Tag))
+	if typ := mango.CleanString(page.Find(sel.SeriesType).First().Text()); typ != "" {
+		meta.PublicationFormat, meta.CountryOfOrigin = typ, mango.CountryOfType(typ)
+	}
+	meta.DateStart = scraper.YearDate(page.Find(sel.Release).First().Text())
+	meta.ProviderPublisher = strings.Join(scraper.Texts(page.Find(sel.Publisher).First().Find("a")), ", ")
+}
+
+// keiyoushi's status words (MadaraBase.kt), checked in this order
+var statuses = []struct {
+	status metadata.Status
+	words  []string
+}{
+	{metadata.StatusFinished, []string{"completed", "completo", "completado", "concluído", "concluido", "finalizado", "achevé", "terminé", "hoàn thành", "مكتملة", "مكتمل", "已完结", "tamamlandı", "đã hoàn thành", "завершено", "tamamlanan", "complété"}},
+	{metadata.StatusReleasing, []string{"ongoing", "on going", "updating", "продолжается", "em lançamento", "em andamento", "en cours", "ativo", "lançando", "đang tiến hành", "còn nữa", "devam ediyor", "in corso", "in arrivo", "مستمرة", "مستمر", "en curso", "emision", "curso", "en marcha", "publicandose", "publicándose", "en emision", "连载中", "đang làm", "em postagem", "devam eden", "em progresso", "atualizações semanais", "виходить", "đang ra"}},
+	{metadata.StatusHiatus, []string{"on hold", "hiatus", "pausado", "en espera", "durduruldu", "beklemede", "đang chờ", "متوقف", "en pause", "заморожено", "en attente", "tạm dừng"}},
+	{metadata.StatusCancelled, []string{"canceled", "cancelled", "cancelado", "iptal edildi", "đã hủy", "ملغي", "abandonné", "заброшено", "annulé"}},
+}
+
+// Status: The metadata status of a madara status text, "UNKNOWN" if it's none of keiyoushi's.
+func Status(text string) metadata.Status {
+	text = strings.ToLower(text)
+	for _, s := range statuses {
+		for _, word := range s.words {
+			if strings.Contains(text, word) {
+				return s.status
+			}
+		}
+	}
+	return metadata.Status("UNKNOWN")
 }

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"path"
 	"strconv"
 	"strings"
 	"testing"
@@ -16,6 +17,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/go-rod/rod/lib/launcher"
 	"github.com/luevano/libmangal/mangadata"
+	"github.com/luevano/libmangal/metadata"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/fetch"
 )
@@ -782,5 +784,121 @@ func TestRequests(t *testing.T) {
 	}
 	if strings.Join(requests, "\n") != strings.Join(want, "\n") {
 		t.Errorf("requests:\n%s\nwant:\n%s", strings.Join(requests, "\n"), strings.Join(want, "\n"))
+	}
+}
+
+func TestMetadata(t *testing.T) {
+	requests := map[string]int{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests[r.URL.Path]++
+		switch r.URL.Path {
+		case "/search":
+			w.Write([]byte(`<a class="manga" href="/manga/a">A</a><a class="manga" href="/manga/b">B</a>`))
+		case "/manga/a", "/manga/b":
+			w.Write([]byte(`<h1>` + strings.ToUpper(path.Base(r.URL.Path)) + `</h1><p class="year">2001</p><img src="/cover.jpg">` +
+				`<a class="chapter" href="/c/2">2</a><a class="chapter" href="/c/1">1</a>`))
+		}
+	}))
+	defer server.Close()
+
+	config := &Configuration{
+		Name: "test", BaseURL: server.URL + "/", Parallelism: 1,
+		GenerateSearchURL: func(base, query string) (string, error) { return base + "search", nil },
+		MangaExtractor: &MangaExtractor{
+			Selector: "a.manga",
+			Title:    func(s *goquery.Selection) string { return s.Text() },
+			URL:      func(s *goquery.Selection) string { return s.AttrOr("href", "") },
+			ID:       func(u string) string { return path.Base(u) },
+			Cover:    func(*goquery.Selection) string { return "" },
+		},
+		MetadataExtractor: &MetadataExtractor{
+			IDCode: "t",
+			Extract: func(page *goquery.Selection, meta *mangadata.Metadata) {
+				meta.AuthorList = []string{"Someone"}
+				meta.CoverImage = page.Find("img").AttrOr("src", "")
+				meta.PublicationStatus = metadata.StatusFinished
+				if page.Find("h1").Text() == "A" {
+					meta.DateStart = YearDate(page.Find("p.year").Text())
+				}
+			},
+			StartFromChapters: true,
+		},
+		VolumeExtractor: &VolumeExtractor{Selector: "h1", Number: func(*goquery.Selection) float32 { return 1 }},
+		ChapterExtractor: &ChapterExtractor{
+			Selector: "a.chapter",
+			Title:    func(s *goquery.Selection) string { return s.Text() },
+			URL:      func(s *goquery.Selection) string { return s.AttrOr("href", "") },
+			ID:       func(u string) string { return path.Base(u) },
+			Date: func(s *goquery.Selection) metadata.Date {
+				return metadata.Date{Year: 2010 + len(s.Text()), Month: 3, Day: 4}
+			},
+		},
+	}
+	s, err := NewScraper(context.Background(), config, mango.DefaultOptions(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, store := context.Background(), mango.NewMemoryStore()
+
+	mangas, err := s.SearchMangas(ctx, store, "q")
+	if err != nil || len(mangas) != 2 {
+		t.Fatalf("search: %v, %v", mangas, err)
+	}
+	// search results have none, a request each
+	if title := mangas[0].Metadata().Title(); title != "" {
+		t.Errorf("search result: %q", title)
+	}
+
+	// the manga's page is read for its volumes, the search result gets its metadata
+	a := mangas[0].(*mango.Manga)
+	volumes, err := s.MangaVolumes(ctx, store, *a)
+	if err != nil || len(volumes) != 1 {
+		t.Fatalf("volumes: %v, %v", volumes, err)
+	}
+	meta := a.Metadata()
+	if err := metadata.Validate(meta); err != nil || meta.Title() != "A" || meta.StartDate().Year != 2001 ||
+		meta.Cover() != server.URL+"/cover.jpg" || meta.URL() != server.URL+"/manga/a" || meta.ID().Raw != "a" {
+		t.Errorf("after volumes: %v, %+v", err, meta)
+	}
+
+	// a later search: its results get it from the cache, the volumes too
+	again, err := s.SearchMangas(ctx, store, "q")
+	if err != nil || again[0].Metadata().StartDate().Year != 2001 || again[1].Metadata().Title() != "" {
+		t.Fatalf("search again: %v, %v", again, err)
+	}
+	b := *again[0].(*mango.Manga)
+	b.Metadata_ = new(metadata.Metadata)
+	if _, err := s.MangaVolumes(ctx, store, b); err != nil || (*b.Metadata_).Title() != "A" || requests["/manga/a"] != 1 {
+		t.Errorf("cached: %v, %v, %d requests", err, *b.Metadata_, requests["/manga/a"])
+	}
+
+	// without a start date in the page, the oldest chapter's
+	bManga := again[1].(*mango.Manga)
+	volumes, err = s.MangaVolumes(ctx, store, *bManga)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := bManga.Metadata().StartDate(); got != (metadata.Date{}) {
+		t.Errorf("b before the chapters: %v", got)
+	}
+	if _, err := s.VolumeChapters(ctx, store, *volumes[0].(*mango.Volume)); err != nil {
+		t.Fatal(err)
+	}
+	if got := bManga.Metadata().StartDate().String(); got != "2011-03-04" {
+		t.Errorf("b after the chapters: %v", got)
+	}
+
+	// metadata the caller set (e.g. AniList's) is left as is
+	var anilist metadata.Metadata = &mangadata.Metadata{EnglishTitle: "From AniList", ProviderIDCode: "al"}
+	c := mango.Manga{ID: "b", URL: server.URL + "/manga/b", Title: "B", Metadata_: &anilist}
+	volumes, err = s.MangaVolumes(ctx, mango.Store{}, c)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.VolumeChapters(ctx, mango.Store{}, *volumes[0].(*mango.Volume)); err != nil {
+		t.Fatal(err)
+	}
+	if got := anilist.(*mangadata.Metadata); got.Title() != "From AniList" || got.DateStart != (metadata.Date{}) {
+		t.Errorf("anilist's: %+v", got)
 	}
 }

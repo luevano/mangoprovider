@@ -2,11 +2,13 @@ package weebcentral
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/luevano/libmangal/metadata"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/scraper/scrapertest"
 	"golang.org/x/time/rate"
@@ -88,6 +90,20 @@ func TestScrape(t *testing.T) {
 	}
 	if info := manga.Info(); info.Title != "One Piece" || info.ID != id {
 		t.Errorf("by id: got %+v", info)
+	}
+	meta := manga.Metadata()
+	if err := metadata.Validate(meta); err != nil {
+		t.Errorf("by id: %s", err)
+	}
+	if meta.Title() != "One Piece" || strings.Join(meta.AlternateTitles(), ",") != "ONE PIECE,ワンピース" ||
+		meta.StartDate().Year != 1997 || meta.Status() != metadata.StatusReleasing || strings.Join(meta.Authors(), ",") != "ODA Eiichiro" ||
+		strings.Join(meta.Genres(), ",") != "Action,Shounen" || meta.Format() != "Manga" || meta.Country() != "JP" ||
+		meta.Cover() != "https://temp.test/cover/normal/"+id+".webp" || meta.ID().Code != "wc" || meta.ID().Raw != id ||
+		meta.Description() != "As a child, Monkey D. Luffy dreamed of becoming the King of the Pirates." {
+		t.Errorf("by id: got %+v", meta)
+	}
+	if ids := fmt.Sprint(meta.ExtraIDs()); len(meta.ExtraIDs()) != 2 || meta.ExtraIDs()[0].Value() != 30013 || meta.ExtraIDs()[1].Value() != 13 {
+		t.Errorf("by id: extra ids %s", ids)
 	}
 
 	m := *mangas[0].(*mango.Manga)

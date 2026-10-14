@@ -3,9 +3,11 @@ package toonily
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/luevano/libmangal/metadata"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/scraper/scrapertest"
 )
@@ -71,6 +73,19 @@ func TestScrape(t *testing.T) {
 		t.Errorf("by id: got %+v", info)
 	}
 
+	meta := manga.Metadata()
+	if meta.Title() != "Solo Leveling" || strings.Join(meta.AlternateTitles(), ",") != "나 혼자만 레벨업" ||
+		strings.Join(meta.Authors(), ",") != "Chu-Gong" || strings.Join(meta.Artists(), ",") != "GEE So-Lyung,REDICE studio" ||
+		strings.Join(meta.Genres(), ",") != "Action,Fantasy" || meta.Status() != metadata.StatusFinished || meta.Publisher() != "Kakao" ||
+		meta.Description() != "When inter-dimensional “gates” opened up, hunters were humanity’s only hope.\n\nSung Jinwoo is the weakest of them all." ||
+		meta.Cover() != "https://cdn.test/toonily/solo-leveling-224x320.jpg" || meta.ID().Code != "tl" || meta.ID().Raw != "solo-leveling" {
+		t.Errorf("by id: got %+v", meta)
+	}
+	// no year on the page, until the chapters are read
+	if meta.StartDate().Year != 0 {
+		t.Errorf("by id: start %v", meta.StartDate())
+	}
+
 	m := *mangas[0].(*mango.Manga)
 	volumes, err := s.MangaVolumes(ctx, mango.Store{}, m)
 	if err != nil || len(volumes) != 1 {
@@ -100,6 +115,12 @@ func TestScrape(t *testing.T) {
 		if c.Number != w.number || c.ID != w.id || c.Title != w.title || c.Date.String() != w.date || c.URL != base+"serie/solo-leveling/"+w.id+"/" || c.ScanlationGroup != "Toonily" {
 			t.Errorf("chapter %d: got %+v %s, want %+v", i, c, c.Date, w)
 		}
+	}
+
+	// the search result has the page's metadata now, started with the oldest chapter
+	meta = mangas[0].Metadata()
+	if err := metadata.Validate(meta); err != nil || meta.StartDate().String() != "2018-03-04" {
+		t.Errorf("search result: %v, %+v", err, meta)
 	}
 
 	pages, err := s.ChapterPages(ctx, mango.Store{}, *chapters[0].(*mango.Chapter))

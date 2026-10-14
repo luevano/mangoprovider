@@ -201,9 +201,21 @@ func TestParseStatus(t *testing.T) {
 		"cancelled":   metadata.StatusCancelled,
 		"Coming Soon": metadata.StatusNotYetReleased,
 		"Season End":  metadata.Status("UNKNOWN"),
+		"publishing":  metadata.StatusReleasing,
+		"Complete":    metadata.StatusFinished,
+		"finished":    metadata.StatusFinished,
+		"Canceled":    metadata.StatusCancelled,
 	} {
 		if got := ParseStatus(status); got != want {
 			t.Errorf("%q: wanted %q, got %q", status, want, got)
+		}
+	}
+}
+
+func TestCountryOfType(t *testing.T) {
+	for typ, want := range map[string]string{"Manga": "JP", " manhwa ": "KR", "MANHUA": "CN", "Webtoon": ""} {
+		if got := CountryOfType(typ); got != want {
+			t.Errorf("%q: wanted %q, got %q", typ, want, got)
 		}
 	}
 }

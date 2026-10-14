@@ -2,8 +2,10 @@ package mangapill
 
 import (
 	"context"
+	"strings"
 	"testing"
 
+	"github.com/luevano/libmangal/metadata"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/scraper/scrapertest"
 )
@@ -99,5 +101,44 @@ func TestScrape(t *testing.T) {
 	}
 	if p := pages[1].(*mango.Page); p.URL != "https://cdn.test/mangapill/file/2/10001000/2.jpeg" || p.Ext != ".jpeg" || p.Headers["Referer"] != chapters[0].Info().URL {
 		t.Errorf("page 2: got %+v", p)
+	}
+}
+
+func TestMetadata(t *testing.T) {
+	s, base := scrapertest.New(t, Config(nil), map[string]string{
+		"/search":            "search.html",
+		"/search?page=2":     "search-2.html",
+		"/manga/2/one-piece": "manga.html",
+	})
+	ctx := context.Background()
+	store := mango.NewMemoryStore()
+
+	manga, found, err := s.MangaByID(ctx, store, "2/one-piece")
+	if err != nil || !found {
+		t.Fatalf("by id: %v, %v, %v", manga, found, err)
+	}
+	meta := manga.Metadata()
+	if meta.Title() != "One Piece" || meta.StartDate().Year != 1997 || meta.Status() != metadata.StatusReleasing ||
+		strings.Join(meta.Genres(), ",") != "Action,Super Power" || meta.Format() != "manga" || meta.Country() != "JP" ||
+		meta.Cover() != "https://cdn.test/mangapill/i/2.jpeg" || meta.URL() != base+"manga/2/one-piece" ||
+		meta.ID().Raw != "2/one-piece" || meta.ID().Code != "mp" ||
+		meta.Description() != "Gol D. Roger, the \"Pirate King,\" is executed.\n\n[Written by MAL Rewrite]" {
+		t.Errorf("got %+v", meta)
+	}
+	// the site has no authors
+	if err := metadata.Validate(meta); err == nil || !strings.Contains(err.Error(), "no authors") {
+		t.Errorf("validate: %v", err)
+	}
+
+	// a search result gets it from the cache
+	mangas, err := s.SearchMangas(ctx, store, "one piece")
+	if err != nil || len(mangas) != 3 {
+		t.Fatalf("search: %v, %v", mangas, err)
+	}
+	if got := mangas[0].Metadata().StartDate().Year; got != 1997 {
+		t.Errorf("search result: start %d", got)
+	}
+	if got := mangas[1].Metadata().Title(); got != "" {
+		t.Errorf("search result without a cached page: %q", got)
 	}
 }

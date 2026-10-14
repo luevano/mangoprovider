@@ -9,6 +9,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/luevano/libmangal"
+	"github.com/luevano/libmangal/mangadata"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/scraper"
 )
@@ -60,12 +61,34 @@ func Config(_ *mango.Logger) *scraper.Configuration {
 			return fmt.Sprintf("%smanga/%s", baseUrl, id), nil
 		},
 		MangaByIDExtractor: &scraper.MangaByIDExtractor{
-			Selector: "div.container > div.flex.flex-col.sm\\:flex-row.my-3",
+			Selector: infoSelector,
 			Title: func(selection *goquery.Selection) string {
 				return selection.Find("div.flex.flex-col > div.mb-3 > h1").Text()
 			},
 			Cover: func(selection *goquery.Selection) string {
 				return selection.Find("div.text-transparent > img").AttrOr("data-src", "")
+			},
+		},
+		// keiyoushi's fetchMangaUpdate details: no authors on the site
+		MetadataExtractor: &scraper.MetadataExtractor{
+			IDCode: "mp",
+			Extract: func(page *goquery.Selection, meta *mangadata.Metadata) {
+				info := page.Find(infoSelector).First()
+				meta.EnglishTitle = mango.CleanString(info.Find("div.flex.flex-col > div.mb-3 > h1").First().Text())
+				meta.Summary = strings.TrimSpace(info.Find("div.flex.flex-col > div.mb-3 > p").First().Text())
+				meta.CoverImage = info.Find("div.text-transparent > img").AttrOr("data-src", "")
+				meta.GenreList = scraper.Texts(info.Find("a[href*=genre]"))
+				info.Find("label").Each(func(_ int, label *goquery.Selection) {
+					value := mango.CleanString(label.Next().Text())
+					switch mango.CleanString(label.Text()) {
+					case "Type":
+						meta.PublicationFormat, meta.CountryOfOrigin = value, mango.CountryOfType(value)
+					case "Status":
+						meta.PublicationStatus = mango.ParseStatus(value)
+					case "Year":
+						meta.DateStart = scraper.YearDate(value)
+					}
+				})
 			},
 		},
 		MangaExtractor: &scraper.MangaExtractor{
@@ -112,6 +135,9 @@ func Config(_ *mango.Logger) *scraper.Configuration {
 		},
 	}
 }
+
+// infoSelector: The manga's details in its page.
+const infoSelector = "div.container > div.flex.flex-col.sm\\:flex-row.my-3"
 
 // pathID: The path after its first part, e.g. "<number>/<name>" for /manga/<number>/<name>.
 func pathID(_url string) string {

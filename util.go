@@ -140,22 +140,36 @@ func EscapePath(p string) string {
 }
 
 // DateOf converts t to a metadata.Date.
-// ParseStatus maps the status the scanlation sites show (asurascans, flamecomics) to the
+// ParseStatus maps the status the sites show (asurascans, flamecomics, the scrapers) to the
 // metadata one, "UNKNOWN" if it isn't one of them.
 func ParseStatus(status string) metadata.Status {
 	switch strings.ToLower(strings.TrimSpace(status)) {
-	case "ongoing":
+	case "ongoing", "publishing", "releasing":
 		return metadata.StatusReleasing
-	case "completed":
+	case "completed", "complete", "finished":
 		return metadata.StatusFinished
-	case "hiatus":
+	case "hiatus", "on hold":
 		return metadata.StatusHiatus
-	case "dropped", "cancelled":
+	case "dropped", "cancelled", "canceled":
 		return metadata.StatusCancelled
-	case "coming soon":
+	case "coming soon", "not yet released", "upcoming":
 		return metadata.StatusNotYetReleased
 	}
 	return metadata.Status("UNKNOWN")
+}
+
+// CountryOfType: The country of origin (ISO 3166-1 alpha-2) of a manga, manhwa or manhua, ""
+// for anything else.
+func CountryOfType(t string) string {
+	switch strings.ToLower(strings.TrimSpace(t)) {
+	case "manga":
+		return "JP"
+	case "manhwa":
+		return "KR"
+	case "manhua":
+		return "CN"
+	}
+	return ""
 }
 
 func DateOf(t time.Time) metadata.Date {
