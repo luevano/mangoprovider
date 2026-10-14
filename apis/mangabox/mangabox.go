@@ -22,7 +22,7 @@ var (
 	MangabatInfo = libmangal.ProviderInfo{
 		ID:          mango.BundleID + "-mangabat",
 		Name:        "Mangabat",
-		Version:     "0.3.3",
+		Version:     "0.3.4",
 		Description: "Mangabat (needs FlareSolverr to search)",
 		Website:     "https://www.mangabats.com/",
 	}
@@ -30,7 +30,7 @@ var (
 	MangakakalotInfo = libmangal.ProviderInfo{
 		ID:          mango.BundleID + "-mangakakalot",
 		Name:        "Mangakakalot",
-		Version:     "0.3.3",
+		Version:     "0.3.4",
 		Description: "Mangakakalot (needs FlareSolverr to search)",
 		Website:     "https://www.mangakakalove.com/",
 		Mirrors:     []string{"https://www.mangakakalot.gg/"},
@@ -38,7 +38,7 @@ var (
 	ManganatoInfo = libmangal.ProviderInfo{
 		ID:          mango.BundleID + "-manganato",
 		Name:        "Manganato",
-		Version:     "0.4.3",
+		Version:     "0.4.4",
 		Description: "Manganato (needs FlareSolverr)",
 		Website:     "https://www.natomanga.com/",
 		Mirrors:     []string{"https://www.nelomanga.net/", "https://www.manganato.gg/"},

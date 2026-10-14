@@ -24,7 +24,7 @@ const (
 var providerInfo = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-asurascans",
 	Name:        "AsuraScans",
-	Version:     "0.4.4",
+	Version:     "0.4.5",
 	Description: "AsuraScans, from the site's API",
 	Website:     website,
 }
