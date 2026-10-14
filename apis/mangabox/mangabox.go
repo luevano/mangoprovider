@@ -4,17 +4,16 @@
 package mangabox
 
 import (
-	"bytes"
 	"context"
+	"errors"
 	"fmt"
-	"net/http"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/luevano/libmangal"
 	mango "github.com/luevano/mangoprovider"
-	"github.com/luevano/mangoprovider/scraper/headless/flaresolverr"
+	"github.com/luevano/mangoprovider/fetch"
 	"golang.org/x/time/rate"
 )
 
@@ -53,23 +52,16 @@ func Loaders(options mango.Options) []libmangal.ProviderLoader {
 	}
 }
 
-// flaresolverrTimeout: solving a challenge takes 10-20s; with mirrors, an unsolvable one
-// shouldn't hold the next for long
-const flaresolverrTimeout = 60 * time.Second
-
 type mangabox struct {
-	info      libmangal.ProviderInfo
-	client    *http.Client
+	info libmangal.ProviderInfo
+	// client: direct, retried through FlareSolverr on a challenge, 2 requests per second
+	// like keiyoushi's
+	client    *fetch.Client
 	userAgent string
-	headless  mango.HeadlessOptions
-	// 2 requests per second, like keiyoushi's
-	limiter *rate.Limiter
-	mirrors *mango.Mirrors
-	log     *mango.Logger
+	mirrors   *mango.Mirrors
+	log       *mango.Logger
 
 	mu sync.Mutex
-	// flaresolverr is created on the first challenge, its session closed with the provider
-	flaresolverr *flaresolverr.TransportFlaresolverr
 	// cdn: the origin of the cdn that served the last image, tried first
 	cdn string
 	// cdnDown: cdns already reported failing, until one of their images works again
@@ -81,12 +73,17 @@ func loader(info libmangal.ProviderInfo, options mango.Options) libmangal.Provid
 		ProviderInfo: info,
 		Options:      options,
 		F: func(_ context.Context, log *mango.Logger) (mango.Functions, error) {
+			client, err := fetch.NewClient(options.HTTPClient, options.Headless, log, fetch.Config{
+				Strategy: fetch.CloudflareFallback,
+				Limiter:  rate.NewLimiter(rate.Every(500*time.Millisecond), 2),
+			})
+			if err != nil {
+				return mango.Functions{}, err
+			}
 			m := &mangabox{
 				info:      info,
-				client:    options.HTTPClient,
+				client:    client,
 				userAgent: options.UserAgent,
-				headless:  options.Headless,
-				limiter:   rate.NewLimiter(rate.Every(500*time.Millisecond), 2),
 				mirrors:   mango.NewMirrors(info, options.Mirrors[info.ID], log),
 				log:       log,
 				cdnDown:   map[string]bool{},
@@ -98,19 +95,10 @@ func loader(info libmangal.ProviderInfo, options mango.Options) libmangal.Provid
 				VolumeChapters: m.VolumeChapters,
 				ChapterPages:   m.ChapterPages,
 				GetPageImage:   m.GetPageImage,
-				Close:          m.Close,
+				Close:          m.client.Close,
 			}, nil
 		},
 	}
-}
-
-func (m *mangabox) Close() error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if m.flaresolverr == nil {
-		return nil
-	}
-	return m.flaresolverr.Close()
 }
 
 // get the page at path (relative to the website), through FlareSolverr when Cloudflare
@@ -129,24 +117,9 @@ func (m *mangabox) get(ctx context.Context, store mango.Store, path string) (bod
 }
 
 func (m *mangabox) getFrom(ctx context.Context, url string) ([]byte, error) {
-	if err := m.limiter.Wait(ctx); err != nil {
-		return nil, err
-	}
-	body, resp, err := mango.Fetch(ctx, m.client, nil, m.userAgent, url)
+	body, resp, err := mango.Fetch(ctx, m.client.Client, nil, m.userAgent, url)
 	if err != nil {
 		return nil, down(ctx, err)
-	}
-	if challenged(resp.StatusCode, body) {
-		fs, err := m.flaresolverrClient()
-		if err != nil {
-			return nil, fmt.Errorf("%w: %w", mango.ErrSiteDown, err)
-		}
-		m.log.Status(ctx, "cloudflare challenge on %s, solving with flaresolverr (up to %ds)", mango.Host(url), int(flaresolverrTimeout.Seconds()))
-		ctx, cancel := context.WithTimeout(ctx, flaresolverrTimeout)
-		defer cancel()
-		if body, resp, err = mango.Fetch(ctx, fs, nil, m.userAgent, url); err != nil {
-			return nil, down(ctx, err)
-		}
 	}
 	if err := mango.StatusError(resp.StatusCode, resp.Header); err != nil {
 		return nil, err
@@ -156,25 +129,8 @@ func (m *mangabox) getFrom(ctx context.Context, url string) ([]byte, error) {
 
 // down marks a request error as the site being down, unless it was cancelled.
 func down(ctx context.Context, err error) error {
-	if ctx.Err() != nil {
+	if ctx.Err() != nil || errors.Is(err, mango.ErrSiteDown) {
 		return err
 	}
 	return fmt.Errorf("%w: %w", mango.ErrSiteDown, err)
-}
-
-func (m *mangabox) flaresolverrClient() (*http.Client, error) {
-	if !m.headless.UseFlaresolverr || m.headless.FlaresolverrURL == "" {
-		return nil, fmt.Errorf("cloudflare challenge, enable flaresolverr (providers.headless.use_flaresolverr)")
-	}
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if m.flaresolverr == nil {
-		m.flaresolverr = flaresolverr.NewTransport(m.headless.FlaresolverrURL)
-	}
-	return &http.Client{Transport: m.flaresolverr}, nil
-}
-
-func challenged(status int, body []byte) bool {
-	return (status == http.StatusForbidden || status == http.StatusServiceUnavailable) &&
-		bytes.Contains(body, []byte("<title>Just a moment...</title>"))
 }

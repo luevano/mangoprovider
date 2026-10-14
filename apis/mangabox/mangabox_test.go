@@ -2,6 +2,7 @@ package mangabox
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -11,7 +12,7 @@ import (
 
 	"github.com/luevano/libmangal/progress"
 	mango "github.com/luevano/mangoprovider"
-	"golang.org/x/time/rate"
+	"github.com/luevano/mangoprovider/fetch"
 )
 
 // reports records the statuses reported through the returned context.
@@ -54,19 +55,26 @@ func newServer(t *testing.T, pages map[string]string) *httptest.Server {
 
 func newTest(t *testing.T, flaresolverr bool, pages map[string]string, mirrors ...string) *mangabox {
 	t.Helper()
+	return newTestWith(t, mango.HeadlessOptions{UseFlaresolverr: flaresolverr}, pages, mirrors...)
+}
+
+func newTestWith(t *testing.T, headless mango.HeadlessOptions, pages map[string]string, mirrors ...string) *mangabox {
+	t.Helper()
 	info := MangabatInfo
 	info.Website, info.Mirrors = newServer(t, pages).URL+"/", mirrors
 	log := mango.NewProviderLogger(info)
-	m := &mangabox{
+	client, err := fetch.NewClient(http.DefaultClient, headless, log, fetch.Config{Strategy: fetch.CloudflareFallback})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { client.Close() })
+	return &mangabox{
 		info:    info,
 		log:     log,
-		client:  http.DefaultClient,
-		limiter: rate.NewLimiter(rate.Inf, 0),
+		client:  client,
 		mirrors: mango.NewMirrors(info, "", log),
 		cdnDown: map[string]bool{},
 	}
-	m.headless.UseFlaresolverr = flaresolverr
-	return m
 }
 
 func TestSearch(t *testing.T) {
@@ -85,6 +93,23 @@ func TestChallengeWithoutFlaresolverr(t *testing.T) {
 	_, err := m.search(context.Background(), mango.Store{}, "solo leveling")
 	if err == nil || !strings.Contains(err.Error(), "use_flaresolverr") {
 		t.Errorf("got %v, want a hint to enable flaresolverr", err)
+	}
+}
+
+func TestChallengeSolved(t *testing.T) {
+	fs := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		out, _ := json.Marshal(map[string]any{"status": "ok", "solution": map[string]any{"status": 200, "response": searchPage}})
+		w.Write(out)
+	}))
+	defer fs.Close()
+	m := newTestWith(t, mango.HeadlessOptions{UseFlaresolverr: true, FlaresolverrURL: fs.URL}, map[string]string{"/search/story/solo_leveling": challenge})
+	ctx, got := reports()
+	mangas, err := m.search(ctx, mango.Store{}, "solo leveling")
+	if err != nil || len(mangas) != 1 {
+		t.Fatalf("got %v, %v", mangas, err)
+	}
+	if len(*got) != 1 || !strings.Contains((*got)[0], "cloudflare challenge") {
+		t.Errorf("got reports %q, want the challenge", *got)
 	}
 }
 
