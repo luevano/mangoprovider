@@ -9,13 +9,19 @@ import (
 	"github.com/philippgille/gokv"
 )
 
+// The cache buckets, prefixed so they can't be mistaken for another owner's (e.g. a Lua
+// provider with the id "mangas").
 const (
-	CacheBucketNameMangas   = "mangas"
-	CacheBucketNameVolumes  = "volumes"
-	CacheBucketNameChapters = "chapters"
+	CacheBucketNameMangas   = BundleID + "-mangas"
+	CacheBucketNameVolumes  = BundleID + "-volumes"
+	CacheBucketNameChapters = BundleID + "-chapters"
 	// CacheBucketNameMirrors: the mirror that last worked by provider id, should expire.
-	CacheBucketNameMirrors = "mirrors"
+	CacheBucketNameMirrors = BundleID + "-mirrors"
 )
+
+// LegacyCacheBucketNames: The buckets' names up to v0.21.0 ("mangas", "volumes", "chapters",
+// "mirrors"), e.g. for migrating old caches. Nothing reads them anymore, the cache is disposable.
+var LegacyCacheBucketNames = []string{"mangas", "volumes", "chapters", "mirrors"}
 
 // the cached slices hold interfaces, gob needs the concrete types (same names as mangal's)
 func init() {
