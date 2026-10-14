@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/luevano/libmangal"
+	"github.com/luevano/libmangal/netutil"
 	"github.com/luevano/mangodex"
 	"github.com/luevano/mangoplus"
 	"github.com/luevano/mangoplus/creators"
@@ -15,7 +16,7 @@ import (
 
 const BundleID = "mango"
 
-const defaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36"
+const defaultUserAgent = netutil.BrowserUserAgent
 
 // FilterOptions are general filtering options for all sources.
 type FilterOptions = libmangal.FilterOptions

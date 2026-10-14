@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/luevano/libmangal/metadata"
+	"github.com/luevano/libmangal/netutil"
+	"github.com/luevano/mangoplus/creators"
 )
 
 var matchingTests = []struct {
@@ -217,5 +219,12 @@ func TestCountryOfType(t *testing.T) {
 		if got := CountryOfType(typ); got != want {
 			t.Errorf("%q: wanted %q, got %q", typ, want, got)
 		}
+	}
+}
+
+func TestDefaultUserAgents(t *testing.T) {
+	// mangoplus doesn't import libmangal, its creators default is a copy
+	if DefaultOptions().UserAgent != netutil.BrowserUserAgent || creators.DefaultOptions().UserAgent != netutil.BrowserUserAgent {
+		t.Errorf("default user agents %q, %q; want netutil.BrowserUserAgent", DefaultOptions().UserAgent, creators.DefaultOptions().UserAgent)
 	}
 }
