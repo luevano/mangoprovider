@@ -1,6 +1,6 @@
 // Package fetch builds the http client a site is read with, like keiyoushi's per-source
 // OkHttp clients: the shared client plus RoundTripper middlewares picked per site (rate limit,
-// headers, Cloudflare fallback, headless browser).
+// headers, headless browser fallback, headless browser).
 package fetch
 
 import (
@@ -20,13 +20,21 @@ type Strategy int
 const (
 	// Direct: plain requests.
 	Direct Strategy = iota
-	// CloudflareFallback: direct, a request Cloudflare challenges is retried through
-	// FlareSolverr (mango.HeadlessOptions), whose session keeps the clearance.
-	CloudflareFallback
+	// HeadlessFallback: direct, a request Cloudflare challenges is retried in a headless
+	// browser: FlareSolverr if mango.HeadlessOptions enable it (its session keeps the
+	// clearance), else rod's Chromium (see Headless). Each fallback is logged, the first per
+	// host as a status too: a site that needs it often should use Headless.
+	HeadlessFallback
 	// Headless: every request loads the page in rod's headless Chromium (sites that build the
 	// html with scripts), downloaded on first use. The body is the page's html once loaded.
 	Headless
 )
+
+// Browser loads the pages in a headless browser, see rod.TransportRod.
+type Browser interface {
+	http.RoundTripper
+	Close() error
+}
 
 // Middleware wraps the transport of a request, like an OkHttp interceptor.
 type Middleware func(next http.RoundTripper) http.RoundTripper
@@ -42,8 +50,11 @@ type Config struct {
 	// Limiter: Optional, every request (redirects and retries through FlareSolverr included)
 	// waits for it.
 	Limiter *rate.Limiter
-	// Headless: How the Headless strategy loads the pages.
+	// Headless: How the Headless strategy (and HeadlessFallback's browser) loads the pages.
 	Headless rod.Options
+	// NewBrowser: Optional, the browser of Headless and HeadlessFallback (made on first use),
+	// rod.NewTransport with Headless by default.
+	NewBrowser func() Browser
 	// Middlewares: The site's own hooks (headers, user agent, url rewrites, ...), the first is
 	// the outermost. They run before the limiter and the strategy.
 	Middlewares []Middleware
@@ -76,15 +87,20 @@ func NewClient(base *http.Client, headless mango.HeadlessOptions, log *mango.Log
 		transport = http.DefaultTransport
 	}
 
+	newBrowser := config.NewBrowser
+	if newBrowser == nil {
+		newBrowser = func() Browser { return rod.NewTransport(config.Headless, log) }
+	}
+
 	c := &Client{direct: &direct}
 	switch config.Strategy {
 	case Direct:
-	case CloudflareFallback:
-		cf := newCloudflare(transport, headless, log)
-		c.closers = append(c.closers, cf.Close)
-		transport = cf
+	case HeadlessFallback:
+		f := newFallback(transport, headless, newBrowser, log)
+		c.closers = append(c.closers, f.Close)
+		transport = f
 	case Headless:
-		browser := rod.NewTransport(config.Headless, log)
+		browser := newBrowser()
 		c.closers = append(c.closers, browser.Close)
 		transport = browser
 	default:

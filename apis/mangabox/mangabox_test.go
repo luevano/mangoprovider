@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"slices"
@@ -53,6 +54,15 @@ func newServer(t *testing.T, pages map[string]string) *httptest.Server {
 	return server
 }
 
+// challengedBrowser: What rod gets on these sites, the challenge again.
+type challengedBrowser struct{}
+
+func (challengedBrowser) RoundTrip(r *http.Request) (*http.Response, error) {
+	return &http.Response{StatusCode: http.StatusForbidden, Header: http.Header{}, Body: io.NopCloser(strings.NewReader(challenge)), Request: r}, nil
+}
+
+func (challengedBrowser) Close() error { return nil }
+
 func newTest(t *testing.T, flaresolverr bool, pages map[string]string, mirrors ...string) *mangabox {
 	t.Helper()
 	return newTestWith(t, mango.HeadlessOptions{UseFlaresolverr: flaresolverr}, pages, mirrors...)
@@ -63,7 +73,10 @@ func newTestWith(t *testing.T, headless mango.HeadlessOptions, pages map[string]
 	info := MangabatInfo
 	info.Website, info.Mirrors = newServer(t, pages).URL+"/", mirrors
 	log := mango.NewProviderLogger(info)
-	client, err := fetch.NewClient(http.DefaultClient, headless, log, fetch.Config{Strategy: fetch.CloudflareFallback})
+	client, err := fetch.NewClient(http.DefaultClient, headless, log, fetch.Config{
+		Strategy:   fetch.HeadlessFallback,
+		NewBrowser: func() fetch.Browser { return challengedBrowser{} },
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -108,8 +121,8 @@ func TestChallengeSolved(t *testing.T) {
 	if err != nil || len(mangas) != 1 {
 		t.Fatalf("got %v, %v", mangas, err)
 	}
-	if len(*got) != 1 || !strings.Contains((*got)[0], "cloudflare challenge") {
-		t.Errorf("got reports %q, want the challenge", *got)
+	if len(*got) != 2 || !strings.Contains((*got)[0], "cloudflare challenge") || !strings.Contains((*got)[1], "fetched through FlareSolverr") {
+		t.Errorf("got reports %q, want the challenge and the fallback", *got)
 	}
 }
 

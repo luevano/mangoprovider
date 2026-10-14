@@ -1,6 +1,7 @@
 // Package mangabox reads the Mangabox sites (Mangabat, Mangakakalot, Manganato), after their
 // 2025 move to new domains (ported from keiyoushi's lib-multisrc/mangabox). Search is behind a
-// Cloudflare challenge, so is everything on some sites: those requests go through FlareSolverr.
+// Cloudflare challenge, so is everything on some sites: those requests go through FlareSolverr
+// (rod's Chromium without it, which these challenges stop too).
 package mangabox
 
 import (
@@ -54,7 +55,7 @@ func Loaders(options mango.Options) []libmangal.ProviderLoader {
 
 type mangabox struct {
 	info libmangal.ProviderInfo
-	// client: direct, retried through FlareSolverr on a challenge, 2 requests per second
+	// client: direct, retried through FlareSolverr (or rod) on a challenge, 2 requests per second
 	// like keiyoushi's
 	client    *fetch.Client
 	userAgent string
@@ -74,7 +75,7 @@ func loader(info libmangal.ProviderInfo, options mango.Options) libmangal.Provid
 		Options:      options,
 		F: func(_ context.Context, log *mango.Logger) (mango.Functions, error) {
 			client, err := fetch.NewClient(options.HTTPClient, options.Headless, log, fetch.Config{
-				Strategy: fetch.CloudflareFallback,
+				Strategy: fetch.HeadlessFallback,
 				Limiter:  rate.NewLimiter(rate.Every(500*time.Millisecond), 2),
 			})
 			if err != nil {
@@ -101,7 +102,7 @@ func loader(info libmangal.ProviderInfo, options mango.Options) libmangal.Provid
 	}
 }
 
-// get the page at path (relative to the website), through FlareSolverr when Cloudflare
+// get the page at path (relative to the website), in a headless browser when Cloudflare
 // challenges the request, from the first mirror that's up. Returns the website it came from.
 func (m *mangabox) get(ctx context.Context, store mango.Store, path string) (body []byte, website string, err error) {
 	path = strings.TrimPrefix(path, "/")

@@ -486,7 +486,7 @@ func TestCookies(t *testing.T) {
 	}
 }
 
-func TestFetchCloudflareFallback(t *testing.T) {
+func TestFetchHeadlessFallback(t *testing.T) {
 	var destroyed bool
 	fs := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
@@ -507,7 +507,7 @@ func TestFetchCloudflareFallback(t *testing.T) {
 	options := mango.DefaultOptions()
 	options.Headless = mango.HeadlessOptions{UseFlaresolverr: true, FlaresolverrURL: fs.URL}
 	config := &Configuration{
-		Name: "test", BaseURL: server.URL, Fetch: fetch.CloudflareFallback,
+		Name: "test", BaseURL: server.URL, Fetch: fetch.HeadlessFallback,
 		PageExtractor: &PageExtractor{Selector: "img", URL: func(s *goquery.Selection) string { return s.AttrOr("src", "") }},
 	}
 	s, err := NewScraper(context.Background(), config, options, nil)
