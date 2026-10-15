@@ -36,8 +36,17 @@ type TransportFlaresolverr struct {
 
 // NewTransport creates a new transport for the given Flaresolerr URL.
 func NewTransport(url string) *TransportFlaresolverr {
+	return NewTransportClient(url, nil)
+}
+
+// NewTransportClient is NewTransport calling FlareSolverr with client, a new one if nil. The
+// client shouldn't have a timeout shorter than the solves (each request has its own).
+func NewTransportClient(url string, client *http.Client) *TransportFlaresolverr {
+	if client == nil {
+		client = new(http.Client)
+	}
 	return &TransportFlaresolverr{
-		client: new(http.Client),
+		client: client,
 		uuid:   uuid.New(),
 		url:    url,
 	}

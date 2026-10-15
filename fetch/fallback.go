@@ -116,7 +116,7 @@ func (f *fallback) status(ctx context.Context, first bool, format string, a ...a
 func (f *fallback) viaFlaresolverr(r *http.Request, first bool) (*http.Response, error) {
 	f.mu.Lock()
 	if f.solver == nil {
-		f.solver = flaresolverr.NewTransport(f.headless.FlaresolverrURL)
+		f.solver = flaresolverr.NewTransportClient(f.headless.FlaresolverrURL, f.headless.FlaresolverrClient)
 	}
 	solver := f.solver
 	f.mu.Unlock()

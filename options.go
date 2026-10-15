@@ -34,6 +34,11 @@ type HeadlessOptions struct {
 
 	// FlaresolverrURL the URL of the Flaresolverr API.
 	FlaresolverrURL string
+
+	// FlaresolverrClient: Optional, the client FlareSolverr's API is called with (not
+	// guarded, it's on the user's network), a new one by default. No timeout shorter than
+	// the solves, each request has its own.
+	FlaresolverrClient *http.Client
 }
 
 func DefaultHeadlessOptions() HeadlessOptions {
