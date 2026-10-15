@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"code.dny.dev/ssrf"
+	"github.com/luevano/libmangal/netutil"
 	"golang.org/x/net/http/httpproxy"
 )
 
@@ -19,8 +20,8 @@ var guardian = ssrf.New(ssrf.WithAnyPort())
 // GuardClient is a copy of client whose connections only reach public addresses, unless
 // Options.AllowPrivateAddresses. The hosts of Options.Mirrors and of the environment's
 // proxies are dialed as they are (the user chose them); FlareSolverr has its own client. A
-// client with a transport other than *http.Transport can't be guarded and is returned as is,
-// a nil one is DefaultOptions' client.
+// client with a transport other than *http.Transport (or a netutil.LoggingTransport over one)
+// can't be guarded and is returned as is, a nil one is DefaultOptions' client.
 func GuardClient(client *http.Client, options Options) *http.Client {
 	if client == nil {
 		client = DefaultOptions().HTTPClient
@@ -28,14 +29,34 @@ func GuardClient(client *http.Client, options Options) *http.Client {
 	if options.AllowPrivateAddresses {
 		return client
 	}
+	transport, ok := guardTransport(client.Transport, options)
+	if !ok {
+		return client
+	}
+	guardedClient := *client
+	guardedClient.Transport = transport
+	return &guardedClient
+}
+
+// guardTransport is a guarded copy of rt, false if it can't be guarded. A
+// netutil.LoggingTransport (mangal's --debug) is kept outside, its Next guarded.
+func guardTransport(rt http.RoundTripper, options Options) (http.RoundTripper, bool) {
 	var transport *http.Transport
-	switch t := client.Transport.(type) {
+	switch t := rt.(type) {
 	case nil:
 		transport = http.DefaultTransport.(*http.Transport).Clone()
 	case *http.Transport:
 		transport = t.Clone()
+	case *netutil.LoggingTransport:
+		next, ok := guardTransport(t.Next, options)
+		if !ok {
+			return nil, false
+		}
+		logging := *t
+		logging.Next = next
+		return &logging, true
 	default:
-		return client
+		return nil, false
 	}
 
 	trusted := map[string]bool{}
@@ -61,7 +82,5 @@ func GuardClient(client *http.Client, options Options) *http.Client {
 		}
 		return guarded.DialContext(ctx, network, address)
 	}
-	guardedClient := *client
-	guardedClient.Transport = transport
-	return &guardedClient
+	return transport, true
 }

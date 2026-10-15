@@ -9,6 +9,7 @@ import (
 
 	"code.dny.dev/ssrf"
 	"github.com/luevano/libmangal"
+	"github.com/luevano/libmangal/netutil"
 )
 
 func TestGuardClient(t *testing.T) {
@@ -41,6 +42,20 @@ func TestGuardClient(t *testing.T) {
 	o.AllowPrivateAddresses = true
 	if err := get(GuardClient(o.HTTPClient, o)); err != nil {
 		t.Errorf("allowed: %v", err)
+	}
+
+	// a logging transport is guarded underneath, and still logs
+	logged := 0
+	o = DefaultOptions()
+	o.HTTPClient = &http.Client{Transport: netutil.NewLoggingTransport(nil, func(string, ...any) { logged++ }, nil)}
+	if err := get(GuardClient(o.HTTPClient, o)); !errors.Is(err, ssrf.ErrProhibitedIP) {
+		t.Errorf("logging transport: got %v, want refused", err)
+	}
+	if logged != 1 {
+		t.Errorf("logged %d requests, want 1", logged)
+	}
+	if o.HTTPClient.Transport.(*netutil.LoggingTransport).Next != nil {
+		t.Error("the given logging transport was changed")
 	}
 
 	// a transport it can't guard stays
