@@ -193,7 +193,7 @@ func (d *dex) dexToMetadata(manga *mangodex.Manga) *mangadata.Metadata {
 
 	for _, tag := range manga.Attributes.Tags {
 		name := tag.GetName(d.filter.Language, true)
-		// TODO: also group TagGroupContent? need to decide how to separate the tags
+		// content warnings (gore, sexual violence) stay tags, like the themes and formats
 		if tag.Attributes.Group == mangodex.TagGroupGenre {
 			genres = append(genres, name)
 			continue
