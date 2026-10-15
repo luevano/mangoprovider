@@ -106,6 +106,8 @@ func (t *TransportRod) launch(ctx context.Context) (*rod.Browser, error) {
 	stop := context.AfterFunc(t.ctx, cancel)
 	defer stop()
 
+	// the launch and cleanup are duplicated in luaprovider's lib/headless (no shared module
+	// but libmangal, which shouldn't pull rod): keep both in sync.
 	// leakless (kills chromium if mangal dies) only on linux: antiviruses flag its binary on
 	// windows
 	l := t.newLauncher().Leakless(runtime.GOOS == "linux").Context(ctx)
