@@ -7,9 +7,13 @@ import (
 	"github.com/luevano/libmangal"
 )
 
-// Account: The subscription of the device secret, or the free device.
+// Account: The subscription of the device secret, or the free device (none with the web api).
 func (p *plus) Account(ctx context.Context) (libmangal.Account, bool, error) {
 	account := libmangal.Account{Service: providerInfo.Name, URL: website, Status: "free device"}
+	if p.client.WebAPI() {
+		account.Status = "web api (no device)"
+		return account, true, nil
+	}
 	if p.options.Secret == "" {
 		return account, true, nil
 	}

@@ -15,7 +15,8 @@ func (p *plus) VolumeChapters(ctx context.Context, store mango.Store, volume man
 	var chapters []mangadata.Chapter
 
 	mangaID := volume.Manga_.ID
-	found, err := store.GetChapters(mangaID, volume, &chapters)
+	cacheID := p.cacheKey(mangaID)
+	found, err := store.GetChapters(cacheID, volume, &chapters)
 	if err != nil {
 		return nil, err
 	}
@@ -28,7 +29,7 @@ func (p *plus) VolumeChapters(ctx context.Context, store mango.Store, volume man
 		return nil, err
 	}
 
-	err = store.SetChapters(mangaID, chapters)
+	err = store.SetChapters(cacheID, chapters)
 	if err != nil {
 		return nil, err
 	}

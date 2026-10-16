@@ -20,7 +20,7 @@ func (p *plus) SearchMangas(ctx context.Context, store mango.Store, query string
 	}
 
 	var mangas []mangadata.Manga
-	cacheID := fmt.Sprintf("%s-%s-%s", query, p.filter.Language, p.options.Quality)
+	cacheID := p.cacheKey(fmt.Sprintf("%s-%s-%s", query, p.filter.Language, p.options.Quality))
 
 	found, err := store.GetMangas(cacheID, query, &mangas)
 	if err != nil {
@@ -44,7 +44,7 @@ func (p *plus) SearchMangas(ctx context.Context, store mango.Store, query string
 
 // MangaByID gets the title by its number.
 func (p *plus) MangaByID(ctx context.Context, store mango.Store, id string) (mangadata.Manga, bool, error) {
-	cacheID := "mid:" + id
+	cacheID := p.cacheKey("mid:" + id)
 	var mangas []mangadata.Manga
 	if found, err := store.GetMangas(cacheID, cacheID, &mangas); err != nil {
 		return nil, false, err

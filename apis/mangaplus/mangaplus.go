@@ -36,6 +36,10 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 		Account:      true,
 		F: func(_ context.Context, log *mango.Logger) (mango.Functions, error) {
 			plusOptions := o.Options
+			// the website's api takes a browser's
+			if plusOptions.WebUserAgent == "" {
+				plusOptions.WebUserAgent = options.UserAgent
+			}
 			if plusOptions.HTTPClient == nil {
 				plusOptions.HTTPClient = options.HTTPClient
 			}
@@ -63,4 +67,12 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 			}, nil
 		},
 	}
+}
+
+// cacheKey: key, apart for the web api (it lists fewer chapters).
+func (p *plus) cacheKey(key string) string {
+	if p.client != nil && p.client.WebAPI() {
+		return key + "-web"
+	}
+	return key
 }
