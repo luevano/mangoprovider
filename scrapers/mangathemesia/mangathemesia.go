@@ -91,6 +91,10 @@ type Options struct {
 	// (keiyoushi's datePattern "MMMM d, yyyy"). Relative ones ("2 days ago") always parse.
 	DateLayouts []string
 
+	// SingleVolume: Optional, see scraper.Configuration: only for a site checked to have no
+	// volumes (the theme can group chapters by volume, flattened like keiyoushi does).
+	SingleVolume bool
+
 	// Selectors: Optional, what's different from keiyoushi's.
 	Selectors Selectors
 
@@ -167,6 +171,7 @@ func Config(o Options) *scraper.Configuration {
 		RateLimit:        o.RateLimit,
 		RateBurst:        o.RateBurst,
 		Fetch:            o.Fetch,
+		SingleVolume:     o.SingleVolume,
 		ReverseChapters:  true,
 		BaseURL:          o.BaseURL,
 		Headers:          o.Headers,

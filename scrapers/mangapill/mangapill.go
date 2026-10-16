@@ -106,13 +106,8 @@ func Config(_ *mango.Logger) *scraper.Configuration {
 			// the url returns 404 (in case it's needed)
 			ID: pathID,
 		},
-		VolumeExtractor: &scraper.VolumeExtractor{
-			// selector that points to only 1 element ("Chapters" header)
-			Selector: "body > div.container > div.border.border-border.rounded > div.p-3.border-b.border-border > div.flex.flex-col.md\\:flex-row.md\\:items-center.md\\:justify-between",
-			Number: func(selection *goquery.Selection) float32 {
-				return 1.0
-			},
-		},
+		// a flat chapter list on the manga page (checked 2026-10-16, One Piece too)
+		SingleVolume: true,
 		ChapterExtractor: &scraper.ChapterExtractor{
 			Selector: "div[data-filter-list] a",
 			Title: func(selection *goquery.Selection) string {

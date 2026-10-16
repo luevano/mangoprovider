@@ -110,12 +110,8 @@ func Config(log *mango.Logger) *scraper.Configuration {
 				return id
 			},
 		},
-		VolumeExtractor: &scraper.VolumeExtractor{
-			Selector: "body",
-			Number: func(selection *goquery.Selection) float32 {
-				return 1.0
-			},
-		},
+		// the chapter list has no volumes
+		SingleVolume: true,
 		ChapterExtractor: &scraper.ChapterExtractor{
 			Selector: `a[href*="/chapters/"]`,
 			Title: func(selection *goquery.Selection) string {

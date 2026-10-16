@@ -11,6 +11,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -930,4 +931,81 @@ func TestNewScraperNoRequest(t *testing.T) {
 // testOptions are mango.DefaultOptions.
 func testOptions() mango.Options {
 	return mango.DefaultOptions()
+}
+
+// SingleVolume reads the chapters from the volume's fetch of the manga page
+func TestSingleVolume(t *testing.T) {
+	var mu sync.Mutex
+	requests := map[string]int{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		requests[r.URL.Path]++
+		mu.Unlock()
+		w.Write([]byte(`<h1>A</h1><a class="chapter" href="/c/2">Chapter 2</a><a class="chapter" href="/c/1">Chapter 1</a>`))
+	}))
+	defer server.Close()
+
+	for _, tt := range []struct {
+		name         string
+		single       bool
+		chaptersURL  bool
+		mangaFetches int
+	}{
+		{"single volume", true, false, 1},
+		{"volume extractor", false, false, 2},
+		{"chapters elsewhere", true, true, 1},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			clear(requests)
+			config := &Configuration{
+				Name: "test", BaseURL: server.URL + "/", Parallelism: 1,
+				SingleVolume:    tt.single,
+				ReverseChapters: true,
+				MetadataExtractor: &MetadataExtractor{
+					IDCode:            "t",
+					Extract:           func(page *goquery.Selection, meta *mangadata.Metadata) { meta.EnglishTitle = page.Find("h1").Text() },
+					StartFromChapters: true,
+				},
+				ChapterExtractor: &ChapterExtractor{
+					Selector: "a.chapter",
+					Title:    func(s *goquery.Selection) string { return s.Text() },
+					URL:      func(s *goquery.Selection) string { return s.AttrOr("href", "") },
+					ID:       func(u string) string { return path.Base(u) },
+					Date: func(s *goquery.Selection) metadata.Date {
+						return metadata.Date{Year: 2010 + int(s.Text()[len(s.Text())-1]-'0'), Month: 1, Day: 1}
+					},
+				},
+			}
+			if !tt.single {
+				config.VolumeExtractor = &VolumeExtractor{Selector: "h1", Number: func(*goquery.Selection) float32 { return 1 }}
+			}
+			if tt.chaptersURL {
+				config.ChaptersURL = func(manga mango.Manga) string { return manga.URL + "/chapters" }
+			}
+			s, err := NewScraper(context.Background(), config, testOptions(), nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			ctx, store := context.Background(), mango.NewMemoryStore()
+			manga := &mango.Manga{ID: "a", URL: server.URL + "/manga/a", Title: "A"}
+			volumes, err := s.MangaVolumes(ctx, store, *manga)
+			if err != nil || len(volumes) != 1 || volumes[0].Info().Number != 1 {
+				t.Fatalf("volumes: %v, %v", volumes, err)
+			}
+			chapters, err := s.VolumeChapters(ctx, store, *volumes[0].(*mango.Volume))
+			if err != nil || len(chapters) != 2 || chapters[0].Info().Number != 1 || chapters[1].Info().Number != 2 {
+				t.Fatalf("chapters: %v, %v", chapters, err)
+			}
+			if got := requests["/manga/a"]; got != tt.mangaFetches {
+				t.Errorf("manga page fetched %d times, want %d", got, tt.mangaFetches)
+			}
+			if tt.chaptersURL && requests["/manga/a/chapters"] != 1 {
+				t.Errorf("chapters page fetched %d times", requests["/manga/a/chapters"])
+			}
+			volume := chapters[0].Volume().(*mango.Volume)
+			if got := volume.Manga_.Metadata().StartDate().Year; got != 2011 {
+				t.Errorf("start from chapters: %d", got)
+			}
+		})
+	}
 }

@@ -71,6 +71,11 @@ type Configuration struct {
 	MangaExtractor *MangaExtractor
 	// MetadataExtractor: Optional, the manga's metadata from its page (none without it).
 	MetadataExtractor *MetadataExtractor
+	// SingleVolume: The site has no volumes: every manga is one volume 1 (VolumeExtractor
+	// isn't used, can be nil). When the chapters are listed on the manga page (no ChaptersURL
+	// or ChaptersRequest), MangaVolumes reads them from its own fetch of the page and caches
+	// them for VolumeChapters, instead of a second request.
+	SingleVolume bool
 	// VolumeExtractor: Responsible for finding volume elements and extracting the data.
 	VolumeExtractor *VolumeExtractor
 	// ChapterExtractor: Responsible for finding chapter elements and extracting the data.

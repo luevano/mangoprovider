@@ -27,7 +27,17 @@ func (s *Scraper) MangaVolumes(ctx context.Context, store mango.Store, manga man
 	}
 	volumes = nil
 
-	err = s.scrape(rod.WithAction(ctx, s.config.VolumeExtractor.Action), manga.URL, manga.URL, func(p *page) error {
+	// with SingleVolume the page may list the chapters too, read them from this fetch
+	reuse := s.config.SingleVolume && s.chaptersOnMangaPage()
+	var action rod.Action
+	switch {
+	case reuse:
+		action = s.config.ChapterExtractor.Action
+	case !s.config.SingleVolume:
+		action = s.config.VolumeExtractor.Action
+	}
+	var chapters []mangadata.Chapter
+	err = s.scrape(rod.WithAction(ctx, action), manga.URL, manga.URL, func(p *page) error {
 		// where the manga moved (e.g. toonily's /webtoon/ to /serie/), for its chapters
 		manga.URL = p.url.String()
 		if s.config.MetadataExtractor != nil && needsMetadata(&manga) {
@@ -36,6 +46,14 @@ func (s *Scraper) MangaVolumes(ctx context.Context, store mango.Store, manga man
 			if err := s.cacheMetadata(store, &manga, meta); err != nil {
 				return err
 			}
+		}
+		if s.config.SingleVolume {
+			volume := &mango.Volume{Number: 1, Manga_: &manga}
+			volumes = append(volumes, volume)
+			if reuse {
+				chapters = s.parseChapters(p, *volume)
+			}
+			return nil
 		}
 		p.doc.Find(s.config.VolumeExtractor.Selector).Each(func(_ int, selection *goquery.Selection) {
 			volumes = append(volumes, &mango.Volume{
@@ -47,6 +65,11 @@ func (s *Scraper) MangaVolumes(ctx context.Context, store mango.Store, manga man
 	})
 	if err != nil {
 		return nil, err
+	}
+	if reuse {
+		if err := s.setChapters(store, &manga, chapters); err != nil {
+			return nil, err
+		}
 	}
 
 	sort.SliceStable(volumes, func(i, j int) bool {

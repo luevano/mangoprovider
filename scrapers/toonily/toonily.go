@@ -32,7 +32,9 @@ func Config(_ *mango.Logger) *scraper.Configuration {
 		// /webtoon/<slug>/ redirects here
 		MangaSubString: "serie",
 		ChapterMode:    madara.MangaAjax,
-		KeepNonManga:   true,
+		// webtoons, chapters only
+		SingleVolume: true,
+		KeepNonManga: true,
 		SearchQuery: func(query string) string {
 			return strings.TrimSpace(titleSpecialCharacters.ReplaceAllString(strings.ToLower(query), " "))
 		},

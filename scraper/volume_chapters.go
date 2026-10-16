@@ -17,10 +17,7 @@ import (
 func (s *Scraper) VolumeChapters(ctx context.Context, store mango.Store, volume mango.Volume) ([]mangadata.Chapter, error) {
 	var chapters []mangadata.Chapter
 
-	// need an identifiable string for the cache
-	cacheID := fmt.Sprintf("%s-chapters", volume.Manga_.URL)
-
-	found, err := store.GetChapters(cacheID, volume, &chapters)
+	found, err := store.GetChapters(chaptersKey(volume.Manga_), volume, &chapters)
 	if err != nil {
 		return nil, err
 	}
@@ -42,6 +39,19 @@ func (s *Scraper) VolumeChapters(ctx context.Context, store mango.Store, volume 
 		return nil, err
 	}
 
+	if err := s.setChapters(store, volume.Manga_, chapters); err != nil {
+		return nil, err
+	}
+	return chapters, nil
+}
+
+// chaptersKey: The cache key of the manga's chapters (needs an identifiable string).
+func chaptersKey(manga *mango.Manga) string {
+	return fmt.Sprintf("%s-chapters", manga.URL)
+}
+
+// setChapters: Puts the chapters, as parsed from the page, in order and caches them.
+func (s *Scraper) setChapters(store mango.Store, manga *mango.Manga, chapters []mangadata.Chapter) error {
 	if s.config.ReverseChapters {
 		slices.Reverse(chapters)
 	}
@@ -50,18 +60,18 @@ func (s *Scraper) VolumeChapters(ctx context.Context, store mango.Store, volume 
 	sort.SliceStable(chapters, func(i, j int) bool {
 		return chapters[i].Info().Number < chapters[j].Info().Number
 	})
-	s.startFromChapters(volume.Manga_, chapters)
+	s.startFromChapters(manga, chapters)
 
 	// could be a markup change on the site, try again next time
 	if len(chapters) == 0 {
-		return chapters, nil
+		return nil
 	}
-	err = store.SetChapters(cacheID, chapters)
-	if err != nil {
-		return nil, err
-	}
+	return store.SetChapters(chaptersKey(manga), chapters)
+}
 
-	return chapters, nil
+// chaptersOnMangaPage: The chapters are listed on the manga page.
+func (s *Scraper) chaptersOnMangaPage() bool {
+	return s.config.ChaptersRequest == nil && s.config.ChaptersURL == nil
 }
 
 // chaptersRequest: The request listing the manga's chapters, its page by default.
