@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cenkalti/backoff/v5"
+	"github.com/cenkalti/backoff/v7"
 	"github.com/luevano/libmangal/netutil"
 	mango "github.com/luevano/mangoprovider"
 )
@@ -55,21 +55,13 @@ func Retryable(status int) bool {
 	return status == http.StatusTooManyRequests || (status >= 500 && status != http.StatusNotImplemented)
 }
 
-// retryableError: The attempt answered a Retryable status, after is the Retry-After if any.
+// retryableError: The attempt answered a Retryable status.
 type retryableError struct {
 	status int
-	after  *backoff.RetryAfterError
 }
 
 func (e *retryableError) Error() string {
 	return fmt.Sprintf("%d %s", e.status, strings.ToLower(http.StatusText(e.status)))
-}
-
-func (e *retryableError) Unwrap() error {
-	if e.after == nil {
-		return nil
-	}
-	return e.after
 }
 
 // Retries: Requests answered with a Retryable status are tried again as r says, each wait
@@ -117,7 +109,7 @@ func Retries(r Retry, log *mango.Logger) Middleware {
 				last = resp
 				failed := &retryableError{status: resp.StatusCode}
 				if after := netutil.RetryAfter(resp.Header.Get("Retry-After")); after > 0 {
-					failed.after = &backoff.RetryAfterError{Duration: after}
+					return resp, backoff.RetryAfter(after, failed)
 				}
 				return resp, failed
 			},
@@ -125,19 +117,32 @@ func Retries(r Retry, log *mango.Logger) Middleware {
 				backoff.WithMaxTries(r.MaxTries),
 				backoff.WithMaxElapsedTime(r.MaxElapsed),
 				backoff.WithNotify(func(err error, wait time.Duration) {
+					// the status, without the RetryAfterError's own text (the wait is shown)
+					var failed *retryableError
+					if errors.As(err, &failed) {
+						err = failed
+					}
 					log.Status(ctx, "%s: %s, retry %d/%d in %s", mango.Host(req.URL.String()), err, tries, r.MaxTries-1, wait.Round(100*time.Millisecond))
 				}),
 			)
-			var failed *retryableError
+			retryErr := backoff.AsRetryError(err)
 			switch {
 			case err == nil:
 				return resp, nil
 			case errors.Is(err, errNotRetried):
 				return resp, nil
-			case errors.As(err, &failed) && last != nil:
-				return last, nil
+			case retryErr == nil:
+				return nil, err
+			case errors.Is(retryErr.Cause, backoff.ErrPermanent):
+				return nil, retryErr.LastErr
+			case errors.Is(retryErr.Cause, backoff.ErrExhausted), errors.Is(retryErr.Cause, backoff.ErrMaxElapsedTime):
+				if last != nil {
+					return last, nil
+				}
+				return nil, retryErr.LastErr
 			}
-			return nil, err
+			// the ctx ended
+			return nil, retryErr.Cause
 		})
 	}
 }

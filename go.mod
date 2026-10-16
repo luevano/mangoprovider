@@ -5,7 +5,7 @@ go 1.27.0
 require (
 	code.dny.dev/ssrf v0.3.0
 	github.com/PuerkitoBio/goquery v1.13.0
-	github.com/cenkalti/backoff/v5 v5.0.3
+	github.com/cenkalti/backoff/v7 v7.0.1
 	github.com/go-rod/rod v0.116.2
 	github.com/google/uuid v1.6.0
 	github.com/lithammer/fuzzysearch v1.1.8
