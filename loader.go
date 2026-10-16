@@ -46,11 +46,15 @@ func (l *Loader) Load(ctx context.Context) (libmangal.Provider, error) {
 		return nil, errors.Join(fmt.Errorf("load %s: %w", l.ProviderInfo.Name, shared(err)), store.Close())
 	}
 
+	client := l.Options.HTTPClient
+	if client == nil {
+		client = DefaultOptions().HTTPClient
+	}
 	return &Provider{
 		ProviderInfo: l.ProviderInfo,
 		Options:      l.Options,
 		F:            f,
-		client:       GuardClient(l.Options.HTTPClient, l.Options),
+		client:       client,
 		store:        store,
 		log:          log,
 	}, nil

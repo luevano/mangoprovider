@@ -3,7 +3,6 @@ module github.com/luevano/mangoprovider
 go 1.27.0
 
 require (
-	code.dny.dev/ssrf v0.3.0
 	github.com/PuerkitoBio/goquery v1.13.0
 	github.com/cenkalti/backoff/v7 v7.0.1
 	github.com/go-rod/rod v0.116.2

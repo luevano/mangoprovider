@@ -15,7 +15,6 @@ import (
 	"testing"
 	"time"
 
-	"code.dny.dev/ssrf"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/go-rod/rod/lib/launcher"
 	"github.com/luevano/libmangal/mangadata"
@@ -928,31 +927,7 @@ func TestNewScraperNoRequest(t *testing.T) {
 	}
 }
 
-// testOptions are mango.DefaultOptions that reach the local test servers.
+// testOptions are mango.DefaultOptions.
 func testOptions() mango.Options {
-	o := mango.DefaultOptions()
-	o.AllowPrivateAddresses = true
-	return o
-}
-
-// by default a site's urls can't reach loopback/LAN addresses
-func TestGuarded(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`<html><body><img src="1.png"></body></html>`))
-	}))
-	defer server.Close()
-
-	config := &Configuration{
-		Name:          "test",
-		BaseURL:       "https://site.test/",
-		Parallelism:   1,
-		PageExtractor: &PageExtractor{Selector: "img", URL: func(s *goquery.Selection) string { return s.AttrOr("src", "") }},
-	}
-	s, err := NewScraper(context.Background(), config, mango.DefaultOptions(), nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := s.ChapterPages(context.Background(), mango.Store{}, mango.Chapter{URL: server.URL + "/chapter"}); !errors.Is(err, ssrf.ErrProhibitedIP) {
-		t.Errorf("got %v, want the loopback address refused", err)
-	}
+	return mango.DefaultOptions()
 }

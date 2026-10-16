@@ -50,11 +50,9 @@ func New(t *testing.T, config *scraper.Configuration, files map[string]string) (
 	return s, config.BaseURL
 }
 
-// Options are mango.DefaultOptions that reach the local test servers.
+// Options are mango.DefaultOptions: they reach the local test servers.
 func Options() mango.Options {
-	o := mango.DefaultOptions()
-	o.AllowPrivateAddresses = true
-	return o
+	return mango.DefaultOptions()
 }
 
 // match: The file for the request, the key with the most matching params.

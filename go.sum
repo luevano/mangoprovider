@@ -1,5 +1,3 @@
-code.dny.dev/ssrf v0.3.0 h1:QDbeKauc3vR5/w9TwlhVYAQwK15cECL7sHkCUUT55ms=
-code.dny.dev/ssrf v0.3.0/go.mod h1:5thKUcQNqSxzz5TVBRkvHZOGmfRM3vI+WU2GGx9xUbw=
 github.com/PuerkitoBio/goquery v1.13.0 h1:mqHbjD7Jmnul4DTR24LKTjo1uUmHUh072kteGV+xpFM=
 github.com/PuerkitoBio/goquery v1.13.0/go.mod h1:Hip5mdBL8K2wEGKJdr27sRaNwIdDajmCwB/ExUPwW+g=
 github.com/agnivade/levenshtein v1.2.1 h1:EHBY3UOn1gwdy/VbFwgo4cxecRznFk7fKWN1KOX7eoM=

@@ -106,7 +106,8 @@ func DefaultMangaPlusCreatorsOptions() MangaPlusCreatorsOptions {
 
 // Options are the general mangoprovider options.
 type Options struct {
-	// HTTPClient HTTP client to use for all requests.
+	// HTTPClient HTTP client to use for all requests. It's used as is: keeping a site's urls
+	// off private addresses is the app's job (mangal guards it).
 	HTTPClient *http.Client
 
 	// UserAgent to use for all HTTP requests.
@@ -126,10 +127,6 @@ type Options struct {
 
 	// Mirrors: the preferred website (its Website or one of its Mirrors) by provider id.
 	Mirrors map[string]string
-
-	// AllowPrivateAddresses lets the scrapers and page images reach loopback, LAN and other
-	// non-public addresses. Off, a site's urls can't reach them (see GuardClient).
-	AllowPrivateAddresses bool
 
 	// MangaDex options
 	MangaDex MangaDexOptions
