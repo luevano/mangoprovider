@@ -80,6 +80,7 @@ func loader(info libmangal.ProviderInfo, options mango.Options) libmangal.Provid
 			client, err := fetch.NewClient(options.HTTPClient, options.Headless, log, fetch.Config{
 				Strategy: fetch.HeadlessFallback,
 				Limiter:  rate.NewLimiter(rate.Every(500*time.Millisecond), 2),
+				Retry:    &fetch.Retry{},
 			})
 			if err != nil {
 				return mango.Functions{}, err

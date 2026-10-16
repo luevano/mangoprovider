@@ -2,9 +2,11 @@ package mangaplus
 
 import (
 	"context"
+
 	"github.com/luevano/libmangal"
 	"github.com/luevano/mangoplus"
 	mango "github.com/luevano/mangoprovider"
+	"github.com/luevano/mangoprovider/fetch"
 )
 
 const website = "https://mangaplus.shueisha.co.jp/"
@@ -37,6 +39,8 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 			if plusOptions.HTTPClient == nil {
 				plusOptions.HTTPClient = options.HTTPClient
 			}
+			// 5xx only: retrying a 429 within seconds can't beat the lockout (see mangoplus.ErrRateLimited)
+			plusOptions.HTTPClient = fetch.RetryClient(plusOptions.HTTPClient, fetch.Retry{Statuses: fetch.ServerErrors}, nil, log)
 			client, err := mangoplus.NewPlusClient(plusOptions)
 			if err != nil {
 				return mango.Functions{}, err

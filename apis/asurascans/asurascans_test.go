@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -104,6 +105,7 @@ func TestChapters(t *testing.T) {
 func TestThrottle(t *testing.T) {
 	a := newTest(t)
 	a.limiter = rate.NewLimiter(rate.Every(100*time.Millisecond), 2)
+	a.client = newClient(a.client, a.limiter, nil)
 	start := time.Now()
 	for range 4 {
 		if _, err := a.search(context.Background(), "solo"); err != nil {
@@ -145,5 +147,23 @@ func TestGetRateLimited(t *testing.T) {
 	var rateLimit *mango.RateLimitError
 	if !errors.As(err, &rateLimit) || rateLimit.RetryAfter != 3*time.Second {
 		t.Errorf("wanted a rate limit error, got %v", err)
+	}
+}
+
+func TestClientRetries(t *testing.T) {
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if hits.Add(1) == 1 {
+			w.Header().Set("Retry-After", "0")
+			w.WriteHeader(http.StatusTooManyRequests)
+			return
+		}
+		w.Write([]byte(`{"ok":true}`))
+	}))
+	defer server.Close()
+	a := &asura{client: newClient(server.Client(), rate.NewLimiter(rate.Inf, 0), nil), base: server.URL + "/"}
+	var v struct{ OK bool }
+	if err := a.get(context.Background(), "x", &v); err != nil || !v.OK || hits.Load() != 2 {
+		t.Errorf("got %v %v after %d requests", v, err, hits.Load())
 	}
 }

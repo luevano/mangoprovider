@@ -7,6 +7,7 @@ import (
 	"github.com/luevano/libmangal"
 	"github.com/luevano/mangodex"
 	mango "github.com/luevano/mangoprovider"
+	"github.com/luevano/mangoprovider/fetch"
 )
 
 const website = "https://mangadex.org/"
@@ -43,6 +44,9 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 			if dexOptions.HTTPClient == nil {
 				dexOptions.HTTPClient = options.HTTPClient
 			}
+			// 5xx only: a 429 goes up with its wait, hitting it again gets the IP banned
+			// (api.mangadex.org/docs/2-limitations)
+			dexOptions.HTTPClient = fetch.RetryClient(dexOptions.HTTPClient, fetch.Retry{Statuses: fetch.ServerErrors}, nil, log)
 			client, err := mangodex.NewDexClient(dexOptions)
 			if err != nil {
 				return mango.Functions{}, err

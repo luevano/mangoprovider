@@ -12,6 +12,7 @@ import (
 
 	"github.com/luevano/libmangal"
 	mango "github.com/luevano/mangoprovider"
+	"github.com/luevano/mangoprovider/fetch"
 	"golang.org/x/time/rate"
 )
 
@@ -31,6 +32,7 @@ var providerInfo = libmangal.ProviderInfo{
 var nextData = regexp.MustCompile(`(?s)<script id="__NEXT_DATA__" type="application/json">(.*?)</script>`)
 
 type flame struct {
+	// client: waits for the limiter, retried on 429/5xx (see newClient)
 	client    *http.Client
 	userAgent string
 	// limiter: pages and page images, across loads (see newLimiter)
@@ -40,16 +42,17 @@ type flame struct {
 }
 
 func Loader(options mango.Options) libmangal.ProviderLoader {
-	f := flame{
-		client:    options.HTTPClient,
-		userAgent: options.UserAgent,
-		limiter:   newLimiter(),
-		base:      website,
-	}
+	limiter := newLimiter()
 	return &mango.Loader{
 		ProviderInfo: providerInfo,
 		Options:      options,
-		F: func(context.Context, *mango.Logger) (mango.Functions, error) {
+		F: func(_ context.Context, log *mango.Logger) (mango.Functions, error) {
+			f := &flame{
+				client:    newClient(options.HTTPClient, limiter, log),
+				userAgent: options.UserAgent,
+				limiter:   limiter,
+				base:      website,
+			}
 			return mango.Functions{
 				SearchMangas:   f.SearchMangas,
 				MangaByID:      f.MangaByID,
@@ -68,6 +71,11 @@ func newLimiter() *rate.Limiter {
 	return rate.NewLimiter(rate.Every(time.Second), 2)
 }
 
+// newClient: base retrying 429/5xx like the scrapers, every try waiting for limiter.
+func newClient(base *http.Client, limiter *rate.Limiter, log *mango.Logger) *http.Client {
+	return fetch.RetryClient(base, fetch.Retry{}, limiter, log)
+}
+
 // GetPageImage is the generic one, throttled.
 func (f *flame) GetPageImage(ctx context.Context, client *http.Client, page mango.Page) ([]byte, error) {
 	if err := f.limiter.Wait(ctx); err != nil {
@@ -78,7 +86,7 @@ func (f *flame) GetPageImage(ctx context.Context, client *http.Client, page mang
 
 // page gets a page of the site and decodes the props it embeds into v.
 func (f *flame) page(ctx context.Context, path string, v any) error {
-	body, resp, err := mango.Fetch(ctx, f.client, f.limiter, f.userAgent, f.base+path)
+	body, resp, err := mango.Fetch(ctx, f.client, nil, f.userAgent, f.base+path)
 	if err != nil {
 		return err
 	}

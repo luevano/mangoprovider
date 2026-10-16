@@ -12,6 +12,7 @@ import (
 	"github.com/cenkalti/backoff/v7"
 	"github.com/luevano/libmangal/netutil"
 	mango "github.com/luevano/mangoprovider"
+	"golang.org/x/time/rate"
 )
 
 // Retry: How a request that failed for a while (429, 5xx) is tried again: exponential backoff
@@ -25,6 +26,9 @@ type Retry struct {
 	// InitialInterval: The first wait when the site doesn't say, then doubled up to MaxInterval.
 	InitialInterval time.Duration
 	MaxInterval     time.Duration
+	// Statuses: Optional, which statuses are tried again, Retryable by default. APIs whose 429
+	// mustn't be retried soon (a ban or lockout for repeating it) pass ServerErrors.
+	Statuses func(status int) bool
 }
 
 // DefaultRetry: Small enough not to hold a search for long: 3 tries within 30s, waiting ~1s
@@ -47,12 +51,39 @@ func (r Retry) withDefaults() Retry {
 	if r.MaxInterval <= 0 {
 		r.MaxInterval = d.MaxInterval
 	}
+	if r.Statuses == nil {
+		r.Statuses = Retryable
+	}
 	return r
 }
 
 // Retryable: A status worth trying again soon: 429 and 5xx, except 501 (not implemented).
 func Retryable(status int) bool {
 	return status == http.StatusTooManyRequests || (status >= 500 && status != http.StatusNotImplemented)
+}
+
+// ServerErrors: Retryable without the 429.
+func ServerErrors(status int) bool {
+	return status != http.StatusTooManyRequests && Retryable(status)
+}
+
+// RetryClient: A copy of base (nil is mango.DefaultOptions' client) whose requests are retried
+// as r says, every try waiting for limiter if set. For API wrappers that take an *http.Client
+// (a limiter of their own only covers the first try).
+func RetryClient(base *http.Client, r Retry, limiter *rate.Limiter, log *mango.Logger) *http.Client {
+	if base == nil {
+		base = mango.DefaultOptions().HTTPClient
+	}
+	client := *base
+	transport := client.Transport
+	if transport == nil {
+		transport = http.DefaultTransport
+	}
+	if limiter != nil {
+		transport = RateLimit(limiter)(transport)
+	}
+	client.Transport = Retries(r, log)(transport)
+	return &client
 }
 
 // retryableError: The attempt answered a Retryable status.
@@ -93,7 +124,7 @@ func Retries(r Retry, log *mango.Logger) Middleware {
 				if err != nil {
 					return nil, backoff.Permanent(err)
 				}
-				if !Retryable(resp.StatusCode) {
+				if !r.Statuses(resp.StatusCode) {
 					return resp, nil
 				}
 				if ok, err := challenged(resp); err != nil || ok {

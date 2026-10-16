@@ -171,3 +171,30 @@ func TestClientRetry(t *testing.T) {
 		t.Errorf("got %d %v after %d requests", status, err, len(*bodies))
 	}
 }
+
+func TestRetriesServerErrors(t *testing.T) {
+	server, bodies := flaky(t, "", 429, 503)
+	r := fastRetry()
+	r.Statuses = ServerErrors
+	status, _, err := do(t, context.Background(), retryClient(r, nil), http.MethodGet, server.URL, "")
+	if err != nil || status != 429 || len(*bodies) != 1 {
+		t.Errorf("429: got %d %v after %d requests", status, err, len(*bodies))
+	}
+	status, _, err = do(t, context.Background(), retryClient(r, nil), http.MethodGet, server.URL, "")
+	if err != nil || status != 200 || len(*bodies) != 3 {
+		t.Errorf("503: got %d %v after %d requests", status, err, len(*bodies))
+	}
+}
+
+func TestRetryClient(t *testing.T) {
+	server, bodies := flaky(t, "", 502)
+	base := &http.Client{Timeout: time.Minute}
+	client := RetryClient(base, fastRetry(), nil, nil)
+	if base.Transport != nil || client.Timeout != time.Minute {
+		t.Fatal("base changed or not copied")
+	}
+	status, _, err := do(t, context.Background(), client, http.MethodGet, server.URL, "")
+	if err != nil || status != 200 || len(*bodies) != 2 {
+		t.Errorf("got %d %v after %d requests", status, err, len(*bodies))
+	}
+}

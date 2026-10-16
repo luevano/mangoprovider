@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -105,6 +106,7 @@ func TestPageStatusErrors(t *testing.T) {
 func TestThrottle(t *testing.T) {
 	f := newTest(t)
 	f.limiter = rate.NewLimiter(rate.Every(100*time.Millisecond), 2)
+	f.client = newClient(f.client, f.limiter, nil)
 	start := time.Now()
 	for range 4 {
 		if _, _, err := f.MangaByID(context.Background(), mango.Store{}, "2"); err != nil {
@@ -163,5 +165,22 @@ func TestPageImageThrottled(t *testing.T) {
 	}
 	if took := time.Since(start); took < 200*time.Millisecond {
 		t.Errorf("3 images took %v, want at least 200ms", took)
+	}
+}
+
+func TestClientRetries(t *testing.T) {
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if hits.Add(1) == 1 {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
+		fmt.Fprint(w, `<script id="__NEXT_DATA__" type="application/json">{"props":{"pageProps":{"ok":true}}}</script>`)
+	}))
+	defer server.Close()
+	f := &flame{client: newClient(server.Client(), rate.NewLimiter(rate.Inf, 0), nil), base: server.URL + "/"}
+	var v struct{ OK bool }
+	if err := f.page(context.Background(), "x", &v); err != nil || !v.OK || hits.Load() != 2 {
+		t.Errorf("got %v %v after %d requests", v, err, hits.Load())
 	}
 }

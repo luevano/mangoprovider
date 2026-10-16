@@ -11,6 +11,7 @@ import (
 
 	"github.com/luevano/libmangal"
 	mango "github.com/luevano/mangoprovider"
+	"github.com/luevano/mangoprovider/fetch"
 	"golang.org/x/time/rate"
 )
 
@@ -30,6 +31,7 @@ var providerInfo = libmangal.ProviderInfo{
 }
 
 type asura struct {
+	// client: waits for the limiter, retried on 429/5xx (see newClient)
 	client    *http.Client
 	userAgent string
 	filter    mango.FilterOptions
@@ -49,7 +51,7 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 		Options:      options,
 		F: func(_ context.Context, log *mango.Logger) (mango.Functions, error) {
 			a := &asura{
-				client:    options.HTTPClient,
+				client:    newClient(options.HTTPClient, limiter, log),
 				userAgent: options.UserAgent,
 				filter:    options.Filter,
 				limiter:   limiter,
@@ -76,9 +78,14 @@ func (a *asura) GetPageImage(ctx context.Context, client *http.Client, page mang
 	return mango.GenericGetPageImage(ctx, client, page)
 }
 
+// newClient: base retrying 429/5xx like the scrapers, every try waiting for limiter.
+func newClient(base *http.Client, limiter *rate.Limiter, log *mango.Logger) *http.Client {
+	return fetch.RetryClient(base, fetch.Retry{}, limiter, log)
+}
+
 // get decodes the api response at path into v.
 func (a *asura) get(ctx context.Context, path string, v any) error {
-	body, resp, err := mango.Fetch(ctx, a.client, a.limiter, a.userAgent, a.base+path)
+	body, resp, err := mango.Fetch(ctx, a.client, nil, a.userAgent, a.base+path)
 	if err != nil {
 		return err
 	}
