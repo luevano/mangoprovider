@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"slices"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -302,5 +304,37 @@ func TestImagesThrottled(t *testing.T) {
 	}
 	if took := time.Since(start); took < 200*time.Millisecond {
 		t.Errorf("3 images took %v, want at least 200ms", took)
+	}
+}
+
+func TestPageImageHostSlots(t *testing.T) {
+	var mu sync.Mutex
+	inFlight, peak := 0, 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		inFlight++
+		peak = max(peak, inFlight)
+		mu.Unlock()
+		time.Sleep(50 * time.Millisecond)
+		mu.Lock()
+		inFlight--
+		mu.Unlock()
+		w.Write([]byte("image"))
+	}))
+	t.Cleanup(server.Close)
+
+	m := newTest(t, false, nil)
+	m.info = MangakakalotInfo
+	var wg sync.WaitGroup
+	for i := range 8 {
+		wg.Go(func() {
+			if _, err := m.GetPageImage(context.Background(), http.DefaultClient, mango.Page{URL: fmt.Sprintf("%s/%d.webp", server.URL, i)}); err != nil {
+				t.Error(err)
+			}
+		})
+	}
+	wg.Wait()
+	if peak != hostImageSlots {
+		t.Errorf("%d images at once, want %d", peak, hostImageSlots)
 	}
 }

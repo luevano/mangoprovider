@@ -6,9 +6,31 @@ import (
 	"net/http"
 	"net/url"
 	"slices"
+	"sync"
 
 	mango "github.com/luevano/mangoprovider"
+	"golang.org/x/sync/semaphore"
 )
+
+// hostImageSlots: Mangakakalot's images, 3 at a time per host, keiyoushi's Mangakakalot.kt
+// imageHeavyDispatcher (maxRequestsPerHost = 3, src/en/mangakakalot)
+const hostImageSlots = 3
+
+var (
+	hostSlotsMu sync.Mutex
+	hostSlots   = map[string]*semaphore.Weighted{}
+)
+
+func hostSlot(host string) *semaphore.Weighted {
+	hostSlotsMu.Lock()
+	defer hostSlotsMu.Unlock()
+	slot, ok := hostSlots[host]
+	if !ok {
+		slot = semaphore.NewWeighted(hostImageSlots)
+		hostSlots[host] = slot
+	}
+	return slot
+}
 
 // GetPageImage tries the image on each cdn the chapter lists, starting with the one that
 // served the last image (like keiyoushi's useAltCdnInterceptor).
@@ -22,7 +44,7 @@ func (m *mangabox) GetPageImage(ctx context.Context, client *http.Client, page m
 	urls := m.cdnOrder(append([]string{page.URL}, page.Fallbacks...))
 	for i, u := range urls {
 		page.URL = u
-		image, err := mango.GenericGetPageImage(ctx, client, page)
+		image, err := m.getImage(ctx, client, page)
 		if err == nil {
 			m.setCDN(origin(u))
 			return image, nil
@@ -36,6 +58,18 @@ func (m *mangabox) GetPageImage(ctx context.Context, client *http.Client, page m
 		errs = append(errs, err)
 	}
 	return nil, errors.Join(errs...)
+}
+
+func (m *mangabox) getImage(ctx context.Context, client *http.Client, page mango.Page) ([]byte, error) {
+	if m.info.ID != MangakakalotInfo.ID {
+		return mango.GenericGetPageImage(ctx, client, page)
+	}
+	slot := hostSlot(mango.Host(page.URL))
+	if err := slot.Acquire(ctx, 1); err != nil {
+		return nil, err
+	}
+	defer slot.Release(1)
+	return mango.GenericGetPageImage(ctx, client, page)
 }
 
 // cdnOrder moves the url on the cdn that worked last to the front.
