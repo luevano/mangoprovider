@@ -23,7 +23,7 @@ require (
 require (
 	github.com/agnivade/levenshtein v1.2.1 // indirect
 	github.com/andybalholm/cascadia v1.3.5 // indirect
-	github.com/bits-and-blooms/bitset v1.20.0 // indirect
+	github.com/bits-and-blooms/bitset v1.26.0 // indirect
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
 	github.com/hhrutter/tiff v1.0.7 // indirect
 	github.com/mattn/go-runewidth v0.0.31 // indirect
@@ -32,9 +32,9 @@ require (
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966 // indirect
 	github.com/spf13/afero v1.15.0 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
-	github.com/ysmood/fetchup v0.2.3 // indirect
+	github.com/ysmood/fetchup v0.3.0 // indirect
 	github.com/ysmood/goob v0.4.0 // indirect
-	github.com/ysmood/got v0.40.0 // indirect
+	github.com/ysmood/got v0.41.0 // indirect
 	github.com/ysmood/gson v0.7.3 // indirect
 	github.com/ysmood/leakless v0.9.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
