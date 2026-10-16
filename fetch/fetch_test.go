@@ -357,3 +357,25 @@ func TestOwnJar(t *testing.T) {
 		t.Error("wanted a jar on the copy only, shared with Direct")
 	}
 }
+
+func TestHeadlessDebug(t *testing.T) {
+	var lines []string
+	browser := &fakeBrowser{f: func(r *http.Request) (*http.Response, error) { return page(r, 200, "<html></html>"), nil }}
+	c, err := NewClient(nil, mango.HeadlessOptions{}, nil, Config{
+		Strategy:   Headless,
+		NewBrowser: func() Browser { return browser },
+		Debug:      func(format string, a ...any) { lines = append(lines, fmt.Sprintf(format, a...)) },
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := get(t, c, "http://example.com/page?token=x"); err != nil {
+		t.Fatal(err)
+	}
+	if len(lines) != 1 || !strings.HasPrefix(lines[0], "headless GET http://example.com/page?token=REDACTED 200 ") {
+		t.Errorf("got %q", lines)
+	}
+	if err := c.Close(); err != nil || !browser.closed {
+		t.Errorf("close: %v, browser closed %t", err, browser.closed)
+	}
+}

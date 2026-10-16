@@ -1,9 +1,12 @@
 package mangoprovider
 
 import (
+	"context"
+	"fmt"
 	"slices"
 	"testing"
 
+	"github.com/luevano/libmangal"
 	"github.com/luevano/libmangal/mangadata"
 	"github.com/philippgille/gokv"
 	"github.com/philippgille/gokv/syncmap"
@@ -42,5 +45,33 @@ func TestBucketNames(t *testing.T) {
 	want := []string{"mango-mangas", "mango-volumes", "mango-chapters", "mango-mirrors"}
 	if !slices.Equal(opened, want) {
 		t.Errorf("opened %v, want %v", opened, want)
+	}
+}
+
+// cache hits go to Options.Debug, prefixed with the provider id
+func TestStoreDebug(t *testing.T) {
+	var lines []string
+	options := DefaultOptions()
+	options.Debug = func(format string, a ...any) { lines = append(lines, fmt.Sprintf(format, a...)) }
+	loader := &Loader{
+		ProviderInfo: libmangal.ProviderInfo{ID: "mango-test", Name: "Test", Version: "0.1.0"},
+		Options:      options,
+		F:            func(context.Context, *Logger) (Functions, error) { return Functions{}, nil },
+	}
+	p, err := loader.Load(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer p.Close()
+	store := p.(*Provider).store
+	var mangas []mangadata.Manga
+	if found, _ := store.GetMangas("q", "q", &mangas); found || len(lines) != 0 {
+		t.Fatalf("miss: %t, %v", found, lines)
+	}
+	if err := store.SetMangas("q", []mangadata.Manga{&Manga{ID: "a"}}); err != nil {
+		t.Fatal(err)
+	}
+	if found, _ := store.GetMangas("q", "q", &mangas); !found || !slices.Equal(lines, []string{"mango-test: mangas q cached"}) {
+		t.Errorf("hit: %t, %v", found, lines)
 	}
 }

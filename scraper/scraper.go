@@ -50,6 +50,7 @@ func NewScraper(ctx context.Context, config *Configuration, options mango.Option
 		Limiter:     rate.NewLimiter(limit, burst),
 		Middlewares: config.Middlewares,
 		Retry:       &retry,
+		Debug:       options.Debug,
 	})
 	if err != nil {
 		return nil, err

@@ -44,6 +44,15 @@ func init() {
 type Store struct {
 	mangas, volumes, chapters, mirrors gokv.Store
 	log                                *Logger
+	// debug: Optional, see Options.Debug
+	debug func(format string, a ...any)
+}
+
+// hit: A cache hit for Options.Debug.
+func (s Store) hit(bucket, key string) {
+	if s.debug != nil {
+		s.debug("%s %s cached", bucket, key)
+	}
 }
 
 func openStore(open func(bucketName string) (gokv.Store, error), log *Logger) (Store, error) {
@@ -117,6 +126,7 @@ func (s Store) GetMangas(cacheID string, query string, mangas *[]mangadata.Manga
 	}
 	if found {
 		s.log.Log("cache: found mangas for query %q", query)
+		s.hit("mangas", cacheID)
 		return true, nil
 	}
 	return false, nil
@@ -140,6 +150,7 @@ func (s Store) GetVolumes(cacheID string, manga Manga, volumes *[]mangadata.Volu
 	}
 	if found {
 		s.log.Log("cache: found volumes for manga %q", manga.String())
+		s.hit("volumes", cacheID)
 		// Need to re-set the manga, as the read data will point to a different address
 		var updatedVolumes []mangadata.Volume
 		for _, v := range foundVolumes {
@@ -175,6 +186,7 @@ func (s Store) GetChapters(cacheID string, volume Volume, chapters *[]mangadata.
 	}
 	if found {
 		s.log.Log("cache: found chapters for volume %s", volume.String())
+		s.hit("chapters", cacheID)
 		// Need to re-set the volume, as the read data will point to a different address
 		var updatedChapters []mangadata.Chapter
 		for _, c := range foundChapters {

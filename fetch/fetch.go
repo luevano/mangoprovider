@@ -5,9 +5,11 @@ package fetch
 
 import (
 	"errors"
+	"io"
 	"net/http"
 	"net/http/cookiejar"
 
+	"github.com/luevano/libmangal/netutil"
 	mango "github.com/luevano/mangoprovider"
 	"github.com/luevano/mangoprovider/scraper/headless/rod"
 	"golang.org/x/net/publicsuffix"
@@ -61,6 +63,8 @@ type Config struct {
 	// Retry: Optional, transient failures (429, 5xx) are tried again (see Retries), each try
 	// waiting for the limiter.
 	Retry *Retry
+	// Debug: Optional, logs the headless browser's page loads (mango.Options.Debug).
+	Debug func(format string, a ...any)
 }
 
 // Client is a site's http client, Close it with the provider.
@@ -93,6 +97,10 @@ func NewClient(base *http.Client, headless mango.HeadlessOptions, log *mango.Log
 	newBrowser := config.NewBrowser
 	if newBrowser == nil {
 		newBrowser = func() Browser { return rod.NewTransport(config.Headless, log) }
+	}
+	if debug := config.Debug; debug != nil {
+		plain := newBrowser
+		newBrowser = func() Browser { return loggedBrowser(plain(), debug) }
 	}
 
 	c := &Client{direct: &direct}
@@ -138,6 +146,15 @@ func (c *Client) Close() error {
 		errs = append(errs, close())
 	}
 	return errors.Join(errs...)
+}
+
+// loggedBrowser: b logging each page load like netutil.LoggingTransport, "headless" first.
+func loggedBrowser(b Browser, debug func(format string, a ...any)) Browser {
+	logf := func(format string, a ...any) { debug("headless "+format, a...) }
+	return struct {
+		http.RoundTripper
+		io.Closer
+	}{netutil.NewLoggingTransport(b, logf, nil), b}
 }
 
 // RateLimit: Every request waits for l (or its context).

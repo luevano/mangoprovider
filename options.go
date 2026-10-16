@@ -136,6 +136,10 @@ type Options struct {
 
 	// MangaPlusCreators options.
 	MangaPlusCreators MangaPlusCreatorsOptions
+
+	// Debug: Optional, logs what answers without a request through HTTPClient: cache hits and
+	// headless browser page loads (e.g. the app's --debug request log).
+	Debug func(format string, a ...any)
 }
 
 func DefaultOptions() Options {

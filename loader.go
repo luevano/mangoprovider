@@ -37,6 +37,10 @@ func (l *Loader) Load(ctx context.Context) (libmangal.Provider, error) {
 	store, err := openStore(func(bucketName string) (gokv.Store, error) {
 		return l.Options.CacheStore(l.ProviderInfo.ID, bucketName)
 	}, log)
+	if debug := l.Options.Debug; debug != nil {
+		id := l.ProviderInfo.ID
+		store.debug = func(format string, a ...any) { debug(id+": "+format, a...) }
+	}
 	if err != nil {
 		return nil, fmt.Errorf("load %s: %w", l.ProviderInfo.Name, err)
 	}
