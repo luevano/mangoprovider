@@ -8,9 +8,9 @@ require (
 	github.com/go-rod/rod v0.116.2
 	github.com/google/uuid v1.6.0
 	github.com/lithammer/fuzzysearch v1.1.8
-	github.com/luevano/libmangal v0.31.0
-	github.com/luevano/mangodex v0.5.2
-	github.com/luevano/mangoplus v0.7.4
+	github.com/luevano/libmangal v0.32.0
+	github.com/luevano/mangodex v0.5.3
+	github.com/luevano/mangoplus v0.7.5
 	github.com/nlnwa/whatwg-url v0.6.2
 	github.com/philippgille/gokv v0.7.0
 	github.com/philippgille/gokv/encoding v0.7.0
