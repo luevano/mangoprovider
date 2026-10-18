@@ -18,6 +18,10 @@ func (d *dex) ChapterPages(ctx context.Context, store mango.Store, chapter mango
 	}
 	// Required for d.GetPageImage
 	chapter.AtHome = atHome
+	// a fresh server, the chapter can be refreshed again
+	d.atHomeMu.Lock()
+	delete(d.atHomeRefreshed, chapter.ID)
+	d.atHomeMu.Unlock()
 
 	filenames := atHome.Chapter.Data
 	if d.options.DataSaver {

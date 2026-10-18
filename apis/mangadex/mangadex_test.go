@@ -280,3 +280,20 @@ func TestChaptersPagesCapped(t *testing.T) {
 		t.Errorf("wanted 5 pages up to offset 400, got %d, last offset %s", got, query.Get("offset"))
 	}
 }
+
+func TestAtHomeRefreshedForgotten(t *testing.T) {
+	fake := newFakeDex()
+	options := mangodex.DefaultOptions()
+	options.HTTPClient = &http.Client{Transport: fake}
+	client, err := mangodex.NewDexClient(options)
+	if err != nil {
+		t.Fatal(err)
+	}
+	d := &dex{client: client, atHomeRefreshed: map[string]*mangodex.AtHomeServer{"c": nil}}
+	if _, err := d.ChapterPages(context.Background(), mango.Store{}, mango.Chapter{ID: "c"}); err != nil {
+		t.Fatal(err)
+	}
+	if len(d.atHomeRefreshed) != 0 {
+		t.Errorf("wanted the chapter forgotten, got %v", d.atHomeRefreshed)
+	}
+}
