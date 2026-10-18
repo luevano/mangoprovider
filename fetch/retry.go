@@ -149,8 +149,7 @@ func Retries(r Retry, log *mango.Logger) Middleware {
 				backoff.WithMaxElapsedTime(r.MaxElapsed),
 				backoff.WithNotify(func(err error, wait time.Duration) {
 					// the status, without the RetryAfterError's own text (the wait is shown)
-					var failed *retryableError
-					if errors.As(err, &failed) {
+					if failed, ok := errors.AsType[*retryableError](err); ok {
 						err = failed
 					}
 					log.Status(ctx, "%s: %s, retry %d/%d in %s", mango.Host(req.URL.String()), err, tries, r.MaxTries-1, wait.Round(100*time.Millisecond))

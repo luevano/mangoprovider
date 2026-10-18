@@ -105,8 +105,7 @@ func Host(rawURL string) string {
 // Reason is a short form of a request error for a status line: the network error of a failed
 // request, or the message without its "GET <url>: " and "site down: ".
 func Reason(err error) string {
-	var urlErr *url.Error
-	if errors.As(err, &urlErr) {
+	if urlErr, ok := errors.AsType[*url.Error](err); ok {
 		return urlErr.Err.Error()
 	}
 	msg := err.Error()

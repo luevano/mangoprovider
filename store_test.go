@@ -6,7 +6,6 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/luevano/libmangal"
 	"github.com/luevano/libmangal/mangadata"
 	"github.com/philippgille/gokv"
 	"github.com/philippgille/gokv/syncmap"
@@ -54,9 +53,9 @@ func TestStoreDebug(t *testing.T) {
 	options := DefaultOptions()
 	options.Debug = func(format string, a ...any) { lines = append(lines, fmt.Sprintf(format, a...)) }
 	loader := &Loader{
-		ProviderInfo: libmangal.ProviderInfo{ID: "mango-test", Name: "Test", Version: "0.1.0"},
-		Options:      options,
-		F:            func(context.Context, *Logger) (Functions, error) { return Functions{}, nil },
+		ID: "mango-test", Name: "Test", Version: "0.1.0",
+		Options: options,
+		F:       func(context.Context, *Logger) (Functions, error) { return Functions{}, nil },
 	}
 	p, err := loader.Load(context.Background())
 	if err != nil {

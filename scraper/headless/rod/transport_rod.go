@@ -260,7 +260,7 @@ func (t *TransportRod) RoundTrip(r *http.Request) (*http.Response, error) {
 	case doc := <-responses:
 		resp.StatusCode = doc.Status
 		for k, v := range doc.Headers {
-			for _, value := range strings.Split(v.Str(), "\n") {
+			for value := range strings.SplitSeq(v.Str(), "\n") {
 				resp.Header.Add(k, value)
 			}
 		}

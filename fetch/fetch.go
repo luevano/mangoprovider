@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/cookiejar"
+	"slices"
 
 	"github.com/luevano/libmangal/netutil"
 	mango "github.com/luevano/mangoprovider"
@@ -123,8 +124,8 @@ func NewClient(base *http.Client, headless mango.HeadlessOptions, log *mango.Log
 	if config.Retry != nil {
 		transport = Retries(*config.Retry, log)(transport)
 	}
-	for i := len(config.Middlewares) - 1; i >= 0; i-- {
-		transport = config.Middlewares[i](transport)
+	for _, mw := range slices.Backward(config.Middlewares) {
+		transport = mw(transport)
 	}
 
 	client := direct

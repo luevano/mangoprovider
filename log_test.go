@@ -48,14 +48,12 @@ func TestLoggerConcurrent(t *testing.T) {
 	out, msgs := newTestLogger()
 	var wg sync.WaitGroup
 	for i := range 20 {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			if i == 10 {
 				log.SetLogger(out)
 			}
 			log.Log("message %d", i)
-		}()
+		})
 	}
 	wg.Wait()
 	if len(*msgs) != 20 {

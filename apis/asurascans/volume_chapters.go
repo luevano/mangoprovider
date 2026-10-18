@@ -3,6 +3,7 @@ package asurascans
 import (
 	"context"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -72,8 +73,7 @@ func (a *asura) chapters(ctx context.Context, volume mango.Volume) ([]mangadata.
 		return nil, err
 	}
 	// newest first
-	for i := len(resp.Data) - 1; i >= 0; i-- {
-		c := resp.Data[i]
+	for _, c := range slices.Backward(resp.Data) {
 		// premium chapters are paid early access, free after a few hours or days (see available)
 		unavailable := ""
 		if until, err := time.Parse(time.RFC3339, c.EarlyAccess); c.Premium && err == nil {

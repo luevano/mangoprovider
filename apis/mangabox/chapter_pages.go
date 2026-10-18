@@ -77,7 +77,7 @@ func jsArray(body []byte, re *regexp.Regexp) []string {
 		return nil
 	}
 	var items []string
-	for _, item := range strings.Split(string(match[1]), ",") {
+	for item := range strings.SplitSeq(string(match[1]), ",") {
 		item = strings.ReplaceAll(strings.Trim(strings.TrimSpace(item), `"'`), `\/`, "/")
 		if item != "" {
 			items = append(items, item)

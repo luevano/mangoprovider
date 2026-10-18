@@ -33,7 +33,7 @@ func TestSharedErrors(t *testing.T) {
 	}
 	for _, tt := range tests {
 		p := &Provider{
-			ProviderInfo: libmangal.ProviderInfo{ID: "mango-test"},
+			ID: "mango-test",
 			F: Functions{
 				SearchMangas: func(context.Context, Store, string) ([]mangadata.Manga, error) {
 					return nil, fmt.Errorf("search: %w", tt.err)

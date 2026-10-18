@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"slices"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
@@ -71,8 +72,7 @@ func (m *mangabox) chapters(ctx context.Context, store mango.Store, volume mango
 	var chapters []mangadata.Chapter
 	var last float32
 	// newest first
-	for i := len(resp.Data.Chapters) - 1; i >= 0; i-- {
-		c := resp.Data.Chapters[i]
+	for _, c := range slices.Backward(resp.Data.Chapters) {
 		if c.Slug == "" {
 			continue
 		}

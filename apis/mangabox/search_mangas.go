@@ -79,7 +79,7 @@ func (m *mangabox) manga(ctx context.Context, store mango.Store, slug string) (*
 		}
 		switch strings.ToLower(strings.TrimSpace(label)) {
 		case "author(s)", "author":
-			for _, a := range strings.Split(value, ",") {
+			for a := range strings.SplitSeq(value, ",") {
 				if a = strings.TrimSpace(a); a != "" {
 					details.authors = append(details.authors, a)
 				}
@@ -92,7 +92,7 @@ func (m *mangabox) manga(ctx context.Context, store mango.Store, slug string) (*
 		details.genres = append(details.genres, strings.TrimSpace(s.Text()))
 	})
 	details.summary = strings.TrimSpace(doc.Find("div#noidungm, div#panel-story-info-description, div#contentBox").First().Text())
-	for _, alt := range strings.Split(doc.Find(".story-alternative, tr:has(.info-alternative) h2").First().Text(), ";") {
+	for alt := range strings.SplitSeq(doc.Find(".story-alternative, tr:has(.info-alternative) h2").First().Text(), ";") {
 		if alt = strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(alt), "Alternative :")); alt != "" {
 			details.alt = append(details.alt, alt)
 		}

@@ -396,7 +396,7 @@ var descriptorRegex = regexp.MustCompile(`^(\d+(?:\.\d+)?)[wx]$`)
 func largestSrc(srcset string) string {
 	var best string
 	bestSize := -1.0
-	for _, candidate := range strings.Split(srcset, ",") {
+	for candidate := range strings.SplitSeq(srcset, ",") {
 		fields := strings.Fields(candidate)
 		if len(fields) == 0 || !strings.HasPrefix(fields[0], "http") {
 			continue

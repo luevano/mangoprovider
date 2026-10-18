@@ -21,7 +21,7 @@ func TestProviderErrorContext(t *testing.T) {
 	volume := &Volume{Number: 1, Manga_: manga}
 	chapter := &Chapter{Title: "Romance Dawn", Volume_: volume}
 	p := &Provider{
-		ProviderInfo: libmangal.ProviderInfo{ID: "mango-test"},
+		ID: "mango-test",
 		F: Functions{
 			SearchMangas: func(context.Context, Store, string) ([]mangadata.Manga, error) { return nil, errAPI },
 			MangaVolumes: func(context.Context, Store, Manga) ([]mangadata.Volume, error) { return nil, errAPI },
@@ -60,7 +60,7 @@ func TestProviderErrorContext(t *testing.T) {
 }
 
 func TestAccount(t *testing.T) {
-	p := &Provider{ProviderInfo: libmangal.ProviderInfo{ID: "mango-x"}}
+	p := &Provider{ID: "mango-x"}
 	if _, found, err := p.Account(context.Background()); found || err != nil {
 		t.Errorf("found %t, %v without an Account function", found, err)
 	}
@@ -83,8 +83,8 @@ func TestAccount(t *testing.T) {
 func TestDefaultCacheHits(t *testing.T) {
 	searches := 0
 	loader := &Loader{
-		ProviderInfo: libmangal.ProviderInfo{ID: "mango-test", Name: "Test", Version: "0.1.0"},
-		Options:      DefaultOptions(),
+		ID: "mango-test", Name: "Test", Version: "0.1.0",
+		Options: DefaultOptions(),
 		F: func(context.Context, *Logger) (Functions, error) {
 			return Functions{
 				SearchMangas: func(_ context.Context, store Store, query string) ([]mangadata.Manga, error) {
@@ -117,7 +117,7 @@ func TestDefaultCacheHits(t *testing.T) {
 func TestMangaByID(t *testing.T) {
 	want := &Manga{Title: "One Piece", ID: "13"}
 	p := &Provider{
-		ProviderInfo: libmangal.ProviderInfo{ID: "mango-test"},
+		ID: "mango-test",
 		F: Functions{
 			MangaByID: func(_ context.Context, _ Store, id string) (mangadata.Manga, bool, error) {
 				switch id {
