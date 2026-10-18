@@ -15,10 +15,10 @@ import (
 )
 
 type chapter struct {
-	Name      string  `json:"chapter_name"`
-	Slug      string  `json:"chapter_slug"`
-	Number    float32 `json:"chapter_num"`
-	UpdatedAt string  `json:"updated_at"`
+	Name      string   `json:"chapter_name"`
+	Slug      string   `json:"chapter_slug"`
+	Number    *float32 `json:"chapter_num"`
+	UpdatedAt string   `json:"updated_at"`
 }
 
 func (m *mangabox) VolumeChapters(ctx context.Context, store mango.Store, volume mango.Volume) ([]mangadata.Chapter, error) {
@@ -62,13 +62,29 @@ func (m *mangabox) chapters(ctx context.Context, store mango.Store, volume mango
 	if !resp.Success {
 		return nil, fmt.Errorf("GET /%s: %w", path, mango.ErrNotFound)
 	}
+	taken := map[float32]bool{}
+	for _, c := range resp.Data.Chapters {
+		if c.Number != nil {
+			taken[*c.Number] = true
+		}
+	}
 	var chapters []mangadata.Chapter
+	var last float32
 	// newest first
 	for i := len(resp.Data.Chapters) - 1; i >= 0; i-- {
 		c := resp.Data.Chapters[i]
 		if c.Slug == "" {
 			continue
 		}
+		// without a number it's an extra, right after the previous chapter
+		var number float32
+		if c.Number != nil {
+			number = *c.Number
+		} else {
+			number = mango.NextFreeExtraNumber(last, taken)
+			taken[number] = true
+		}
+		last = number
 		var date metadata.Date
 		if t, err := time.Parse(time.RFC3339, c.UpdatedAt); err == nil {
 			date = mango.DateOf(t)
@@ -77,7 +93,7 @@ func (m *mangabox) chapters(ctx context.Context, store mango.Store, volume mango
 			Title:           c.Name,
 			ID:              c.Slug,
 			URL:             site + "manga/" + slug + "/" + c.Slug,
-			Number:          c.Number,
+			Number:          number,
 			Date:            date,
 			ScanlationGroup: m.info.Name,
 			Volume_:         &volume,

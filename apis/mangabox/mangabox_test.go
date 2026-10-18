@@ -149,6 +149,23 @@ func TestChapters(t *testing.T) {
 	}
 }
 
+func TestChaptersWithoutNumber(t *testing.T) {
+	// newest first, two extras without a number after chapter 1, and a numbered 1.5
+	body := `{"success":true,"data":{"chapters":[{"chapter_slug":"c","chapter_num":null},{"chapter_slug":"b","chapter_num":null},{"chapter_slug":"half","chapter_num":1.5},{"chapter_slug":"a","chapter_num":null},{"chapter_slug":"one","chapter_num":1}]}}`
+	m := newTest(t, false, map[string]string{"/api/manga/x/chapters": body})
+	chapters, err := m.chapters(context.Background(), mango.Store{}, mango.Volume{Manga_: &mango.Manga{ID: "x"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []float32
+	for _, c := range chapters {
+		got = append(got, c.Info().Number)
+	}
+	if want := []float32{1, 1.6, 1.5, 1.7, 1.8}; !slices.Equal(got, want) {
+		t.Errorf("wanted %v, got %v", want, got)
+	}
+}
+
 func TestChapterPages(t *testing.T) {
 	m := newTest(t, false, map[string]string{"/manga/solo-leveling/chapter-1": chapterPage})
 	chapter := mango.Chapter{ID: "chapter-1", Volume_: &mango.Volume{Manga_: &mango.Manga{ID: "solo-leveling"}}}
