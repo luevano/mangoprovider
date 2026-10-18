@@ -10,11 +10,11 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/google/uuid"
 	mango "github.com/luevano/mangoprovider"
+	"golang.org/x/sync/semaphore"
 )
 
 var (
@@ -31,7 +31,8 @@ type TransportFlaresolverr struct {
 	client *http.Client
 	uuid   uuid.UUID
 	url    string
-	mutex  sync.Mutex
+	// one request at a time, waited for until the request's ctx ends
+	slot *semaphore.Weighted
 }
 
 // NewTransport creates a new transport for the given Flaresolerr URL.
@@ -49,13 +50,16 @@ func NewTransportClient(url string, client *http.Client) *TransportFlaresolverr 
 		client: client,
 		uuid:   uuid.New(),
 		url:    url,
+		slot:   semaphore.NewWeighted(1),
 	}
 }
 
 // RoundTrip makes the request through FlareSolverr.
 func (t *TransportFlaresolverr) RoundTrip(r *http.Request) (*http.Response, error) {
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
+	if err := t.slot.Acquire(r.Context(), 1); err != nil {
+		return nil, err
+	}
+	defer t.slot.Release(1)
 
 	// flaresolverr (v3) creates the session on its first request, Close destroys it
 	var req []byte
@@ -63,7 +67,10 @@ func (t *TransportFlaresolverr) RoundTrip(r *http.Request) (*http.Response, erro
 	var timeout int
 	deadline, ok := r.Context().Deadline()
 	if ok {
-		timeout = int(deadline.Sub(time.Now()).Milliseconds()) - 1000
+		timeout = int(time.Until(deadline).Milliseconds()) - 1000
+		if timeout <= 0 {
+			return nil, fmt.Errorf("flaresolverr: no time left to solve %s: %w", r.URL, context.DeadlineExceeded)
+		}
 	} else {
 		timeout = int(defaultMaxTimeout.Milliseconds())
 	}

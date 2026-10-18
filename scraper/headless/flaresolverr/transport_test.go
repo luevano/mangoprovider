@@ -1,6 +1,8 @@
 package flaresolverr
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -33,6 +35,40 @@ func TestRoundTripTimeout(t *testing.T) {
 		}
 	case <-time.After(5 * time.Second):
 		t.Fatal("a flaresolverr that never answers should time out")
+	}
+}
+
+func TestRoundTripQueuedHonoursContext(t *testing.T) {
+	hang := make(chan struct{})
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		<-hang
+	}))
+	defer server.Close()
+	defer close(hang)
+
+	transport := NewTransport(server.URL)
+	first, _ := http.NewRequest(http.MethodGet, "https://example.com/1", nil)
+	go transport.RoundTrip(first)
+	time.Sleep(50 * time.Millisecond)
+
+	// queued behind the first one, gives up when its ctx ends
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+	queued, _ := http.NewRequestWithContext(ctx, http.MethodGet, "https://example.com/2", nil)
+	start := time.Now()
+	if _, err := transport.RoundTrip(queued); !errors.Is(err, context.DeadlineExceeded) {
+		t.Errorf("wanted the ctx's error, got %v", err)
+	}
+	if time.Since(start) > 2*time.Second {
+		t.Error("the queued request waited past its ctx")
+	}
+
+	// less than the second flaresolverr needs left
+	ctx, cancel = context.WithTimeout(context.Background(), 500*time.Millisecond)
+	defer cancel()
+	short, _ := http.NewRequestWithContext(ctx, http.MethodGet, "https://example.com/3", nil)
+	if _, err := NewTransport(server.URL).RoundTrip(short); !errors.Is(err, context.DeadlineExceeded) {
+		t.Errorf("wanted a deadline error, got %v", err)
 	}
 }
 
