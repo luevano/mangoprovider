@@ -83,7 +83,7 @@ func TestMangaByID(t *testing.T) {
 func TestChapters(t *testing.T) {
 	a := newTest(t)
 	manga := &mango.Manga{ID: "solo-farming-in-the-tower", URL: website + "comics/solo-farming-in-the-tower-bd5bdaf8"}
-	chapters, err := a.chapters(context.Background(), mango.Volume{Manga_: manga})
+	chapters, err := a.VolumeChapters(context.Background(), mango.Store{}, mango.Volume{Manga_: manga})
 	if err != nil || len(chapters) != 2 {
 		t.Fatalf("got %v, %v, want 2 without the early access one", chapters, err)
 	}
@@ -93,12 +93,22 @@ func TestChapters(t *testing.T) {
 	}
 
 	a.filter.ShowUnavailableChapters = true
-	chapters, err = a.chapters(context.Background(), mango.Volume{Manga_: manga})
+	chapters, err = a.VolumeChapters(context.Background(), mango.Store{}, mango.Volume{Manga_: manga})
 	if err != nil || len(chapters) != 3 {
 		t.Fatalf("got %v, %v, want 3 when showing unavailable ones", chapters, err)
 	}
-	if c := chapters[2].(*mango.Chapter); c.Number != 146 || c.Unavailable == "" || chapters[1].(*mango.Chapter).Unavailable != "" {
+	if c := chapters[2].(*mango.Chapter); c.Number != 146 || c.Unavailable != "early access until "+time.Date(2999, 1, 1, 0, 0, 0, 0, time.UTC).Local().Format(time.DateTime) || chapters[1].(*mango.Chapter).Unavailable != "" {
 		t.Errorf("got %+v, want only 146 unavailable", chapters)
+	}
+
+	// the cached list: 146 is free once its early access ends
+	a.filter.ShowUnavailableChapters = false
+	all, err := a.chapters(context.Background(), mango.Volume{Manga_: manga})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := a.available(all, time.Date(3000, 1, 1, 0, 0, 0, 0, time.UTC)); len(got) != 3 || got[2].(*mango.Chapter).Unavailable != "" {
+		t.Errorf("got %+v, want 146 available after its early access", got)
 	}
 }
 
