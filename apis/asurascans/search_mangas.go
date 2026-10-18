@@ -86,15 +86,6 @@ func (a *asura) search(ctx context.Context, query string) ([]mangadata.Manga, er
 }
 
 func toManga(s series) *mango.Manga {
-	country := ""
-	switch strings.ToLower(s.Type) {
-	case "manhwa":
-		country = "KR"
-	case "manhua":
-		country = "CN"
-	case "manga":
-		country = "JP"
-	}
 	var alt, genres, authors, artists []string
 	if len(s.AltTitles) == 0 && s.AlternativeTitles != "" {
 		s.AltTitles = strings.Split(s.AlternativeTitles, " • ")
@@ -128,7 +119,7 @@ func toManga(s series) *mango.Manga {
 		ArtistList:        artists,
 		GenreList:         genres,
 		PublicationStatus: mango.ParseStatus(s.Status),
-		CountryOfOrigin:   country,
+		CountryOfOrigin:   mango.CountryOfType(s.Type),
 		SourceURL:         mangaURL,
 		ProviderID:        s.Slug,
 		ProviderIDCode:    "asura",
