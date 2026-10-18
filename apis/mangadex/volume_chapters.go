@@ -12,6 +12,9 @@ import (
 	mango "github.com/luevano/mangoprovider"
 )
 
+// maxResults: MangaDex refuses an offset+limit over 10000.
+var maxResults = 10000
+
 // Contains the actual chapter list as well as helper values for filtering.
 type aggregate struct {
 	chapters    []mangadata.Chapter
@@ -95,6 +98,10 @@ func (d *dex) VolumeChapters(ctx context.Context, store mango.Store, volume mang
 			break
 		}
 		offset += limit
+		if offset+limit > maxResults {
+			d.log.Log("volume %s: list cut at %d chapters, MangaDex lists at most %d", volume.String(), len(agg.chapters), maxResults)
+			break
+		}
 	}
 	numberExtraChapters(agg.chapters, agg.extras)
 

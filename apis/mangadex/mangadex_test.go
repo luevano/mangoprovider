@@ -260,3 +260,23 @@ func TestGroups(t *testing.T) {
 		t.Errorf("wanted %v, got %v", want, got)
 	}
 }
+
+func TestChaptersPagesCapped(t *testing.T) {
+	defer func(m int) { maxResults = m }(maxResults)
+	maxResults = 500
+	fake := newFakeDex()
+	chapters := make([]string, 100)
+	for i := range chapters {
+		chapters[i] = `{"id":"00000000-0000-0000-0000-` + strings.Repeat("0", 9) + strconv.Itoa(100+i) + `","type":"chapter","attributes":{"chapter":"` + strconv.Itoa(i) + `","pages":3}}`
+	}
+	fake.chapters = strings.Join(chapters, ",")
+	fns := loadFake(t, fake, nil)
+	manga := mango.Manga{ID: "m"}
+	if _, err := fns.VolumeChapters(context.Background(), mango.Store{}, mango.Volume{Number: 1, Manga_: &manga}); err != nil {
+		t.Fatal(err)
+	}
+	query, _ := url.ParseQuery(fake.queries["/chapter"])
+	if got := fake.count("/chapter"); got != 5 || query.Get("offset") != "400" {
+		t.Errorf("wanted 5 pages up to offset 400, got %d, last offset %s", got, query.Get("offset"))
+	}
+}
