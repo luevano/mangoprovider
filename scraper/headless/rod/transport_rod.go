@@ -26,6 +26,9 @@ var _ http.RoundTripper = (*TransportRod)(nil)
 // errClosed: The transport was closed, it doesn't launch the browser again.
 var errClosed = errors.New("headless browser closed")
 
+// downloadTimeout: How long the chromium download (~150 MB) can take.
+var downloadTimeout = 10 * time.Minute
+
 // responseWait: How long to wait for the page's response event once it's loaded.
 const responseWait = 2 * time.Second
 
@@ -87,7 +90,8 @@ func (t *TransportRod) Close() error {
 }
 
 // launch: The browser, started on the first call. A failed launch is tried again by the next
-// call; ctx (or Close) cancels the download and the launch, not the launched browser.
+// call; ctx (or Close) cancels the launch, not the launched browser; only Close (or
+// downloadTimeout) cancels the download.
 func (t *TransportRod) launch(ctx context.Context) (*rod.Browser, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -113,8 +117,14 @@ func (t *TransportRod) launch(ctx context.Context) (*rod.Browser, error) {
 	l := t.newLauncher().Leakless(runtime.GOOS == "linux").Context(ctx)
 	if l.Get(flags.Bin) == "" {
 		// rod's own download logs to stdout, which must stay clean (e.g. --json)
+		// the download outlives the request's deadline (the next request uses it), only Close
+		// stops it
+		downloadCtx, cancelDownload := context.WithTimeout(context.WithoutCancel(ctx), downloadTimeout)
+		defer cancelDownload()
+		stopDownload := context.AfterFunc(t.ctx, cancelDownload)
+		defer stopDownload()
 		b := launcher.NewBrowser()
-		b.Context = ctx
+		b.Context = downloadCtx
 		b.Logger = logger{t.log}
 		if b.Validate() != nil {
 			t.log.Status(ctx, "downloading chromium for the headless browser")
