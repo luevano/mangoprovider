@@ -138,13 +138,21 @@ func (s *Scraper) parseChapters(p *page, volume mango.Volume) []mangadata.Chapte
 	return chapters
 }
 
-// numberExtraChapters: Chapters without a number (e.g. "Extra") go right after the previous one.
+// numberExtraChapters: Chapters without a number (e.g. "Extra") go right after the previous one,
+// on a number no other chapter has.
 func numberExtraChapters(chapters []mangadata.Chapter) {
+	taken := map[float32]bool{}
+	for _, chapter := range chapters {
+		if n := chapter.Info().Number; n >= 0 {
+			taken[n] = true
+		}
+	}
 	var last float32
 	for _, chapter := range chapters {
 		c := chapter.(*mango.Chapter)
 		if c.Number < 0 {
-			c.Number = mango.NextExtraNumber(last)
+			c.Number = mango.NextFreeExtraNumber(last, taken)
+			taken[c.Number] = true
 		}
 		last = c.Number
 	}

@@ -46,6 +46,12 @@ func (p *plus) searchChapters(ctx context.Context, chapters *[]mangadata.Chapter
 
 	// All chapters are assumed to come in order, there is no other way to deal
 	// with extra/bonus chapters (if they don't come with a number)
+	taken := map[float32]bool{}
+	for _, chapter := range chapterList {
+		if n, ok := mango.ParseChapterNumber(chapter.Name); ok {
+			taken[n] = true
+		}
+	}
 	lastNumber := float32(0.0)
 	for _, chapter := range chapterList {
 		title := chapter.Name
@@ -56,7 +62,7 @@ func (p *plus) searchChapters(ctx context.Context, chapters *[]mangadata.Chapter
 			Title:           title,
 			ID:              strconv.Itoa(int(chapter.ChapterId)),
 			URL:             fmt.Sprintf("%sviewer/%d", website, chapter.ChapterId),
-			Number:          parseChapterNumber(chapter.Name, lastNumber),
+			Number:          parseChapterNumber(chapter.Name, lastNumber, taken),
 			Date:            parseTSSecs(chapter.StartTimeStamp),
 			ScanlationGroup: "MangaPlus",
 			Volume_:         &volume,
@@ -67,11 +73,13 @@ func (p *plus) searchChapters(ctx context.Context, chapters *[]mangadata.Chapter
 	return nil
 }
 
-func parseChapterNumber(s string, lastNumber float32) float32 {
+// parseChapterNumber: The chapter's number, extras get a free one (added to taken) after lastNumber.
+func parseChapterNumber(s string, lastNumber float32, taken map[float32]bool) float32 {
 	number, ok := mango.ParseChapterNumber(s)
 	// extras have no number, or repeat the last one
 	if !ok || number == lastNumber {
-		return mango.NextExtraNumber(lastNumber)
+		number = mango.NextFreeExtraNumber(lastNumber, taken)
+		taken[number] = true
 	}
 	return number
 }

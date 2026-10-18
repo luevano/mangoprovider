@@ -3,6 +3,7 @@ package flamecomics
 import (
 	"context"
 	"fmt"
+	"math"
 	"slices"
 	"strconv"
 	"time"
@@ -33,11 +34,18 @@ func (f *flame) VolumeChapters(ctx context.Context, store mango.Store, volume ma
 	}
 	// oldest first, so a chapter without a number goes right after the previous one
 	slices.Reverse(props.Chapters)
+	taken := map[float32]bool{}
+	for _, c := range props.Chapters {
+		if n, ok := chapterNumber(c.Number); ok {
+			taken[n] = true
+		}
+	}
 	var last float32
 	for _, c := range props.Chapters {
-		number := mango.NextExtraNumber(last)
-		if n, err := strconv.ParseFloat(c.Number, 32); err == nil {
-			number = float32(n)
+		number, ok := chapterNumber(c.Number)
+		if !ok {
+			number = mango.NextFreeExtraNumber(last, taken)
+			taken[number] = true
 		}
 		last = number
 		var date metadata.Date
@@ -55,4 +63,13 @@ func (f *flame) VolumeChapters(ctx context.Context, store mango.Store, volume ma
 		})
 	}
 	return chapters, store.SetChapters(id, chapters)
+}
+
+// chapterNumber: The chapter's number, false if it has none.
+func chapterNumber(s string) (float32, bool) {
+	n, err := strconv.ParseFloat(s, 32)
+	if err != nil || math.IsNaN(n) || math.IsInf(n, 0) {
+		return 0, false
+	}
+	return float32(n), true
 }

@@ -178,3 +178,11 @@ func TestMetadataLinks(t *testing.T) {
 		}
 	}
 }
+
+func TestNumberExtraChaptersTaken(t *testing.T) {
+	one, extra, half := &mango.Chapter{Number: 1}, &mango.Chapter{Title: "Extra"}, &mango.Chapter{Number: 1.5}
+	numberExtraChapters([]mangadata.Chapter{one, extra, half}, map[*mango.Chapter]bool{extra: true})
+	if extra.Number != 1.6 {
+		t.Errorf("wanted 1.6 (1.5 is taken), got %v", extra.Number)
+	}
+}

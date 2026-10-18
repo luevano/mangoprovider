@@ -184,3 +184,11 @@ func TestClientRetries(t *testing.T) {
 		t.Errorf("got %v %v after %d requests", v, err, hits.Load())
 	}
 }
+
+func TestChapterNumber(t *testing.T) {
+	for s, want := range map[string]bool{"10": true, "10.5": true, "0": true, "": false, "NaN": false, "Inf": false, "-Inf": false, "10a": false} {
+		if _, ok := chapterNumber(s); ok != want {
+			t.Errorf("%q: wanted %v, got %v", s, want, ok)
+		}
+	}
+}

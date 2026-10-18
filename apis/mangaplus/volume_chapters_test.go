@@ -14,9 +14,10 @@ func TestParseChapterNumber(t *testing.T) {
 	names := []string{"#001", "#002", "ex", "#003", "#003", "#004-5"}
 	want := []float32{1, 2, 2.5, 3, 3.5, 4.5}
 
+	taken := map[float32]bool{1: true, 2: true, 3: true, 4.5: true}
 	var last float32
 	for i, name := range names {
-		got := parseChapterNumber(name, last)
+		got := parseChapterNumber(name, last, taken)
 		if got != want[i] {
 			t.Errorf("%q after %v: wanted %v, got %v", name, last, want[i], got)
 		}

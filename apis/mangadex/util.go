@@ -30,13 +30,20 @@ func getChapterNum(chapter *mangodex.Chapter) (float32, bool, error) {
 }
 
 // numberExtraChapters: Chapters without a number go right after the previous one (in the api's
-// order), untitled ones are named after their number.
+// order), on a number no other chapter has; untitled ones are named after their number.
 func numberExtraChapters(chapters []mangadata.Chapter, extras map[*mango.Chapter]bool) {
+	taken := map[float32]bool{}
+	for _, chapter := range chapters {
+		if !extras[chapter.(*mango.Chapter)] {
+			taken[chapter.Info().Number] = true
+		}
+	}
 	var last float32
 	for _, chapter := range chapters {
 		c := chapter.(*mango.Chapter)
 		if extras[c] {
-			c.Number = mango.NextExtraNumber(last)
+			c.Number = mango.NextFreeExtraNumber(last, taken)
+			taken[c.Number] = true
 		}
 		if c.Title == "" {
 			c.Title = fmt.Sprintf(chapterNumberFormat, mango.FormattedFloat(c.Number))

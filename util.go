@@ -2,6 +2,7 @@ package mangoprovider
 
 import (
 	"fmt"
+	"math"
 	"net/url"
 	"path"
 	"regexp"
@@ -122,11 +123,50 @@ func ParseChapterNumber(title string) (number float32, ok bool) {
 // NextExtraNumber returns the number for a chapter without one that comes right after last,
 // e.g. an "Extra" after chapter 5 is 5.5, after 5.5 it's 5.6.
 func NextExtraNumber(last float32) float32 {
-	// avoids floating point precision issues https://stackoverflow.com/a/56300186
-	if FloatIsInt(last) {
-		return float32((float64(last*10) + 5) / 10)
+	return NextFreeExtraNumber(last, nil)
+}
+
+// NextFreeExtraNumber is NextExtraNumber skipping the numbers in taken: after a whole N it tries
+// N.5, else last+0.1, then steps by 0.1, then .91, .92, ... (and .991 after .99). It stays below
+// the next whole number a chapter has; when no chapter has N+1, a long run of extras goes on
+// past it (N+1.5, N+1.6, ...), never on the whole number itself.
+func NextFreeExtraNumber(last float32, taken map[float32]bool) float32 {
+	// exact decimals: work on the number ×10^6, parsed from its shortest representation
+	const scale = 1_000_000
+	scaled := func(n float32) int64 {
+		f, _ := strconv.ParseFloat(FormattedFloat(n), 64)
+		return int64(math.Round(f * scale))
 	}
-	return float32((float64(last*10) + 1) / 10)
+	// past a whole number only when no chapter has it
+	for base := scaled(last); ; base = (base/scale + 1) * scale {
+		next := (base/scale + 1) * scale
+		step := int64(scale / 10)
+		candidate := base + step
+		if base%scale == 0 {
+			candidate = base + scale/2
+		}
+		for step > 0 {
+			if candidate >= next {
+				candidate -= step
+				step /= 10
+				candidate += step
+				continue
+			}
+			n := float32(float64(candidate) / scale)
+			// float32 can't hold every millionth of big numbers (it'd round to a taken or whole one)
+			if scaled(n) == candidate && !taken[n] {
+				return n
+			}
+			candidate += step
+		}
+		if taken[float32(next/scale)] {
+			break
+		}
+	}
+	// shortcut: about 40 extras in a row fit before a whole number a chapter has (float32),
+	// later ones share the previous extra's number instead of taking a real chapter's; backlog
+	// "extra chapters"
+	return last
 }
 
 // EscapePath escapes each "/"-separated part of p, e.g. an id given by the user that goes in a

@@ -163,10 +163,39 @@ func TestParseChapterNumber(t *testing.T) {
 }
 
 func TestNextExtraNumber(t *testing.T) {
-	tests := map[float32]float32{0: 0.5, 5: 5.5, 5.5: 5.6, 5.6: 5.7}
+	tests := map[float32]float32{0: 0.5, 5: 5.5, 5.5: 5.6, 5.6: 5.7, 5.9: 5.91, 5.95: 5.96, 5.99: 5.991}
 	for last, want := range tests {
 		if got := NextExtraNumber(last); got != want {
 			t.Errorf("after %v: wanted %v, got %v", last, want, got)
+		}
+	}
+}
+
+func TestNextFreeExtraNumber(t *testing.T) {
+	taken := func(numbers ...float32) map[float32]bool {
+		m := map[float32]bool{}
+		for _, n := range numbers {
+			m[n] = true
+		}
+		return m
+	}
+	tests := []struct {
+		last  float32
+		taken map[float32]bool
+		want  string
+	}{
+		{5, nil, "5.5"},
+		{5, taken(5.5), "5.6"},
+		{10.5, taken(10.6), "10.7"},
+		{5, taken(5, 5.5, 5.6, 5.7, 5.8, 5.9, 6), "5.91"},
+		{5.9, taken(5.91, 5.92, 6), "5.93"},
+		{5.99, taken(6), "5.991"},
+		{1234, taken(1234.5), "1234.6"},
+	}
+	for _, tt := range tests {
+		got := NextFreeExtraNumber(tt.last, tt.taken)
+		if FormattedFloat(got) != tt.want || tt.taken[got] {
+			t.Errorf("after %v (taken %v): wanted %s, got %s", tt.last, tt.taken, tt.want, FormattedFloat(got))
 		}
 	}
 }
@@ -226,5 +255,36 @@ func TestDefaultUserAgents(t *testing.T) {
 	// mangoplus doesn't import libmangal, its creators default is a copy
 	if DefaultOptions().UserAgent != netutil.BrowserUserAgent || creators.DefaultOptions().UserAgent != netutil.BrowserUserAgent {
 		t.Errorf("default user agents %q, %q; want netutil.BrowserUserAgent", DefaultOptions().UserAgent, creators.DefaultOptions().UserAgent)
+	}
+}
+
+func TestNextFreeExtraNumberLongRun(t *testing.T) {
+	// 40 extras in a row stay distinct (20 past 10000, float32), later ones never take the next
+	// whole number
+	for start, fit := range map[float32]int{81: 40, 12345: 20} {
+		taken := map[float32]bool{start: true, start + 1: true}
+		last := start
+		for i := range 300 {
+			n := NextFreeExtraNumber(last, taken)
+			if n <= start || n >= start+1 || (i < fit && taken[n]) {
+				t.Fatalf("after %v, extra %d: %v", start, i, n)
+			}
+			taken[n], last = true, n
+		}
+	}
+}
+
+func TestNextFreeExtraNumberPastFreeWholeNumbers(t *testing.T) {
+	// with no chapter after it, a long run (mangapill's "Group 2" chapters) goes on past the
+	// whole numbers without taking them
+	start := float32(77)
+	taken := map[float32]bool{start: true}
+	last := start
+	for i := range 300 {
+		n := NextFreeExtraNumber(last, taken)
+		if taken[n] || n <= last || n == float32(int(n)) {
+			t.Fatalf("extra %d after %v: %v", i, last, n)
+		}
+		taken[n], last = true, n
 	}
 }

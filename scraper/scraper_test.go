@@ -113,7 +113,7 @@ func TestChapterPagesEmpty(t *testing.T) {
 }
 
 func TestNumberExtraChapters(t *testing.T) {
-	numbers := []float32{-1, 1, 2, -1, -1, 3}
+	numbers := []float32{-1, 1, 2, -1, -1, 2.5, 3}
 	var chapters []mangadata.Chapter
 	for _, n := range numbers {
 		chapters = append(chapters, &mango.Chapter{Number: n})
@@ -121,7 +121,8 @@ func TestNumberExtraChapters(t *testing.T) {
 
 	numberExtraChapters(chapters)
 
-	want := []float32{0.5, 1, 2, 2.5, 2.6, 3}
+	// 2.5 is taken by a later chapter
+	want := []float32{0.5, 1, 2, 2.6, 2.7, 2.5, 3}
 	for i, chapter := range chapters {
 		if got := chapter.Info().Number; got != want[i] {
 			t.Errorf("chapter %d: wanted %v, got %v", i, want[i], got)
