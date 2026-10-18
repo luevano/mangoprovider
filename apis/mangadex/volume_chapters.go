@@ -145,10 +145,7 @@ func (d *dex) populateChapters(ctx context.Context, agg *aggregate, params url.V
 			continue
 		}
 
-		chapterNumber, numbered, err := getChapterNum(chapter)
-		if err != nil {
-			return false, err
-		}
+		chapterNumber, numbered := getChapterNum(chapter)
 
 		chapterID := chapter.ID
 		groups := chapterGroups(chapter.Relationships)

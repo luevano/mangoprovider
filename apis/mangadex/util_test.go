@@ -13,28 +13,36 @@ import (
 )
 
 func TestGetChapterNum(t *testing.T) {
-	five, half := "5", "12.5"
+	str := func(s string) *string { return &s }
 	tests := []struct {
 		chapter  *string
 		number   float32
 		numbered bool
 	}{
-		{&five, 5, true},
-		{&half, 12.5, true},
-		{nil, 0, false}, // no number (oneshots, extras)
+		{str("5"), 5, true},
+		{str("12.5"), 12.5, true},
+		{str("0"), 0, true},
+		{nil, -1, false}, // no number (oneshots, extras)
+		{str("10a"), 10, false},
+		{str("10-a"), 10, false},
+		{str("1,5"), 1, false},
+		{str(""), -1, false},
+		{str("NaN"), -1, false},
+		{str("Inf"), -1, false},
+		{str("extra"), -1, false},
 	}
 	for _, tt := range tests {
 		chapter := &mangodex.Chapter{Attributes: mangodex.ChapterAttributes{Chapter: tt.chapter}}
-		number, numbered, err := getChapterNum(chapter)
-		if err != nil || number != tt.number || numbered != tt.numbered {
-			t.Errorf("wanted %v, %v; got %v, %v, %v", tt.number, tt.numbered, number, numbered, err)
+		number, numbered := getChapterNum(chapter)
+		if number != tt.number || numbered != tt.numbered {
+			t.Errorf("%q: wanted %v, %v; got %v, %v", chapter.GetChapterNum(), tt.number, tt.numbered, number, numbered)
 		}
 	}
 }
 
 func TestNumberExtraChapters(t *testing.T) {
-	one, extra, two := &mango.Chapter{Number: 1}, &mango.Chapter{Title: "Side story"}, &mango.Chapter{Number: 2}
-	extra2, extra3 := &mango.Chapter{}, &mango.Chapter{}
+	one, extra, two := &mango.Chapter{Number: 1}, &mango.Chapter{Title: "Side story", Number: -1}, &mango.Chapter{Number: 2}
+	extra2, extra3 := &mango.Chapter{Number: -1}, &mango.Chapter{Number: -1}
 	numberExtraChapters([]mangadata.Chapter{one, extra, two, extra2, extra3}, map[*mango.Chapter]bool{extra: true, extra2: true, extra3: true})
 
 	for _, tt := range []struct {
@@ -180,9 +188,14 @@ func TestMetadataLinks(t *testing.T) {
 }
 
 func TestNumberExtraChaptersTaken(t *testing.T) {
-	one, extra, half := &mango.Chapter{Number: 1}, &mango.Chapter{Title: "Extra"}, &mango.Chapter{Number: 1.5}
-	numberExtraChapters([]mangadata.Chapter{one, extra, half}, map[*mango.Chapter]bool{extra: true})
+	one, extra, half := &mango.Chapter{Number: 1}, &mango.Chapter{Title: "Extra", Number: -1}, &mango.Chapter{Number: 1.5}
+	ten, tenA, two := &mango.Chapter{Number: 10}, &mango.Chapter{Title: "10a", Number: 10}, &mango.Chapter{Number: 2}
+	numberExtraChapters([]mangadata.Chapter{one, extra, half, two, tenA, ten}, map[*mango.Chapter]bool{extra: true, tenA: true})
 	if extra.Number != 1.6 {
 		t.Errorf("wanted 1.6 (1.5 is taken), got %v", extra.Number)
+	}
+	// "10a" goes after 10, not after the previous chapter
+	if tenA.Number != 10.5 {
+		t.Errorf("wanted 10.5, got %v", tenA.Number)
 	}
 }

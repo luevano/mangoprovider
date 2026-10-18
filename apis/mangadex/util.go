@@ -2,6 +2,8 @@ package mangadex
 
 import (
 	"fmt"
+	"math"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -15,22 +17,26 @@ import (
 
 const chapterNumberFormat = "Chapter %s"
 
-// getChapterNum: The chapter's number, false for chapters without one (oneshots, extras).
-func getChapterNum(chapter *mangodex.Chapter) (float32, bool, error) {
-	chapterNumberStr := chapter.GetChapterNum()
-	if chapterNumberStr == "-" {
-		return 0, false, nil
-	}
+var leadingNumberRegex = regexp.MustCompile(`^\s*\d+(\.\d+)?`)
 
-	chapterNumber, err := strconv.ParseFloat(chapterNumberStr, 32)
-	if err != nil {
-		return 0, false, err
+// getChapterNum: The chapter's number, false for chapters without one (oneshots, extras). For
+// those the number is the one they go right after ("10a" is 10), or -1 to go after the previous
+// chapter.
+func getChapterNum(chapter *mangodex.Chapter) (float32, bool) {
+	s := chapter.GetChapterNum()
+	n, err := strconv.ParseFloat(s, 32)
+	if err == nil && !math.IsNaN(n) && !math.IsInf(n, 0) {
+		return float32(n), true
 	}
-	return float32(chapterNumber), true, nil
+	if n, err := strconv.ParseFloat(strings.TrimSpace(leadingNumberRegex.FindString(s)), 32); err == nil {
+		return float32(n), false
+	}
+	return -1, false
 }
 
 // numberExtraChapters: Chapters without a number go right after the previous one (in the api's
-// order), on a number no other chapter has; untitled ones are named after their number.
+// order) or the number they start with, on a number no other chapter has; untitled ones are
+// named after their number.
 func numberExtraChapters(chapters []mangadata.Chapter, extras map[*mango.Chapter]bool) {
 	taken := map[float32]bool{}
 	for _, chapter := range chapters {
@@ -42,7 +48,11 @@ func numberExtraChapters(chapters []mangadata.Chapter, extras map[*mango.Chapter
 	for _, chapter := range chapters {
 		c := chapter.(*mango.Chapter)
 		if extras[c] {
-			c.Number = mango.NextFreeExtraNumber(last, taken)
+			after := last
+			if c.Number >= 0 {
+				after = c.Number
+			}
+			c.Number = mango.NextFreeExtraNumber(after, taken)
 			taken[c.Number] = true
 		}
 		if c.Title == "" {
