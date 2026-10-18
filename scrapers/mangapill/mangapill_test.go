@@ -80,17 +80,24 @@ func TestScrape(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// oldest first, the odd link skipped
+	// oldest first, the odd link skipped, another translation's "Group 2" chapters are extras
 	wantChapters := []struct {
 		number float32
 		id     string
-	}{{1, "2-10001000/one-piece-chapter-1"}, {1.5, "2-10001500/one-piece-chapter-1.5"}, {2, "2-10002000/one-piece-chapter-2"}}
+		title  string
+	}{
+		{1, "2-10001000/one-piece-chapter-1", "Chapter 1"},
+		{1.5, "2-10001500/one-piece-chapter-1.5", "Chapter 1.5"},
+		{2, "2-10002000/one-piece-chapter-2", "Chapter 2"},
+		{2.5, "2-20001000/one-piece-chapter-1", "Group 2 Chapter 1"},
+		{2.6, "2-20002000/one-piece-chapter-2", "Group 2 Chapter 2"},
+	}
 	if len(chapters) != len(wantChapters) {
 		t.Fatalf("got %v, want %d chapters", chapters, len(wantChapters))
 	}
 	for i, w := range wantChapters {
 		c := chapters[i].(*mango.Chapter)
-		if c.Number != w.number || c.ID != w.id || c.URL != base+"chapters/"+w.id || c.Date.Year != 0 || c.ScanlationGroup != "Mangapill" {
+		if c.Number != w.number || c.ID != w.id || c.Title != w.title || c.URL != base+"chapters/"+w.id || c.Date.Year != 0 || c.ScanlationGroup != "Mangapill" {
 			t.Errorf("chapter %d: got %+v, want %+v", i, c, w)
 		}
 	}

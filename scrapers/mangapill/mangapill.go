@@ -3,6 +3,7 @@ package mangapill
 import (
 	"fmt"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -116,6 +117,13 @@ func Config(_ *mango.Logger) *scraper.Configuration {
 			URL: func(selection *goquery.Selection) string {
 				return selection.AttrOr("href", "")
 			},
+			// "Group 2 Chapter 10" is another translation's chapter, kept apart as an extra
+			Number: func(title string) (float32, bool) {
+				if groupRegex.MatchString(title) {
+					return 0, false
+				}
+				return mango.ParseChapterNumber(title)
+			},
 			// id is constructed similar to manga id above, <number>/<chapter-name>
 			ID: pathID,
 			ScanlationGroup: func(_ *goquery.Selection) string {
@@ -135,6 +143,8 @@ func Config(_ *mango.Logger) *scraper.Configuration {
 const infoSelector = "div.container > div.flex.flex-col.sm\\:flex-row.my-3"
 
 // pathID: The path after its first part, e.g. "<number>/<name>" for /manga/<number>/<name>.
+var groupRegex = regexp.MustCompile(`(?i)^group\s*\d+\b`)
+
 func pathID(_url string) string {
 	if parts := scraper.PathParts(_url); len(parts) >= 2 {
 		return strings.Join(parts[1:], "/")

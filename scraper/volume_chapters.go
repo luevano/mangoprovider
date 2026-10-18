@@ -109,7 +109,10 @@ func (s *Scraper) parseChapters(p *page, volume mango.Volume) []mangadata.Chapte
 			parseNumber = s.config.ChapterExtractor.Number
 		}
 		chapterNumber, ok := parseNumber(title)
-		if !ok {
+		chapterTitle := title
+		if ok {
+			chapterTitle = mango.ParseChapterTitle(title)
+		} else {
 			// numbered once all chapters are in order, see numberExtraChapters
 			chapterNumber = -1
 		}
@@ -125,7 +128,7 @@ func (s *Scraper) parseChapters(p *page, volume mango.Volume) []mangadata.Chapte
 		}
 
 		c := mango.Chapter{
-			Title:           mango.ParseChapterTitle(title),
+			Title:           chapterTitle,
 			ID:              id,
 			URL:             url,
 			Number:          chapterNumber,
