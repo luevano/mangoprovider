@@ -54,18 +54,18 @@ func TestSearch(t *testing.T) {
 	}
 }
 
-func TestSearchByID(t *testing.T) {
+func TestMangaByIDAltTitles(t *testing.T) {
 	a := newTest(t)
-	mangas, err := a.SearchMangas(context.Background(), mango.Store{}, "mid: solo-farming-in-the-tower")
-	if err != nil || len(mangas) != 1 {
-		t.Fatalf("got %v, %v", mangas, err)
+	manga, found, err := a.MangaByID(context.Background(), mango.Store{}, "solo-farming-in-the-tower")
+	if err != nil || !found {
+		t.Fatalf("got %v, %v, %v", manga, found, err)
 	}
-	if alt := (*mangas[0].(*mango.Manga).Metadata_).AlternateTitles(); len(alt) != 2 || alt[1] != "Tower Farmer" {
+	if alt := (*manga.(*mango.Manga).Metadata_).AlternateTitles(); len(alt) != 2 || alt[1] != "Tower Farmer" {
 		t.Errorf("alt titles %q, want the joined ones split", alt)
 	}
 
-	if mangas, err := a.SearchMangas(context.Background(), mango.Store{}, "mid: nope"); err != nil || len(mangas) != 0 {
-		t.Errorf("unknown id: %v, %v, want no mangas", mangas, err)
+	if manga, found, err := a.MangaByID(context.Background(), mango.Store{}, "nope"); err != nil || found {
+		t.Errorf("unknown id: %v, %v, %v, want not found", manga, found, err)
 	}
 }
 

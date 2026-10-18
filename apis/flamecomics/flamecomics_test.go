@@ -42,20 +42,20 @@ func newTest(t *testing.T) *flame {
 	return &flame{client: server.Client(), base: server.URL + "/"}
 }
 
-func TestSearchByID(t *testing.T) {
+func TestMangaByIDMetadata(t *testing.T) {
 	f := newTest(t)
-	mangas, err := f.SearchMangas(context.Background(), mango.Store{}, "mid: 2")
-	if err != nil || len(mangas) != 1 {
-		t.Fatalf("got %v, %v", mangas, err)
+	manga, found, err := f.MangaByID(context.Background(), mango.Store{}, "2")
+	if err != nil || !found {
+		t.Fatalf("got %v, %v, %v", manga, found, err)
 	}
-	m := mangas[0].(*mango.Manga)
+	m := manga.(*mango.Manga)
 	meta := *m.Metadata_
 	if m.ID != "2" || m.Cover != cdn+"2/thumbnail.png" || meta.Title() != "Omniscient Reader's Viewpoint" || len(meta.AlternateTitles()) != 1 {
 		t.Errorf("got %+v, %+v", m, meta)
 	}
 
-	if mangas, err := f.SearchMangas(context.Background(), mango.Store{}, "mid: 999"); err != nil || len(mangas) != 0 {
-		t.Errorf("unknown id: %v, %v, want no mangas", mangas, err)
+	if manga, found, err := f.MangaByID(context.Background(), mango.Store{}, "999"); err != nil || found {
+		t.Errorf("unknown id: %v, %v, %v, want not found", manga, found, err)
 	}
 }
 

@@ -14,13 +14,8 @@ import (
 	mango "github.com/luevano/mangoprovider"
 )
 
-// SearchMangas uses the site's search (first page, 20 results: it goes through FlareSolverr),
-// or gets one by "mid:" (the slug in /manga/<slug>).
+// SearchMangas uses the site's search (first page, 20 results: it goes through FlareSolverr).
 func (m *mangabox) SearchMangas(ctx context.Context, store mango.Store, query string) ([]mangadata.Manga, error) {
-	if id, byID := mango.ReNamedGroups(mango.MangaQueryIDRegex, query)[mango.MangaQueryID]; byID {
-		return mango.SearchByID(m.MangaByID(ctx, store, id))
-	}
-
 	var mangas []mangadata.Manga
 	if found, err := store.GetMangas(query, query, &mangas); err != nil || found {
 		return mangas, err

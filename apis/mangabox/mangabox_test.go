@@ -289,9 +289,6 @@ func TestMangaByID(t *testing.T) {
 	if manga, found, err := m.MangaByID(context.Background(), mango.Store{}, "nope"); err != nil || found {
 		t.Errorf("unknown id: %v, %v, %v, want not found", manga, found, err)
 	}
-	if mangas, err := m.SearchMangas(context.Background(), mango.Store{}, "mid:solo-leveling"); err != nil || len(mangas) != 1 {
-		t.Errorf("search by id: %v, %v", mangas, err)
-	}
 }
 
 func TestGetRateLimited(t *testing.T) {

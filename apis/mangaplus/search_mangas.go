@@ -15,10 +15,6 @@ import (
 )
 
 func (p *plus) SearchMangas(ctx context.Context, store mango.Store, query string) ([]mangadata.Manga, error) {
-	if id, byID := mango.ReNamedGroups(mango.MangaQueryIDRegex, query)[mango.MangaQueryID]; byID {
-		return mango.SearchByID(p.MangaByID(ctx, store, id))
-	}
-
 	var mangas []mangadata.Manga
 	cacheID := p.cacheKey(fmt.Sprintf("%s-%s-%s", query, p.filter.Language, p.options.Quality))
 

@@ -53,14 +53,6 @@ func api(t *testing.T, answers map[string]string) http.HandlerFunc {
 	}
 }
 
-func TestSearchByID(t *testing.T) {
-	c := newTest(t, api(t, nil))
-	mangas, err := c.SearchMangas(context.Background(), mango.Store{}, "mid: fm1")
-	if err != nil || len(mangas) != 0 {
-		t.Errorf("wanted no results, got %v, %v", mangas, err)
-	}
-}
-
 func TestSearch(t *testing.T) {
 	c := newTest(t, api(t, map[string]string{
 		"/api/mpc/search/titles?page=1": `{"result":"OK","mpcTitlesDto":{"titleList":[{"titleId":"fm1","title":"Rauch","handleName":"A","firstPublishDate":1681000000000}],"pagination":{"page":1,"maxPage":2}}}`,

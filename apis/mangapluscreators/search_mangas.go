@@ -13,12 +13,6 @@ import (
 func (c *mpc) SearchMangas(ctx context.Context, store mango.Store, query string) ([]mangadata.Manga, error) {
 	var mangas []mangadata.Manga
 
-	// the api has no title lookup, an id finds nothing like an unknown one elsewhere
-	if _, byID := mango.ReNamedGroups(mango.MangaQueryIDRegex, query)[mango.MangaQueryID]; byID {
-		c.log.Log("search by id isn't supported, no results for %q", query)
-		return nil, nil
-	}
-
 	cacheID := fmt.Sprintf("%s-%s", query, c.filter.Language)
 	found, err := store.GetMangas(cacheID, query, &mangas)
 	if err != nil {

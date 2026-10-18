@@ -29,12 +29,8 @@ type series struct {
 	LastEdit    int64    `json:"last_edit"`
 }
 
-// SearchMangas filters the whole catalog (/browse lists every series), or gets one by "mid:".
+// SearchMangas filters the whole catalog (/browse lists every series).
 func (f *flame) SearchMangas(ctx context.Context, store mango.Store, query string) ([]mangadata.Manga, error) {
-	if id, byID := mango.ReNamedGroups(mango.MangaQueryIDRegex, query)[mango.MangaQueryID]; byID {
-		return mango.SearchByID(f.MangaByID(ctx, store, id))
-	}
-
 	var mangas []mangadata.Manga
 	if found, err := store.GetMangas(query, query, &mangas); err != nil || found {
 		return mangas, err

@@ -32,6 +32,7 @@ const (
 )
 
 var (
+	// Deprecated: SearchMangas no longer reads "mid:" queries, call MangaByID.
 	MangaQueryIDRegex       = regexp.MustCompile(`(?mi)\s*(m((anga)?[-_]?)?id)\s*:\s*(?P<` + MangaQueryID + `>.*\S)\s*$`)
 	ChapterNumberRegex      = regexp.MustCompile(numRe)
 	ChapterNameRegex        = regexp.MustCompile(`(?mi)^(` + volNumRe + `)?\s*` + chapNumRe + `\s*(` + sepRe + `\s*` + partNumRe + `)?\s*` + sepRe + `\s+` + chapNameRe + `\s*$`) // https://regex101.com/r/ADDouB

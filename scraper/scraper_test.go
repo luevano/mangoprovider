@@ -182,9 +182,6 @@ func TestMangaByID(t *testing.T) {
 	if _, found, err := s.MangaByID(ctx, mango.Store{}, "2/changed"); err == nil || found {
 		t.Errorf("page without the manga: %v, %v, want an error", found, err)
 	}
-	if mangas, err := s.SearchMangas(ctx, mango.Store{}, "mid: 1/one-piece"); err != nil || len(mangas) != 1 {
-		t.Errorf("search by id: %v, %v", mangas, err)
-	}
 }
 
 // hostRecorder: Transport that records the Host header it gets, like the headless ones forward it.

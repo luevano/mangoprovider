@@ -15,10 +15,6 @@ import (
 )
 
 func (s *Scraper) SearchMangas(ctx context.Context, store mango.Store, query string) ([]mangadata.Manga, error) {
-	if id, byID := mango.ReNamedGroups(mango.MangaQueryIDRegex, query)[mango.MangaQueryID]; byID {
-		return mango.SearchByID(s.MangaByID(ctx, store, id))
-	}
-
 	var mangas []mangadata.Manga
 	first, next, err := s.searchRequests(query)
 	if err != nil {

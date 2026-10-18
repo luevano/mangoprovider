@@ -105,6 +105,8 @@ func (p *Provider) MangaByID(ctx context.Context, id string) (mangadata.Manga, b
 }
 
 // SearchByID: The result of a MangaByID as a search result, for "mid:" queries.
+//
+// Deprecated: SearchMangas no longer reads "mid:" queries, call MangaByID.
 func SearchByID(manga mangadata.Manga, found bool, err error) ([]mangadata.Manga, error) {
 	if err != nil || !found {
 		return nil, err

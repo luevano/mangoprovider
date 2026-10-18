@@ -30,13 +30,8 @@ type series struct {
 	} `json:"genres"`
 }
 
-// SearchMangas uses the site's search, or gets one by "mid:" (old asuracomic.net ids with
-// their "-<hash>" suffix redirect to the series too).
+// SearchMangas uses the site's search.
 func (a *asura) SearchMangas(ctx context.Context, store mango.Store, query string) ([]mangadata.Manga, error) {
-	if id, byID := mango.ReNamedGroups(mango.MangaQueryIDRegex, query)[mango.MangaQueryID]; byID {
-		return mango.SearchByID(a.MangaByID(ctx, store, id))
-	}
-
 	var mangas []mangadata.Manga
 	if found, err := store.GetMangas(query, query, &mangas); err != nil || found {
 		return mangas, err

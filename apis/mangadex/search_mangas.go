@@ -15,10 +15,6 @@ import (
 )
 
 func (d *dex) SearchMangas(ctx context.Context, store mango.Store, query string) ([]mangadata.Manga, error) {
-	if id, byID := mango.ReNamedGroups(mango.MangaQueryIDRegex, query)[mango.MangaQueryID]; byID {
-		return mango.SearchByID(d.MangaByID(ctx, store, id))
-	}
-
 	var mangas []mangadata.Manga
 	limit := 100
 	params := d.getSearchMangasParams(query, limit)
