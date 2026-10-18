@@ -90,7 +90,7 @@ func (m *madara) serve(t *testing.T) *httptest.Server {
 		m.mu.Lock()
 		m.requests = append(m.requests, r.Method+" "+r.URL.RequestURI()+" "+r.PostForm.Encode())
 		m.mu.Unlock()
-		chapters := `<ul><li class="wp-manga-chapter"><a href="/manga/a-b/chapter-2/">Chapter 2</a><span class="chapter-release-date"><i>March 3, 2024</i></span></li>` +
+		chapters := `<ul><li class="wp-manga-chapter"><a href="/manga/a-b/chapter-2/">Vol.1 Chapter 2</a><span class="chapter-release-date"><i>March 3, 2024</i></span></li>` +
 			`<li class="wp-manga-chapter"><a href="/manga/a-b/chapter-1/">Chapter 1</a></li></ul>`
 		switch {
 		case r.URL.Path == "/manga/a-b/":

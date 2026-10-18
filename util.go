@@ -38,6 +38,10 @@ var (
 	ChapterNameExcludeRegex = regexp.MustCompile(`(?mi)^` + partNumRe + `$`)
 	NewlineCharactersRegex  = regexp.MustCompile(`\r?\n`)
 	ImageExtensionRegex     = regexp.MustCompile(`^\.[a-zA-Z0-9][a-zA-Z0-9.]*[a-zA-Z0-9]$`)
+
+	// a volume (or season) prefix followed by an explicit chapter (or episode) number,
+	// e.g. "Vol. 2 Chapter 10", "S2 Ep 5", "第2巻 第10話"; group 2 is where the chapter starts
+	volumePrefixRegex = regexp.MustCompile(`(?i)^\s*((?:v[a-z]*|tome|tomo|band|book|season|saison|s)\.?\s*#?\s*\d+(?:\.\d+)?|第\s*\d+\s*[巻卷]|\d+\s*[巻권])\s*[:\-_.,]?\s*((?:c|ch|chap|chapter|ep|episode|cap|cap[ií]tulo|chapitre|kapitel)\.?\s*#?\s*\d|#\s*\d|第\s*\d+\s*[話话화])`)
 )
 
 // Translate regex named groups to a map.
@@ -103,6 +107,10 @@ func FloatIsInt(number float32) bool {
 
 // ParseChapterNumber returns the chapter number in the title, ok is false if there's none.
 func ParseChapterNumber(title string) (number float32, ok bool) {
+	// otherwise ChapterNameRegex reads the volume's number as the chapter's
+	if m := volumePrefixRegex.FindStringSubmatchIndex(title); m != nil {
+		title = title[m[4]:]
+	}
 	match := strings.TrimSpace(ReNamedGroups(ChapterNameRegex, title)[ChapterNumberID])
 	// if the groups matching fail, it probably only contains the chapter number
 	if match == "" {
