@@ -29,6 +29,8 @@ type Retry struct {
 	// Statuses: Optional, which statuses are tried again, Retryable by default. APIs whose 429
 	// mustn't be retried soon (a ban or lockout for repeating it) pass ServerErrors.
 	Statuses func(status int) bool
+	// Skip: Optional, requests never tried again (e.g. best-effort reports).
+	Skip func(req *http.Request) bool
 }
 
 // DefaultRetry: Small enough not to hold a search for long: 3 tries within 30s, waiting ~1s
@@ -92,7 +94,8 @@ type retryableError struct {
 }
 
 func (e *retryableError) Error() string {
-	return fmt.Sprintf("%d %s", e.status, strings.ToLower(http.StatusText(e.status)))
+	// Cloudflare's 52x have no text
+	return strings.TrimSpace(fmt.Sprintf("%d %s", e.status, strings.ToLower(http.StatusText(e.status))))
 }
 
 // Retries: Requests answered with a Retryable status are tried again as r says, each wait
@@ -103,7 +106,7 @@ func Retries(r Retry, log *mango.Logger) Middleware {
 	r = r.withDefaults()
 	return func(next http.RoundTripper) http.RoundTripper {
 		return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
-			if r.MaxTries <= 1 {
+			if r.MaxTries <= 1 || (r.Skip != nil && r.Skip(req)) {
 				return next.RoundTrip(req)
 			}
 			ctx := req.Context()

@@ -186,6 +186,20 @@ func TestRetriesServerErrors(t *testing.T) {
 	}
 }
 
+// a skipped request gets its first answer, a 52x's error has no trailing space
+func TestRetriesSkip(t *testing.T) {
+	server, bodies := flaky(t, "", 522)
+	r := fastRetry()
+	r.Skip = func(req *http.Request) bool { return req.URL.Path == "/report" }
+	status, _, err := do(t, context.Background(), retryClient(r, nil), http.MethodPost, server.URL+"/report", "{}")
+	if err != nil || status != 522 || len(*bodies) != 1 {
+		t.Errorf("skipped: got %d %v after %d requests", status, err, len(*bodies))
+	}
+	if got := (&retryableError{status: 522}).Error(); got != "522" {
+		t.Errorf("522 error %q", got)
+	}
+}
+
 func TestRetryClient(t *testing.T) {
 	server, bodies := flaky(t, "", 502)
 	base := &http.Client{Timeout: time.Minute}

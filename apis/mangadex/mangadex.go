@@ -2,6 +2,7 @@ package mangadex
 
 import (
 	"context"
+	"net/http"
 	"sync"
 
 	"github.com/luevano/libmangal"
@@ -15,7 +16,7 @@ const website = "https://mangadex.org/"
 var providerInfo = libmangal.ProviderInfo{
 	ID:          mango.BundleID + "-mangadex",
 	Name:        "MangaDex",
-	Version:     "0.8.6",
+	Version:     "0.8.7",
 	Description: "MangaDex scraper using mangodex",
 	Website:     website,
 }
@@ -46,7 +47,12 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 			}
 			// 5xx only: a 429 goes up with its wait, hitting it again gets the IP banned
 			// (api.mangadex.org/docs/2-limitations)
-			dexOptions.HTTPClient = fetch.RetryClient(dexOptions.HTTPClient, fetch.Retry{Statuses: fetch.ServerErrors}, nil, log)
+			// the MangaDex@Home reports are best-effort: a report endpoint that's down isn't
+			// retried (and logged) for every page
+			retry := fetch.Retry{Statuses: fetch.ServerErrors, Skip: func(req *http.Request) bool {
+				return req.URL.String() == mangodex.MDHomeReportURL
+			}}
+			dexOptions.HTTPClient = fetch.RetryClient(dexOptions.HTTPClient, retry, nil, log)
 			client, err := mangodex.NewDexClient(dexOptions)
 			if err != nil {
 				return mango.Functions{}, err
