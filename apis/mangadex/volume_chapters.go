@@ -59,6 +59,9 @@ func (d *dex) VolumeChapters(ctx context.Context, store mango.Store, volume mang
 	if !d.filter.ShowUnavailableChapters {
 		params.Set("includeEmptyPages", "0")
 	}
+	if d.filter.ShowRetiredChapters {
+		params.Set("includeUnavailable", "1")
+	}
 
 	ratings := []mangodex.ContentRating{mangodex.ContentRatingSafe, mangodex.ContentRatingSuggestive}
 	if d.filter.NSFW {
@@ -140,15 +143,18 @@ func (d *dex) populateChapters(ctx context.Context, agg *aggregate, params url.V
 	}
 
 	for _, chapter := range chapterList {
-		// External and empty chapters can't be downloaded, only shown if wanted.
+		// Retired, external and empty chapters can't be downloaded, only shown if wanted.
+		// retired ones are only sent when asked for, so they're always kept.
 		var unavailable string
 		switch {
+		case chapter.Attributes.IsUnavailable:
+			unavailable = "retired"
 		case chapter.Attributes.ExternalURL != nil:
 			unavailable = "external"
 		case chapter.Attributes.Pages == 0:
 			unavailable = "0 pages"
 		}
-		if unavailable != "" && !d.filter.ShowUnavailableChapters {
+		if unavailable != "" && !chapter.Attributes.IsUnavailable && !d.filter.ShowUnavailableChapters {
 			continue
 		}
 

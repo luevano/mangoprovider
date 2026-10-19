@@ -297,3 +297,37 @@ func TestAtHomeRefreshedForgotten(t *testing.T) {
 		t.Errorf("wanted the chapter forgotten, got %v", d.atHomeRefreshed)
 	}
 }
+
+func TestRetiredChapters(t *testing.T) {
+	for _, retired := range []bool{false, true} {
+		fake := newFakeDex()
+		fake.chapters = `{"id":"r","type":"chapter","attributes":{"chapter":"1","pages":3,"isUnavailable":true}},` +
+			`{"id":"e","type":"chapter","attributes":{"chapter":"2","pages":0,"externalUrl":"https://x.test"}},` +
+			`{"id":"a","type":"chapter","attributes":{"chapter":"3","pages":3}}`
+		options := mango.DefaultOptions()
+		options.HTTPClient = &http.Client{Transport: fake}
+		options.Filter.ShowUnavailableChapters = false
+		options.Filter.ShowRetiredChapters = retired
+		fns := load(t, Loader(options).(*mango.Loader), nil)
+		manga := mango.Manga{ID: "m"}
+		fns.MangaVolumes(context.Background(), mango.Store{}, manga)
+		chapters, err := fns.VolumeChapters(context.Background(), mango.Store{}, mango.Volume{Number: 1, Manga_: &manga})
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, path := range []string{"/manga/m/aggregate", "/chapter"} {
+			query, _ := url.ParseQuery(fake.queries[path])
+			if got := query.Get("includeUnavailable") == "1"; got != retired {
+				t.Errorf("retired %t, %s: got %s", retired, path, fake.queries[path])
+			}
+		}
+		var got []string
+		for _, c := range chapters {
+			got = append(got, c.(*mango.Chapter).ID+":"+c.Info().Unavailable)
+		}
+		// the fake answers retired chapters either way, the server only does when asked
+		if want := "r:retired,a:"; strings.Join(got, ",") != want {
+			t.Errorf("retired %t: wanted %s, got %v", retired, want, got)
+		}
+	}
+}

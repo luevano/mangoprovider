@@ -20,6 +20,10 @@ func (d *dex) MangaVolumes(ctx context.Context, store mango.Store, manga mango.M
 	if d.filter.Language != "" {
 		params.Add("translatedLanguage[]", d.filter.Language)
 	}
+	// volumes with only retired chapters are left out otherwise
+	if d.filter.ShowRetiredChapters {
+		params.Set("includeUnavailable", "1")
+	}
 
 	cacheID := fmt.Sprintf("%s?%s-%s", manga.ID, params.Encode(), d.filter.String())
 
