@@ -25,6 +25,7 @@ var (
 		Version:     "0.3.6",
 		Description: "Mangabat (needs FlareSolverr to search)",
 		Website:     "https://www.mangabats.com/",
+		Icon:        "https://www.mangabats.com/images/favicon-bat.webp",
 	}
 	// .gg's pages are challenged and only a FlareSolverr on Google Chrome solves them
 	MangakakalotInfo = libmangal.ProviderInfo{
@@ -33,6 +34,7 @@ var (
 		Version:     "0.3.6",
 		Description: "Mangakakalot (needs FlareSolverr to search)",
 		Website:     "https://www.mangakakalove.com/",
+		Icon:        "https://www.mangakakalove.com/images/favicon.ico",
 		Mirrors:     []string{"https://www.mangakakalot.gg/"},
 	}
 	ManganatoInfo = libmangal.ProviderInfo{
@@ -41,6 +43,7 @@ var (
 		Version:     "0.4.6",
 		Description: "Manganato (needs FlareSolverr)",
 		Website:     "https://www.natomanga.com/",
+		Icon:        "https://www.natomanga.com/images/favicon-manganato.webp",
 		Mirrors:     []string{"https://www.nelomanga.net/", "https://www.manganato.gg/"},
 	}
 )

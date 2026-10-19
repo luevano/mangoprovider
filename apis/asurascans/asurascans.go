@@ -28,6 +28,7 @@ var providerInfo = libmangal.ProviderInfo{
 	Version:     "0.4.7",
 	Description: "AsuraScans, from the site's API",
 	Website:     website,
+	Icon:        website + "icons/apple-touch-icon.png",
 }
 
 type asura struct {

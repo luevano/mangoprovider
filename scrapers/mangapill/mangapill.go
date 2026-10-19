@@ -21,6 +21,7 @@ var Info = libmangal.ProviderInfo{
 	Version:     "0.4.6",
 	Description: "Mangapill scraper",
 	Website:     "https://mangapill.com/",
+	Icon:        "https://mangapill.com/static/favicon/favicon-32x32.png",
 }
 
 // Config: A new configuration, built on every load.
