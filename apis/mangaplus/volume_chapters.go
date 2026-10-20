@@ -54,6 +54,10 @@ func (p *plus) searchChapters(ctx context.Context, chapters *[]mangadata.Chapter
 	}
 	lastNumber := float32(0.0)
 	for _, chapter := range chapterList {
+		if chapter.ChapterId == 0 {
+			p.log.Log("skipping chapter %q: no id", chapter.Name)
+			continue
+		}
 		title := chapter.Name
 		if chapter.SubTitle != "" {
 			title = mango.ParseChapterTitle(chapter.SubTitle)

@@ -115,7 +115,7 @@ func (p *plus) searchMangas(ctx context.Context, mangas *[]mangadata.Manga, quer
 }
 
 func (p *plus) plusToMangoManga(titleDetail *mangoplus.TitleDetailView) (*mango.Manga, error) {
-	if titleDetail.GetTitle() == nil {
+	if titleDetail.GetTitle().GetTitleId() == 0 {
 		return nil, errors.New("no title in the details")
 	}
 	meta := p.plusToMetadata(titleDetail)

@@ -11,6 +11,9 @@ func TestPlusToMangoMangaNoTitle(t *testing.T) {
 	if _, err := p.plusToMangoManga(&mangoplus.TitleDetailView{}); err == nil {
 		t.Error("wanted an error for details without a title")
 	}
+	if _, err := p.plusToMangoManga(&mangoplus.TitleDetailView{Title: &mangoplus.Title{Name: "A"}}); err == nil {
+		t.Error("wanted an error for a title without an id")
+	}
 	m, err := p.plusToMangoManga(&mangoplus.TitleDetailView{Title: &mangoplus.Title{TitleId: 1, Name: "A"}})
 	if err != nil || m.ID != "1" || m.Title != "A" {
 		t.Errorf("got %+v, %v", m, err)
