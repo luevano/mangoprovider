@@ -179,3 +179,19 @@ func TestGetPageImageReportsRetries(t *testing.T) {
 		t.Errorf("reported %q, want %q", got, want)
 	}
 }
+
+func TestVolumeChaptersSkipsWithoutID(t *testing.T) {
+	ok := &Chapter{ID: "1", Number: 1}
+	p := &Provider{
+		log: NewProviderLogger(libmangal.ProviderInfo{ID: "mango-test"}),
+		F: Functions{
+			VolumeChapters: func(context.Context, Store, Volume) ([]mangadata.Chapter, error) {
+				return []mangadata.Chapter{&Chapter{Number: 2}, ok}, nil
+			},
+		},
+	}
+	chapters, err := p.VolumeChapters(context.Background(), &Volume{Manga_: &Manga{ID: "m"}})
+	if err != nil || len(chapters) != 1 || chapters[0] != ok {
+		t.Errorf("got %v, %v, want only the chapter with an id", chapters, err)
+	}
+}

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/luevano/libmangal"
@@ -145,7 +146,14 @@ func (p *Provider) VolumeChapters(
 	if err != nil {
 		return nil, fmt.Errorf("%s: chapters of %q vol %s: %w", p.ProviderInfo.ID, v.Manga_, v, shared(err))
 	}
-	return chapters, nil
+	// the pages are got by the id, the site sent a chapter without one
+	return slices.DeleteFunc(slices.Clone(chapters), func(c mangadata.Chapter) bool {
+		if ch, ok := c.(*Chapter); ok && ch.ID == "" {
+			p.log.Log("skipping chapter %q (%s): no id", ch, ch.URL)
+			return true
+		}
+		return false
+	}), nil
 }
 
 func (p *Provider) ChapterPages(
