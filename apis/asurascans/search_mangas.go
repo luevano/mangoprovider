@@ -3,6 +3,7 @@ package asurascans
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
@@ -54,6 +55,10 @@ func (a *asura) MangaByID(ctx context.Context, _ mango.Store, id string) (mangad
 			return nil, false, nil
 		}
 		return nil, false, err
+	}
+	// seen once: a 200 without the series, which would be an empty manga (empty cache keys)
+	if resp.Series.Slug == "" {
+		return nil, false, fmt.Errorf("series %q: no series in the response", id)
 	}
 	return toManga(resp.Series), true, nil
 }

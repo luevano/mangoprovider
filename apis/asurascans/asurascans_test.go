@@ -19,6 +19,7 @@ var responses = map[string]string{
 	"/series/solo-farming-in-the-tower":              `{"series":{"slug":"solo-farming-in-the-tower","title":"Solo Farming In The Tower","alternative_titles":"나혼자 탑에서 농사 • Tower Farmer","type":"manhwa","status":"ongoing","public_url":"/comics/solo-farming-in-the-tower-bd5bdaf8"}}`,
 	"/series/solo-farming-in-the-tower/chapters":     `{"data":[{"number":146,"slug":"chapter-146","is_premium":true,"early_access_until":"2999-01-01T00:00:00Z"},{"number":145,"slug":"chapter-145","is_premium":true,"early_access_until":"2026-10-04T12:36:06.561124Z","published_at":"2026-10-04T06:36:06.561124Z"},{"number":1.5,"slug":"66e058fe","published_at":"2025-12-25T20:41:13Z"}]}`,
 	"/series/solo-farming-in-the-tower/chapters/145": `{"data":{"is_locked":false,"chapter":{"pages":[{"url":"https://cdn.asurascans.com/c/145/a.webp?v=1"},{"url":"https://cdn.asurascans.com/c/145/b.jpg?v=1"}]}}}`,
+	"/series/empty":                                  `{}`,
 	"/series/solo-farming-in-the-tower/chapters/146": `{"data":{"is_locked":true,"unlock_time":"2026-10-11T09:31:27Z","chapter":{"pages":null}}}`,
 }
 
@@ -77,6 +78,9 @@ func TestMangaByID(t *testing.T) {
 	}
 	if manga, found, err := a.MangaByID(context.Background(), mango.Store{}, "nope"); err != nil || found {
 		t.Errorf("unknown id: %v, %v, %v, want not found", manga, found, err)
+	}
+	if manga, found, err := a.MangaByID(context.Background(), mango.Store{}, "empty"); err == nil || found {
+		t.Errorf("no series: %v, %v, %v, want an error", manga, found, err)
 	}
 }
 
