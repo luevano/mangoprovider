@@ -61,6 +61,9 @@ func (d *dex) MangaByID(ctx context.Context, store mango.Store, id string) (mang
 	if err != nil {
 		return nil, false, err
 	}
+	if manga == nil || manga.ID == "" {
+		return nil, false, fmt.Errorf("GET manga %q: no manga in the response", id)
+	}
 	m := d.dexToMangoManga(manga)
 	return m, true, store.SetMangas(cacheID, []mangadata.Manga{m})
 }
@@ -82,6 +85,10 @@ func (d *dex) searchMangas(ctx context.Context, mangas *[]mangadata.Manga, param
 			return err
 		}
 		for _, manga := range mangaList {
+			// a null in the list
+			if manga == nil {
+				continue
+			}
 			*mangas = append(*mangas, d.dexToMangoManga(manga))
 		}
 		offset += limit

@@ -58,6 +58,8 @@ func (f *fakeDex) RoundTrip(r *http.Request) (*http.Response, error) {
 			mangas[i] = `{"id":"m","type":"manga","attributes":{"title":{"en":"A"}}}`
 		}
 		w.WriteString(`{"result":"ok","data":[` + strings.Join(mangas, ",") + `],"total":` + strconv.Itoa(total) + `}`)
+	case r.URL.Path == "/manga/empty":
+		w.WriteString(`{"result":"ok","data":null}`)
 	case r.URL.Path == "/chapter" && f.chapters != "":
 		w.WriteString(`{"result":"ok","data":[` + f.chapters + `]}`)
 	case strings.HasPrefix(r.URL.Path, "/at-home/server/"):
@@ -329,5 +331,12 @@ func TestRetiredChapters(t *testing.T) {
 		if want := "r:retired,a:"; strings.Join(got, ",") != want {
 			t.Errorf("retired %t: wanted %s, got %v", retired, want, got)
 		}
+	}
+}
+
+func TestMangaByIDWithoutManga(t *testing.T) {
+	fns := loadFake(t, newFakeDex(), nil)
+	if manga, found, err := fns.MangaByID(context.Background(), mango.Store{}, "empty"); err == nil || !strings.Contains(err.Error(), "no manga in the response") || found {
+		t.Errorf("got %v, %v, %v, want an error", manga, found, err)
 	}
 }
