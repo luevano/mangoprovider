@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"net/url"
 	"regexp"
 	"strings"
@@ -98,6 +99,10 @@ func (m *mangabox) manga(ctx context.Context, store mango.Store, slug string) (*
 		}
 	}
 	title := strings.TrimSpace(info.Find("h1, h2").First().Text())
+	// e.g. a challenge or error page answered 200
+	if title == "" {
+		return nil, fmt.Errorf("GET /manga/%s: no manga title in the page", slug)
+	}
 	cover := doc.Find("div.manga-info-pic img, span.info-image img").First().AttrOr("src", "")
 	return m.toManga(slug, site+"manga/"+slug, title, cover, &details), nil
 }

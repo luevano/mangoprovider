@@ -281,13 +281,16 @@ func TestPageImageFallback(t *testing.T) {
 
 func TestMangaByID(t *testing.T) {
 	page := `<div class="manga-info-top"><ul class="manga-info-text"><li><h1>Solo Leveling</h1></li><li>Author(s) : Chugong</li><li>Status : Completed</li></ul></div>`
-	m := newTest(t, false, map[string]string{"/manga/solo-leveling": page})
+	m := newTest(t, false, map[string]string{"/manga/solo-leveling": page, "/manga/empty": "<html></html>"})
 	manga, found, err := m.MangaByID(context.Background(), mango.Store{}, "solo-leveling")
 	if err != nil || !found || manga.Info().Title != "Solo Leveling" || manga.Info().ID != "solo-leveling" {
 		t.Fatalf("got %v, %v, %v", manga, found, err)
 	}
 	if manga, found, err := m.MangaByID(context.Background(), mango.Store{}, "nope"); err != nil || found {
 		t.Errorf("unknown id: %v, %v, %v, want not found", manga, found, err)
+	}
+	if manga, found, err := m.MangaByID(context.Background(), mango.Store{}, "empty"); err == nil || !strings.Contains(err.Error(), "no manga title") || found {
+		t.Errorf("page without a manga: %v, %v, %v, want an error", manga, found, err)
 	}
 }
 
