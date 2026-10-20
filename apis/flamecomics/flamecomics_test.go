@@ -16,6 +16,7 @@ import (
 
 // pages are trimmed copies of what the site embeds (checked 2026-10-10).
 var pages = map[string]string{
+	"/browse":       `{"series":[{"title":"Omniscient Reader"},{"series_id":2,"title":"Omniscient Reader's Viewpoint","type":"Manhwa"}]}`,
 	"/series/2":     `{"series":{"series_id":2,"title":"Omniscient Reader's Viewpoint","altTitles":[" ORV ",""],"type":"Manhwa","status":"Ongoing","year":2020,"cover":"thumbnail.png","author":["Sing N Song"]},"chapters":[{"chapter":"1.00","title":"One","token":"bbb","release_date":1611705600},{"chapter":"0.00","title":"Prologue","token":"aaa","release_date":1611705600}]}`,
 	"/series/2/aaa": `{"chapter":{"token":"aaa","images":{"10":{"name":"p10.jpg"},"2":{"name":"p02.jpg"},"0":{"name":"p00.png"}}}}`,
 }
@@ -190,5 +191,12 @@ func TestChapterNumber(t *testing.T) {
 		if _, ok := chapterNumber(s); ok != want {
 			t.Errorf("%q: wanted %v, got %v", s, want, ok)
 		}
+	}
+}
+
+func TestSearchSkipsWithoutID(t *testing.T) {
+	mangas, err := newTest(t).SearchMangas(context.Background(), mango.Store{}, "omniscient")
+	if err != nil || len(mangas) != 1 || mangas[0].Info().ID != "2" {
+		t.Errorf("got %v, %v, want only series 2", mangas, err)
 	}
 }

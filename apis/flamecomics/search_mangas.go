@@ -43,8 +43,8 @@ func (f *flame) SearchMangas(ctx context.Context, store mango.Store, query strin
 	}
 	q := strings.ToLower(strings.TrimSpace(query))
 	for _, s := range props.Series {
-		// novels have no images
-		if strings.Contains(s.Type, "Novel") {
+		// novels have no images, a series without an id is an empty one
+		if strings.Contains(s.Type, "Novel") || s.ID == 0 {
 			continue
 		}
 		titles := append([]string{s.Title}, s.AltTitles...)
