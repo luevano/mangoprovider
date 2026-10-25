@@ -17,6 +17,13 @@ var providerInfo = libmangal.ProviderInfo{
 	Version:     "0.6.8",
 	Description: "MangaPlus scraper using mangoplus",
 	Website:     website,
+	Settings:    settings,
+	Traits: libmangal.ProviderTraits{
+		// MangaPlus shows only some of a series' chapters (often the first and latest)
+		PartialChapters: true,
+		// the device gets locked out after bursts of requests (mangoplus.ErrRateLimited)
+		AvoidUnattended: true,
+	},
 }
 
 type plus struct {
@@ -35,6 +42,10 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 		Options:      options,
 		Account:      true,
 		F: func(_ context.Context, log *mango.Logger) (mango.Functions, error) {
+			o := o
+			if err := applySettings(options.Settings, &o, log); err != nil {
+				return mango.Functions{}, err
+			}
 			plusOptions := o.Options
 			// the website's api takes a browser's
 			if plusOptions.WebUserAgent == "" {

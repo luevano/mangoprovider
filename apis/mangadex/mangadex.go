@@ -19,6 +19,7 @@ var providerInfo = libmangal.ProviderInfo{
 	Version:     "0.8.8",
 	Description: "MangaDex scraper using mangodex",
 	Website:     website,
+	Settings:    settings,
 }
 
 type dex struct {
@@ -41,6 +42,10 @@ func Loader(options mango.Options) libmangal.ProviderLoader {
 		ProviderInfo: providerInfo,
 		Options:      options,
 		F: func(_ context.Context, log *mango.Logger) (mango.Functions, error) {
+			o := o
+			if err := applySettings(options.Settings, &o); err != nil {
+				return mango.Functions{}, err
+			}
 			dexOptions := o.Options
 			if dexOptions.HTTPClient == nil {
 				dexOptions.HTTPClient = options.HTTPClient

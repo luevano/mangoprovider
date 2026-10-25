@@ -137,6 +137,11 @@ type Options struct {
 	// MangaPlusCreators options.
 	MangaPlusCreators MangaPlusCreatorsOptions
 
+	// Settings: Optional, the values of the providers' declared settings
+	// (libmangal.ProviderInfo.Settings), asked when a provider loads. When set, they
+	// replace the matching MangaDex and MangaPlus fields; nil keeps those fields as they are.
+	Settings libmangal.SettingsFunc
+
 	// Debug: Optional, logs what answers without a request through HTTPClient: cache hits and
 	// headless browser page loads (e.g. the app's --debug request log).
 	Debug func(format string, a ...any)
